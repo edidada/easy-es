@@ -2,9 +2,8 @@ package cn.easyes.core.conditions.update;
 
 
 import cn.easyes.common.params.SFunction;
-import cn.easyes.core.conditions.AbstractChainWrapper;
-import cn.easyes.core.conditions.interfaces.BaseEsMapper;
-import cn.easyes.core.conditions.interfaces.Update;
+import cn.easyes.core.core.AbstractChainWrapper;
+import cn.easyes.core.core.BaseEsMapper;
 
 /**
  * 链式更新条件构造器
@@ -13,7 +12,7 @@ import cn.easyes.core.conditions.interfaces.Update;
  **/
 @SuppressWarnings({"serial"})
 public class LambdaEsUpdateChainWrapper<T> extends AbstractChainWrapper<T, SFunction<T, ?>, LambdaEsUpdateChainWrapper<T>, LambdaEsUpdateWrapper<T>>
-        implements EsChainUpdate<T>, Update<LambdaEsUpdateChainWrapper<T>, SFunction<T, ?>> {
+        implements EsChainUpdate<T> {
 
     private final BaseEsMapper<T> baseEsMapper;
 
