@@ -2,6 +2,7 @@ package cn.easyes.starter.config;
 
 import cn.easyes.common.utils.ExceptionUtils;
 import cn.easyes.common.utils.RestHighLevelClientBuilder;
+import cn.easyes.common.utils.RestHighLevelClientUtils;
 import cn.easyes.common.utils.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -31,11 +32,16 @@ import static cn.easyes.common.constants.BaseEsConstants.DEFAULT_SCHEMA;
  **/
 @Configuration
 @ConditionalOnClass(RestHighLevelClient.class)
-@EnableConfigurationProperties(EasyEsConfigProperties.class)
+@EnableConfigurationProperties(value = {DynamicEsProperties.class,EasyEsConfigProperties.class})
 @ConditionalOnProperty(prefix = "easy-es", name = {"enable"}, havingValue = "true", matchIfMissing = true)
 public class EsAutoConfiguration {
     @Autowired
     private EasyEsConfigProperties easyEsConfigProperties;
+
+    @Autowired
+    private DynamicEsProperties dynamicEsProperties;
+
+    private final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
     /**
      * 装配RestHighLevelClient
@@ -45,6 +51,10 @@ public class EsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RestHighLevelClient restHighLevelClient() {
+        return restHighLevelClient(easyEsConfigProperties);
+    }
+
+    private RestHighLevelClient restHighLevelClient(EasyEsConfigProperties easyEsConfigProperties){
         // 处理地址
         String address = easyEsConfigProperties.getAddress();
         if (StringUtils.isEmpty(address)) {
@@ -106,6 +116,21 @@ public class EsAutoConfiguration {
         }
 
         return RestHighLevelClientBuilder.build(builder);
+    }
+
+
+
+    @Bean
+    public RestHighLevelClientUtils restHighLevelClientUtils(){
+        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
+        Map<String, EasyEsConfigProperties> datasourceMap = dynamicEsProperties.getDatasource();
+        Map<String, RestHighLevelClient> restHighLevelClientMap = new HashMap<>();
+        for (String key : datasourceMap.keySet()) {
+            EasyEsConfigProperties easyEsConfigProperties = datasourceMap.get(key);
+            restHighLevelClientMap.put(key,restHighLevelClient(easyEsConfigProperties));
+            RestHighLevelClientUtils.registerRestHighLevelClient(key, restHighLevelClient(easyEsConfigProperties));
+        }
+        return restHighLevelClientUtils;
     }
 
 }

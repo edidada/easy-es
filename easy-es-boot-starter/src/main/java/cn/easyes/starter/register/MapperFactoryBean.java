@@ -1,9 +1,11 @@
 package cn.easyes.starter.register;
 
+import cn.easyes.annotation.EsDS;
 import cn.easyes.annotation.Intercepts;
 import cn.easyes.common.enums.ProcessIndexStrategyEnum;
 import cn.easyes.common.params.DefaultChildClass;
 import cn.easyes.common.utils.LogUtils;
+import cn.easyes.common.utils.RestHighLevelClientUtils;
 import cn.easyes.common.utils.TypeUtils;
 import cn.easyes.core.biz.EntityInfo;
 import cn.easyes.core.cache.BaseCache;
@@ -26,6 +28,8 @@ import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.Optional;
 
+import static cn.easyes.common.utils.RestHighLevelClientUtils.DEFAULT_DS;
+
 /**
  * 代理类
  * <p>
@@ -35,7 +39,7 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
     private Class<T> mapperInterface;
 
     @Autowired
-    private RestHighLevelClient client;
+    private RestHighLevelClientUtils restHighLevelClientUtils;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -63,6 +67,12 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
 
         // 初始化缓存
         GlobalConfigCache.setGlobalConfig(esConfigProperties.getGlobalConfig());
+
+        //获取动态数据源
+        EsDS annotation = mapperInterface.getAnnotation(EsDS.class);
+        RestHighLevelClient client = restHighLevelClientUtils.getClient(annotation != null? annotation.value() : DEFAULT_DS);
+        BaseCache.initCache(mapperInterface, entityClass, client);
+
         BaseCache.initCache(mapperInterface, entityClass, client);
 
         // 创建代理
