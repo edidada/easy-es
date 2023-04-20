@@ -1,9 +1,9 @@
 package cn.easyes.core.conditions;
 
+import cn.easyes.annotation.rely.FieldStrategy;
+import cn.easyes.annotation.rely.IdType;
 import cn.easyes.common.constants.BaseEsConstants;
 import cn.easyes.common.enums.EsQueryTypeEnum;
-import cn.easyes.common.enums.FieldStrategy;
-import cn.easyes.common.enums.IdType;
 import cn.easyes.common.utils.*;
 import cn.easyes.core.biz.*;
 import cn.easyes.core.cache.BaseCache;
@@ -38,6 +38,7 @@ import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -177,7 +178,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public PageInfo<T> pageQuery(LambdaEsQueryWrapper<T> wrapper, Integer pageNum, Integer pageSize) {
+    public EsPageInfo<T> pageQuery(LambdaEsQueryWrapper<T> wrapper, Integer pageNum, Integer pageSize) {
         // 兼容分页参数
         pageNum = pageNum == null || pageNum <= BaseEsConstants.ZERO ? BaseEsConstants.PAGE_NUM : pageNum;
         pageSize = pageSize == null || pageSize <= BaseEsConstants.ZERO ? BaseEsConstants.PAGE_SIZE : pageSize;
@@ -190,7 +191,8 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 解析数据
         SearchHit[] searchHits = parseSearchHitArray(response);
-        List<T> dataList = Arrays.stream(searchHits).map(searchHit -> parseOne(searchHit, wrapper))
+        List<T> dataList = Arrays.stream(searchHits)
+                .map(searchHit -> parseOne(searchHit, wrapper))
                 .collect(Collectors.toList());
         long count = parseCount(response, Objects.nonNull(wrapper.distinctField));
         return PageHelper.getPageInfo(dataList, count, pageNum, pageSize);
@@ -247,9 +249,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         } else {
             // 不去重,直接count获取,效率更高
             CountRequest countRequest = new CountRequest(getIndexNames(wrapper.indexNames));
-            BoolQueryBuilder boolQueryBuilder = WrapperProcessor.initBoolQueryBuilder(wrapper.baseEsParamList,
-                    wrapper.enableMust2Filter, entityClass);
-            countRequest.query(boolQueryBuilder);
+            QueryBuilder queryBuilder = Optional.ofNullable(wrapper.searchSourceBuilder)
+                    .map(SearchSourceBuilder::query)
+                    .orElseGet(() -> WrapperProcessor.initBoolQueryBuilder(wrapper.baseEsParamList,
+                            wrapper.enableMust2Filter, entityClass));
+            countRequest.query(queryBuilder);
             CountResponse count;
             try {
                 printCountDSL(countRequest);
@@ -495,6 +499,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 设置分片个副本信息
         Optional.ofNullable(wrapper.shardsNum).ifPresent(createIndexParam::setShardsNum);
         Optional.ofNullable(wrapper.replicasNum).ifPresent(createIndexParam::setReplicasNum);
+        Optional.ofNullable(wrapper.maxResultWindow).ifPresent(createIndexParam::setMaxResultWindow);
 
         // 设置用户自定义的settings
         Optional.ofNullable(wrapper.settings).ifPresent(createIndexParam::setSettings);
@@ -760,9 +765,15 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     private SearchResponse getSearchResponse(LambdaEsQueryWrapper<T> wrapper, Object[] searchAfter) {
         // 构建es restHighLevelClient 查询参数
         SearchRequest searchRequest = new SearchRequest(getIndexNames(wrapper.indexNames));
+
         // 用户在wrapper中指定的混合查询条件优先级最高
-        SearchSourceBuilder searchSourceBuilder = Objects.isNull(wrapper.searchSourceBuilder) ?
-                WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass) : wrapper.searchSourceBuilder;
+        SearchSourceBuilder searchSourceBuilder = Optional.ofNullable(wrapper.searchSourceBuilder)
+                .map(builder -> {
+                    // 兼容混合查询时用户在分页中自定义的分页参数
+                    Optional.ofNullable(wrapper.from).ifPresent(builder::from);
+                    Optional.ofNullable(wrapper.size).ifPresent(builder::size);
+                    return builder;
+                }).orElseGet(() -> WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass));
         searchRequest.source(searchSourceBuilder);
         Optional.ofNullable(searchAfter).ifPresent(searchSourceBuilder::searchAfter);
         printDSL(searchRequest);
