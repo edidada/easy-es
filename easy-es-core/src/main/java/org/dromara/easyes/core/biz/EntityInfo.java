@@ -8,6 +8,7 @@ import com.alibaba.fastjson.parser.deserializer.ExtraProcessor;
 import com.alibaba.fastjson.serializer.SerializeFilter;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dromara.easyes.annotation.rely.RefreshPolicy;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -176,6 +177,8 @@ public class EntityInfo {
      * fastjson 过滤器
      */
     private final Map<Class<?>, List<SerializeFilter>> classSimplePropertyPreFilterMap = new HashMap<>();
+
+    private RefreshPolicy refreshPolicy;
 
     /**
      * 获取需要进行查询的字段列表
