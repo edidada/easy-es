@@ -131,6 +131,18 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 compile group: 'org.dromara.easy-es', name: 'easy-es-boot-starter', version: 'Latest Version'
 ```
 
+# 荣誉 | Honour
+---
+
+> Easy-Es是一个持续成长和精进的开源框架,感谢大家一路支持,也感谢多方平台多我们努力的认可,我们会继续努力,用更好的产品力报答每一位用户!
+
+<img alt="zsxq" src="https://iknow.hs.net/6f675c35-27ee-4bbd-8222-8a7def3d5969.jpg">
+
+<img alt="zsxq" src="https://iknow.hs.net/822d5c8a-5066-40b4-9154-0e72d56b6802.jpg">
+
+<img alt="zsxq" src="https://iknow.hs.net/9f475d0a-1425-4e59-927b-c4cd04a6c0ed.jpg">
+
+
 # 其他开源项目 | Other Project
 ---
 
@@ -188,6 +200,8 @@ QQ | 微信:252645816
 
 # 周边好物 | Good things
 ---
+
+> 老汉为社区量身打造的专属T恤,感兴趣的老板们可以点击下图链接了解详情
 
 <a href="https://www.easy-es.cn/pages/1a810c/">
   <img alt="ad" src="https://iknow.hs.net/ac784337-0b57-4885-9875-e1879bff47dc.jpg">
