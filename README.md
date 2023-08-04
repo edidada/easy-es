@@ -134,13 +134,10 @@ compile group: 'org.dromara.easy-es', name: 'easy-es-boot-starter', version: 'La
 # 荣誉 | Honour
 ---
 
-> Easy-Es是一个持续成长和精进的开源框架,感谢大家一路支持,也感谢多方平台多我们努力的认可,我们会继续努力,用更好的产品力报答每一位用户!
+> Easy-Es是一个持续成长和精进的开源框架,感谢大家一路支持,也感谢多方平台多我们努力的认可,我们会继续努力,用更好的产品力回报每一位支持者!
 
-<img alt="zsxq" src="https://iknow.hs.net/6f675c35-27ee-4bbd-8222-8a7def3d5969.jpg">
 
-<img alt="zsxq" src="https://iknow.hs.net/822d5c8a-5066-40b4-9154-0e72d56b6802.jpg">
-
-<img alt="zsxq" src="https://iknow.hs.net/9f475d0a-1425-4e59-927b-c4cd04a6c0ed.jpg">
+<img alt="zsxq" src="https://iknow.hs.net/1b003ee7-dbfb-4cb8-9b30-de6136218faf.jpg">
 
 
 # 其他开源项目 | Other Project
