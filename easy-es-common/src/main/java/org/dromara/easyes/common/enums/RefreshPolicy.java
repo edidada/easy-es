@@ -1,4 +1,4 @@
-package org.dromara.easyes.annotation.rely;
+package org.dromara.easyes.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,17 +7,11 @@ import lombok.Getter;
  * 数据刷新策略枚举
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
- *
- * @see org.elasticsearch.action.support.WriteRequest.RefreshPolicy
  **/
 @AllArgsConstructor
 public enum RefreshPolicy {
     /**
-     * 使用全局设置: easy-es.global-config.db-config.refresh-policy
-     */
-    GLOBAL(""),
-    /**
-     * 不立即刷新 (es默认的数据刷新策略)
+     * 默认不刷新
      */
     NONE("false"),
     /**

@@ -59,20 +59,14 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 public class IndexUtils {
 
     private static final String FIELDS_KEY;
-    private static final Map<String, Object> FIELDS_MAP;
-    private static final int IGNORE_ABOVE;
+    private static final int DEFAULT_IGNORE_ABOVE;
     private static final String IGNORE_ABOVE_KEY;
 
 
     static {
-        FIELDS_MAP = new HashMap<>();
         FIELDS_KEY = "fields";
-        IGNORE_ABOVE = 256;
+        DEFAULT_IGNORE_ABOVE = 256;
         IGNORE_ABOVE_KEY = "ignore_above";
-        Map<String, Object> keywordsMap = new HashMap<>();
-        keywordsMap.put(TYPE, FieldType.KEYWORD.getType());
-        keywordsMap.put(IGNORE_ABOVE_KEY, IGNORE_ABOVE);
-        FIELDS_MAP.put(FieldType.KEYWORD.getType(), keywordsMap);
     }
 
     /**
@@ -323,7 +317,7 @@ public class IndexUtils {
             return fieldType.getType();
         }
 
-        // 否则根据类型推断,String以及找不到的类型一律被当做keyword处理
+        // 否则根据类型推断,String以及找不到的类型一律被当做keyword_text复核类型处理
         JdkDataTypeEnum jdkDataType = JdkDataTypeEnum.getByType(typeName.toLowerCase());
         String type;
         switch (jdkDataType) {
@@ -414,9 +408,17 @@ public class IndexUtils {
             }
 
             // 设置type
+            Map<String, Object> fieldsMap = null;
             if (FieldType.KEYWORD_TEXT.getType().equals(indexParam.getFieldType())) {
+                // 复合类型需特殊处理
                 info.put(BaseEsConstants.TYPE, FieldType.TEXT.getType());
-                info.put(FIELDS_KEY, FIELDS_MAP);
+                fieldsMap = new HashMap<>();
+                Map<String, Object> keywordMap = new HashMap<>();
+                keywordMap.put(TYPE, FieldType.KEYWORD.getType());
+                int ignoreAbove = Optional.ofNullable(indexParam.getIgnoreAbove()).orElse(DEFAULT_IGNORE_ABOVE);
+                keywordMap.put(IGNORE_ABOVE_KEY, ignoreAbove);
+                fieldsMap.put(FieldType.KEYWORD.getType(), keywordMap);
+                info.put(FIELDS_KEY, fieldsMap);
             } else {
                 info.put(BaseEsConstants.TYPE, indexParam.getFieldType());
             }
@@ -427,11 +429,10 @@ public class IndexUtils {
             if (containsTextType) {
                 // 设置分词器
                 Optional.ofNullable(indexParam.getAnalyzer())
-                        .ifPresent(analyzer ->
-                                info.put(BaseEsConstants.ANALYZER, indexParam.getAnalyzer().toLowerCase()));
+                        .ifPresent(analyzer -> info.put(BaseEsConstants.ANALYZER, analyzer.toLowerCase()));
                 Optional.ofNullable(indexParam.getSearchAnalyzer())
                         .ifPresent(searchAnalyzer ->
-                                info.put(BaseEsConstants.SEARCH_ANALYZER, indexParam.getSearchAnalyzer().toLowerCase()));
+                                info.put(BaseEsConstants.SEARCH_ANALYZER, searchAnalyzer.toLowerCase()));
 
                 // 设置是否对text类型进行聚合处理
                 MyOptional.ofNullable(indexParam.getFieldData()).ifTrue(fieldData -> info.put(FIELD_DATA, fieldData));
@@ -462,6 +463,31 @@ public class IndexUtils {
             if (dbConfig.isMapUnderscoreToCamelCase()) {
                 fieldName = StringUtils.camelToUnderline(fieldName);
             }
+
+            // 设置内部字段
+            if (CollectionUtils.isNotEmpty(indexParam.getInnerFieldParamList())) {
+                Map<String, Object> finalFieldsMap = Optional.ofNullable(fieldsMap).orElseGet(HashMap::new);
+                indexParam.getInnerFieldParamList().forEach(innerFieldParam -> {
+                    Map<String, Object> innerInfo = new HashMap<>();
+                    if (FieldType.KEYWORD_TEXT.getType().equals(innerFieldParam.getFieldType())) {
+                        ExceptionUtils.eee("The fieldType FieldType.KEYWORD_TEXT just for mainIndexField, can not be used in @InnerIndexField");
+                    }
+                    innerInfo.put(TYPE, innerFieldParam.getFieldType());
+                    boolean innerContainsTextType = FieldType.TEXT.getType().equals(innerFieldParam.getFieldType()) ||
+                            FieldType.KEYWORD_TEXT.getType().equals(innerFieldParam.getFieldType());
+                    if (innerContainsTextType) {
+                        Optional.ofNullable(innerFieldParam.getAnalyzer()).ifPresent(i -> innerInfo.put(ANALYZER, i));
+                        Optional.ofNullable(innerFieldParam.getSearchAnalyzer())
+                                .ifPresent(i -> innerInfo.put(SEARCH_ANALYZER, i));
+                    }
+                    Optional.ofNullable(innerFieldParam.getIgnoreAbove())
+                            .ifPresent(i -> innerInfo.put(IGNORE_ABOVE_KEY, innerFieldParam.getIgnoreAbove()));
+                    finalFieldsMap.putIfAbsent(innerFieldParam.getColumn(), innerInfo);
+                });
+
+                info.put(FIELDS_KEY, finalFieldsMap);
+            }
+
             properties.put(fieldName, info);
         });
         return properties;
@@ -589,6 +615,25 @@ public class IndexUtils {
                 esIndexParam.setIgnoreCase(field.isIgnoreCase());
                 Optional.ofNullable(field.getParentName()).ifPresent(esIndexParam::setParentName);
                 Optional.ofNullable(field.getChildName()).ifPresent(esIndexParam::setChildName);
+
+                // 内部字段处理
+                final List<EntityFieldInfo.InnerFieldInfo> innerFieldInfoList = field.getInnerFieldInfoList();
+                if (CollectionUtils.isNotEmpty(innerFieldInfoList)) {
+                    List<EsIndexParam.InnerFieldParam> innerFieldParamList = new ArrayList<>();
+                    innerFieldInfoList.forEach(innerFieldInfo -> {
+                        EsIndexParam.InnerFieldParam innerFieldParam = new EsIndexParam.InnerFieldParam();
+                        innerFieldParam.setColumn(innerFieldInfo.getColumn());
+                        if (!Analyzer.NONE.equals(innerFieldInfo.getAnalyzer())) {
+                            innerFieldParam.setAnalyzer(innerFieldInfo.getAnalyzer());
+                        }
+                        if (!Analyzer.NONE.equals(innerFieldInfo.getSearchAnalyzer())) {
+                            innerFieldParam.setSearchAnalyzer(innerFieldInfo.getSearchAnalyzer());
+                        }
+                        innerFieldParam.setFieldType(innerFieldInfo.getFieldType().getType());
+                        innerFieldParamList.add(innerFieldParam);
+                    });
+                    esIndexParam.setInnerFieldParamList(innerFieldParamList);
+                }
                 esIndexParamList.add(esIndexParam);
             });
         }

@@ -29,6 +29,9 @@ public enum FieldType {
     BINARY("binary"),
     KEYWORD("keyword"),
     TEXT("text"),
+    /**
+     * This type can not be used for @InnerIndexField
+     */
     KEYWORD_TEXT("keyword&text"),
     WILDCARD("wildcard"),
     /**
