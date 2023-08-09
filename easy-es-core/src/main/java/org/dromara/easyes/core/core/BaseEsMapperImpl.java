@@ -1485,7 +1485,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 && searchResponse.getShardFailures() != null
                 && searchResponse.getShardFailures().length > ZERO) {
             String errorMsg = searchResponse.getShardFailures()[0].toString();
-            throw ExceptionUtils.eee("es响应出错，search response failed ,failedShards: " + errorMsg);
+            throw ExceptionUtils.eee("search response failed ,failedShards: " + errorMsg);
         }
     }
 

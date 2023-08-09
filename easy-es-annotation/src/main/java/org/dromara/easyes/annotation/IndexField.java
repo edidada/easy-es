@@ -1,7 +1,6 @@
 package org.dromara.easyes.annotation;
 
 
-
 import org.dromara.easyes.annotation.rely.*;
 
 import java.lang.annotation.ElementType;
@@ -79,6 +78,13 @@ public @interface IndexField {
      * @return 是否忽略大小写
      */
     boolean ignoreCase() default false;
+
+    /**
+     * 长度超过ignore_above设置的字符串将不会被索引或存储 keyword_text默认值为256
+     *
+     * @return 索引字段最大长度
+     */
+    int ignoreAbove() default -1;
 
     /**
      * 默认嵌套类

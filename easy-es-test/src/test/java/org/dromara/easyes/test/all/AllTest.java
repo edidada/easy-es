@@ -85,6 +85,8 @@ public class AllTest {
         Rectangle rectangle = new Rectangle(39.084509D, 41.187328D, 70.610461D, 20.498353D);
         document.setGeoLocation(rectangle.toString());
         document.setStarNum(1);
+        document.setMultiField("葡萄糖酸钙口服溶液");
+        document.setEnglish("Calcium Gluconate");
         int successCount = documentMapper.insert(document);
         Assertions.assertEquals(successCount, 1);
 
@@ -880,6 +882,21 @@ public class AllTest {
         Assertions.assertEquals(22, documents.size());
     }
 
+    @Test
+    @Order(6)
+    public void testMultiFieldSelect() {
+        // 药品 中文名叫葡萄糖酸钙口服溶液 英文名叫 Calcium Gluconate 汉语拼音为 putaotangsuangaikoufurongye
+        // 用户可以通过模糊检索,例如输入 Calcium 或 葡萄糖 或 putaotang时对应药品均可以被检索到
+        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+        wrapper.match("english", "Calcium")
+                .or()
+                .match("multi_field.zh", "葡萄糖")
+                .or()
+                .match("multi_field.pinyin", "putaotang");
+        List<Document> documents = documentMapper.selectList(wrapper);
+        System.out.println(documents);
+    }
+
     // 4.删除
     @Test
     @Order(7)
@@ -938,5 +955,6 @@ public class AllTest {
                 .or(i -> i.eq("business_type", 2).in("state", 2, 3));
         documentMapper.selectList(wrapper);
     }
+
 
 }

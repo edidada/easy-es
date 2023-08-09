@@ -123,4 +123,16 @@ public class Document {
      */
     @Distance(decimalPlaces = 2)
     private Double distance2;
+
+    /**
+     * 复合字段,此注解和SpringData中的MultiField用法类似 适用于对同一个字段通过多种分词器检索的场景
+     */
+    @MultiIndexField(mainIndexField = @IndexField(fieldType = FieldType.KEYWORD),
+            otherIndexFields = {@InnerIndexField(suffix = "zh", fieldType = FieldType.TEXT, analyzer = Analyzer.IK_SMART),
+                    @InnerIndexField(suffix = "pinyin", fieldType = FieldType.TEXT, analyzer = "pinyin")})
+    private String multiField;
+    /**
+     * 英文名
+     */
+    private String english;
 }
