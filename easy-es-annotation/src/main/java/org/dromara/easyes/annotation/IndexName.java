@@ -1,7 +1,6 @@
 package org.dromara.easyes.annotation;
 
 import org.dromara.easyes.annotation.rely.DefaultChildClass;
-import org.dromara.easyes.annotation.rely.RefreshPolicy;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -82,6 +81,4 @@ public @interface IndexName {
      * @return CRUD作用的路由
      */
     String routing() default "";
-
-    RefreshPolicy refreshPolicy() default RefreshPolicy.GLOBAL;
 }

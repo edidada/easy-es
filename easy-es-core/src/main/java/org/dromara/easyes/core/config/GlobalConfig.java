@@ -5,7 +5,7 @@ import lombok.Data;
 import org.dromara.easyes.annotation.rely.FieldStrategy;
 import org.dromara.easyes.annotation.rely.IdType;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
-import org.dromara.easyes.annotation.rely.RefreshPolicy;
+import org.dromara.easyes.common.enums.RefreshPolicy;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.EMPTY_STR;
@@ -79,7 +79,7 @@ public class GlobalConfig {
          */
         private boolean enableTrackTotalHits = true;
         /**
-         * data refresh policy 数据刷新策略,es默认的数据刷新策略为NONE
+         * data refresh policy 数据刷新策略,默认为NONE
          */
         private RefreshPolicy refreshPolicy = RefreshPolicy.NONE;
         /**
