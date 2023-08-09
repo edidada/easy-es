@@ -8,6 +8,7 @@ import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.DefaultNestedClass;
 import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.annotation.rely.IdType;
+import org.dromara.easyes.annotation.rely.RefreshPolicy;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.EntityFieldInfo;
 import org.dromara.easyes.core.biz.EntityInfo;
@@ -658,6 +659,11 @@ public class EntityInfoHelper {
             entityInfo.setReplicasNum(table.replicasNum());
             entityInfo.setChild(table.child());
             entityInfo.setChildClass(table.childClass());
+            RefreshPolicy refreshPolicy = table.refreshPolicy();
+            if (RefreshPolicy.GLOBAL.equals(refreshPolicy)) {
+                refreshPolicy = dbConfig.getRefreshPolicy();
+            }
+            entityInfo.setRefreshPolicy(refreshPolicy);
         }
 
         String targetIndexName = indexName;
