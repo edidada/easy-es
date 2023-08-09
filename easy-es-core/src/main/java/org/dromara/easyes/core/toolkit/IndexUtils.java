@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import static org.dromara.easyes.annotation.rely.AnnotationConstants.DEFAULT_ALIAS;
+import static org.dromara.easyes.annotation.rely.AnnotationConstants.DEFAULT_MAX_RESULT_WINDOW;
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
 
@@ -236,9 +237,10 @@ public class IndexUtils {
      * @param client           RestHighLevelClient
      * @param oldIndexName     旧索引名
      * @param releaseIndexName 新索引名
+     * @param maxResultWindow  最大返回数
      * @return 是否操作成功
      */
-    public static boolean reindex(RestHighLevelClient client, String oldIndexName, String releaseIndexName) {
+    public static boolean reindex(RestHighLevelClient client, String oldIndexName, String releaseIndexName, Integer maxResultWindow) {
         ReindexRequest reindexRequest = new ReindexRequest();
         reindexRequest.setSourceIndices(oldIndexName);
         reindexRequest.setDestIndex(releaseIndexName);
@@ -247,6 +249,10 @@ public class IndexUtils {
         reindexRequest.setRefresh(Boolean.TRUE);
         int reindexTimeOutHours = GlobalConfigCache.getGlobalConfig().getReindexTimeOutHours();
         reindexRequest.setTimeout(TimeValue.timeValueHours(reindexTimeOutHours));
+        // batchSize须小于等于maxResultWindow,否则es报错
+        if (DEFAULT_MAX_RESULT_WINDOW > maxResultWindow) {
+            reindexRequest.setSourceBatchSize(maxResultWindow);
+        }
         try {
             BulkByScrollResponse response = client.reindex(reindexRequest, RequestOptions.DEFAULT);
             List<BulkItemResponse.Failure> bulkFailures = response.getBulkFailures();
