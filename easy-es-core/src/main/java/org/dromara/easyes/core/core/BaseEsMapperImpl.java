@@ -13,7 +13,7 @@ import org.dromara.easyes.annotation.rely.IdType;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.enums.MethodEnum;
-import org.dromara.easyes.common.enums.RefreshPolicy;
+import org.dromara.easyes.annotation.rely.RefreshPolicy;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
@@ -1495,7 +1495,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      * @return 刷新策略
      */
     private String getRefreshPolicy() {
-        return GlobalConfigCache.getGlobalConfig().getDbConfig().getRefreshPolicy().getValue();
+        return EntityInfoHelper.getEntityInfo(entityClass).getRefreshPolicy().getValue();
     }
 
     /**
