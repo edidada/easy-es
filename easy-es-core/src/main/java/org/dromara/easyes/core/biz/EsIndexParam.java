@@ -28,6 +28,10 @@ public class EsIndexParam {
      */
     private Boolean fieldData;
     /**
+     * 浮点数字段的缩放因子
+     */
+    private Integer scalingFactor;
+    /**
      * 分词器
      */
     private String analyzer;

@@ -7,7 +7,7 @@ package org.dromara.easyes.annotation.rely;
  **/
 public enum RefreshPolicy {
     /**
-     * 使用全局设置: easy-es.global-config.db-config.refresh-policy
+     * 使用全局设置: easy-es.global-config.db-config.refresh-policy 全局设置默认为不刷新
      */
     GLOBAL(""),
     /**

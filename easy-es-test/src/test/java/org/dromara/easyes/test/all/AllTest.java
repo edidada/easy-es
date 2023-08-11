@@ -38,6 +38,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -75,7 +76,7 @@ public class AllTest {
         document.setEsId("1");
         document.setCaseTest("Test");
         document.setTitle("测试文档1");
-        document.setContent("测试内容1");
+        document.setContent("测试内容1我是大家发达酸辣粉家里都是测试阿拉拉肥发的是就测试时风刀霜剑阿凯刘非打死了交付率及时点法律就反倒是测测试初拉力肌肥大来极氪吉利发送代理费逻辑逻辑发骚鸡,测试发力了哦哦我");
         document.setCreator("老汉1");
         document.setIpAddress("192.168.1.1");
         document.setLocation("40.171975,116.587105");
@@ -87,9 +88,9 @@ public class AllTest {
         document.setStarNum(1);
         document.setMultiField("葡萄糖酸钙口服溶液");
         document.setEnglish("Calcium Gluconate");
+        document.setBigNum(new BigDecimal("66.66"));
         int successCount = documentMapper.insert(document);
         Assertions.assertEquals(successCount, 1);
-
     }
 
     @Test
@@ -955,6 +956,5 @@ public class AllTest {
                 .or(i -> i.eq("business_type", 2).in("state", 2, 3));
         documentMapper.selectList(wrapper);
     }
-
 
 }

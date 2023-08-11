@@ -37,6 +37,10 @@ public class EntityFieldInfo {
      */
     private String mappingColumn;
     /**
+     * 缩放因子
+     */
+    private Integer scalingFactor;
+    /**
      * 字段在es中的存储类型
      */
     private FieldType fieldType;

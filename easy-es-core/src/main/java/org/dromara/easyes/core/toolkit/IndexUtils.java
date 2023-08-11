@@ -403,7 +403,8 @@ public class IndexUtils {
      * @param indexParamList 索引参数列表
      * @return info信息
      */
-    private static Map<String, Object> initInfo(EntityInfo entityInfo, GlobalConfig.DbConfig dbConfig, Map<String, Object> properties, List<EsIndexParam> indexParamList) {
+    private static Map<String, Object> initInfo(EntityInfo entityInfo, GlobalConfig.DbConfig dbConfig,
+                                                Map<String, Object> properties, List<EsIndexParam> indexParamList) {
         indexParamList.forEach(indexParam -> {
             Map<String, Object> info = new HashMap<>();
             Optional.ofNullable(indexParam.getDateFormat()).ifPresent(format -> info.put(BaseEsConstants.FORMAT, indexParam.getDateFormat()));
@@ -442,6 +443,12 @@ public class IndexUtils {
 
                 // 设置是否对text类型进行聚合处理
                 MyOptional.ofNullable(indexParam.getFieldData()).ifTrue(fieldData -> info.put(FIELD_DATA, fieldData));
+            }
+
+            // scaled_float数据类型,须设置scaling_factor
+            if (FieldType.SCALED_FLOAT.getType().equals(indexParam.getFieldType())) {
+                int scalingFactor = Optional.ofNullable(indexParam.getScalingFactor()).orElse(DEFAULT_SCALING_FACTOR);
+                info.put(SCALING_FACTOR_FIELD, scalingFactor);
             }
 
             // 设置权重
@@ -607,6 +614,7 @@ public class IndexUtils {
                 }
                 esIndexParam.setFieldName(field.getMappingColumn());
                 esIndexParam.setDateFormat(field.getDateFormat());
+                esIndexParam.setScalingFactor(field.getScalingFactor());
                 if (FieldType.NESTED.equals(field.getFieldType())) {
                     esIndexParam.setNestedClass(entityInfo.getPathClassMap().get(field.getColumn()));
                 }

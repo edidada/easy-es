@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ public class Document {
     /**
      * 文档内容,指定了类型及存储/查询分词器
      */
-    @HighLight(mappingField = "highlightContent", fragmentSize = 2)
+    @HighLight(mappingField = "highlightContent", fragmentSize = 10, numberOfFragments = 2)
     @IndexField(fieldType = FieldType.TEXT, analyzer = Analyzer.IK_SMART, searchAnalyzer = Analyzer.IK_SMART)
     private String content;
     /**
@@ -125,6 +126,12 @@ public class Document {
      */
     @Distance(decimalPlaces = 2)
     private Double distance2;
+
+    /**
+     * 浮点数,可指定缩放因子,不指定默认值为100
+     */
+    @IndexField(fieldType = FieldType.SCALED_FLOAT, scalingFactor = 101)
+    private BigDecimal bigNum;
 
     /**
      * 复合字段,此注解和SpringData中的MultiField用法类似 适用于对同一个字段通过多种分词器检索的场景

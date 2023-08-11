@@ -87,6 +87,13 @@ public @interface IndexField {
     int ignoreAbove() default -1;
 
     /**
+     * 用于指定浮点数字段的缩放因子 缩放因子用于将浮点数值映射到整数值以进行存储和索引,取值范围是 1 到 10000 针对BigDecimal类型字段,不指定时默认值为 100
+     *
+     * @return 缩放因子
+     */
+    int scalingFactor() default -1;
+
+    /**
      * 默认嵌套类
      *
      * @return 默认嵌套类

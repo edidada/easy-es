@@ -12,9 +12,9 @@ import org.dromara.easyes.annotation.rely.FieldType;
  **/
 public @interface InnerIndexField {
     /**
-     * 内部字段的前缀,必须指定,否则无存在意义,且不可重名,重名则以首次出现的为准
+     * 内部字段的后缀,必须指定,否则无存在意义,且不可重名,重名则以首次出现的为准
      *
-     * @return 内部字段的前缀
+     * @return 内部字段的后缀
      */
     String suffix();
 

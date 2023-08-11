@@ -310,6 +310,11 @@ public class EntityInfoHelper {
                 mappingColumn = initMappingColumnMapAndGet(dbConfig, entityInfo, field);
             }
 
+            // 缩放因子
+            if (MINUS_ONE != indexField.scalingFactor()) {
+                entityFieldInfo.setScalingFactor(indexField.scalingFactor());
+            }
+
             // 日期格式化
             if (StringUtils.isNotBlank(indexField.dateFormat())) {
                 entityFieldInfo.setDateFormat(indexField.dateFormat());
@@ -390,8 +395,15 @@ public class EntityInfoHelper {
         entityInfo.getHighlightFieldMap().putIfAbsent(realHighLightField, mappingField);
 
         // 封装高亮参数
-        HighLightParam highLightParam =
-                new HighLightParam(highLight.fragmentSize(), highLight.preTag(), highLight.postTag(), realHighLightField, highLight.highLightType());
+        HighLightParam highLightParam = new HighLightParam();
+        highLightParam.setFragmentSize(highLight.fragmentSize())
+                .setPreTag(highLight.preTag())
+                .setPostTag(highLight.postTag())
+                .setHighLightField(realHighLightField)
+                .setHighLightType(highLight.highLightType());
+        if (MINUS_ONE != highLight.numberOfFragments() && highLight.numberOfFragments() > ZERO) {
+            highLightParam.setNumberOfFragments(highLight.numberOfFragments());
+        }
         entityInfo.getHighLightParams().add(highLightParam);
     }
 
@@ -458,6 +470,11 @@ public class EntityInfoHelper {
                         entityFieldInfo.setDateFormat(indexField.dateFormat());
                     }
 
+                    // 缩放因子
+                    if (MINUS_ONE != indexField.scalingFactor()) {
+                        entityFieldInfo.setScalingFactor(indexField.scalingFactor());
+                    }
+
                     // 处理内部字段
                     InnerIndexField[] innerIndexFields = Optional.ofNullable(multiIndexField).map(MultiIndexField::otherIndexFields).orElse(null);
                     processInnerField(innerIndexFields, entityFieldInfo);
@@ -497,7 +514,7 @@ public class EntityInfoHelper {
                 innerFieldInfo.setFieldType(innerField.fieldType());
                 innerFieldInfo.setAnalyzer(innerField.analyzer());
                 innerFieldInfo.setSearchAnalyzer(innerField.searchAnalyzer());
-                if (innerField.ignoreAbove() > 0){
+                if (innerField.ignoreAbove() > ZERO) {
                     innerFieldInfo.setIgnoreAbove(innerField.ignoreAbove());
                 }
                 innerFieldInfoList.add(innerFieldInfo);
@@ -703,4 +720,5 @@ public class EntityInfoHelper {
         }
         return mappingColumn;
     }
+
 }

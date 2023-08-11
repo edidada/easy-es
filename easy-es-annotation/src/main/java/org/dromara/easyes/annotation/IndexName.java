@@ -85,6 +85,7 @@ public @interface IndexName {
 
     /**
      * 数据刷新策略
+     *
      * @return 具体策略
      */
     RefreshPolicy refreshPolicy() default RefreshPolicy.GLOBAL;
