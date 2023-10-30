@@ -257,7 +257,7 @@ public class EntityInfoHelper {
 
         // 初始化封装HighLight注解信息
         if (field.isAnnotationPresent(HighLight.class)) {
-            initHighLightAnnotation(dbConfig, entityInfo, field);
+            initHighLightAnnotation(dbConfig, entityInfo, field, entityInfo.getMappingColumnMap(), null);
             // 此处无需返回true阻断流程,可防止用户未添加IndexField时,框架索引跳过读取此字段的信息
         }
 
@@ -373,38 +373,71 @@ public class EntityInfoHelper {
     /**
      * HighLight注解初始化
      *
-     * @param dbConfig   索引配置
-     * @param entityInfo 实体信息
-     * @param field      字段
+     * @param dbConfig         索引配置
+     * @param entityInfo       实体信息
+     * @param field            字段
+     * @param mappingColumnMap 实体字段与es字段映射关系
+     * @param nestedClass      嵌套类
      */
-    private static void initHighLightAnnotation(GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo, Field field) {
+    private static void initHighLightAnnotation(GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo, Field field,
+                                                Map<String, String> mappingColumnMap, Class<?> nestedClass) {
         HighLight highLight = field.getAnnotation(HighLight.class);
         String mappingField = highLight.mappingField();
-        if (StringUtils.isNotBlank(mappingField)) {
-            entityInfo.getNotSerializeField().add(mappingField);
-        } else {
+
+        // 置入字段json序列化忽略缓存
+        boolean skip = false;
+        if (StringUtils.isBlank(mappingField)) {
             // 如果用户未指定高亮映射字段,则高亮映射字段用当前字段
             mappingField = field.getName();
+            // 当使用当前字段作为高亮字段时,当前字段参与索引创建
+            skip = true;
+        }
+        if (!skip) {
+            // 添加无需序列化字段至缓存
+            if (nestedClass == null) {
+                entityInfo.getNotSerializeField().add(mappingField);
+            } else {
+                // 嵌套类型
+                Set<String> nestedNotSerializeFieldSet = Optional.ofNullable(entityInfo.getNestedNotSerializeField().get(nestedClass))
+                        .orElse(new HashSet<>());
+                nestedNotSerializeFieldSet.add(mappingField);
+                entityInfo.getNestedNotSerializeField().put(nestedClass, nestedNotSerializeFieldSet);
+            }
         }
 
-        String customField = entityInfo.getMappingColumnMap().get(field.getName());
+        // 置入高亮字段与实体类中字段名对应关系缓存
+        String customField = mappingColumnMap.get(field.getName());
         String realHighLightField = Objects.isNull(customField) ? field.getName() : customField;
         if (dbConfig.isMapUnderscoreToCamelCase()) {
             realHighLightField = StringUtils.camelToUnderline(realHighLightField);
         }
-        entityInfo.getHighlightFieldMap().putIfAbsent(realHighLightField, mappingField);
+        if (nestedClass == null) {
+            entityInfo.getHighlightFieldMap().putIfAbsent(realHighLightField, mappingField);
+        } else {
+            Map<String, String> nestedHighlightFieldMap = Optional.ofNullable(entityInfo.getNestedHighlightFieldMap().get(nestedClass))
+                    .orElse(new HashMap<>());
+            nestedHighlightFieldMap.putIfAbsent(realHighLightField, mappingField);
+            entityInfo.getNestedHighlightFieldMap().put(nestedClass, nestedHighlightFieldMap);
+        }
 
-        // 封装高亮参数
-        HighLightParam highLightParam = new HighLightParam();
-        highLightParam.setFragmentSize(highLight.fragmentSize())
+        // 置入高亮查询参数缓存
+        HighLightParam highlightParam = new HighLightParam();
+        highlightParam.setFragmentSize(highLight.fragmentSize())
                 .setPreTag(highLight.preTag())
                 .setPostTag(highLight.postTag())
                 .setHighLightField(realHighLightField)
                 .setHighLightType(highLight.highLightType());
         if (MINUS_ONE != highLight.numberOfFragments() && highLight.numberOfFragments() > ZERO) {
-            highLightParam.setNumberOfFragments(highLight.numberOfFragments());
+            highlightParam.setNumberOfFragments(highLight.numberOfFragments());
         }
-        entityInfo.getHighLightParams().add(highLightParam);
+        if (nestedClass == null) {
+            entityInfo.getHighlightParams().add(highlightParam);
+        } else {
+            List<HighLightParam> nestedHighlightParams = Optional.ofNullable(entityInfo.getNestedHighLightParamsMap().get(nestedClass))
+                    .orElse(new ArrayList<>());
+            nestedHighlightParams.add(highlightParam);
+            entityInfo.getNestedHighLightParamsMap().put(nestedClass, nestedHighlightParams);
+        }
     }
 
     /**
@@ -490,6 +523,10 @@ public class EntityInfoHelper {
             mappingColumnMap.putIfAbsent(field.getName(), mappingColumn);
             fieldTypeMap.putIfAbsent(field.getName(), fieldType.getType());
 
+            // 初始化封装嵌套类中的HighLight注解信息
+            if (field.isAnnotationPresent(HighLight.class)) {
+                initHighLightAnnotation(dbConfig, entityInfo, field, mappingColumnMap, nestedClass);
+            }
         });
         entityInfo.getNestedNotSerializeField().putIfAbsent(nestedClass, notSerializedFields);
         entityInfo.getNestedClassColumnMappingMap().putIfAbsent(nestedClass, columnMappingMap);

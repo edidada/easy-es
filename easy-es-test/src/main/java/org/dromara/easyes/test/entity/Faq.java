@@ -4,10 +4,11 @@ package org.dromara.easyes.test.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.dromara.easyes.annotation.HighLight;
 import org.dromara.easyes.annotation.IndexField;
 
 /**
- * 文件描述
+ * 问答
  *
  * @ProductName: Hundsun HEP
  * @ProjectName: easy-es
@@ -26,7 +27,14 @@ import org.dromara.easyes.annotation.IndexField;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Faq {
+    /**
+     * 问题 高亮内容直接覆盖在原字段值上进行返回,故不需要指定高亮注解中的mappingField
+     */
+    @HighLight
     private String faqName;
     @IndexField(value = "answer")
+    /**
+     * 答案
+     */
     private String faqAnswer;
 }

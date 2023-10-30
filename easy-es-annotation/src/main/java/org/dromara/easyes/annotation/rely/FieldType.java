@@ -9,7 +9,7 @@ import java.util.Arrays;
  **/
 public enum FieldType {
     /**
-     * none Required inside the framework, do not use 框架内部需要,切勿使用,若不慎使用则会被当做keyword&text类型
+     * none Required inside the framework, do not use 框架内部需要,切勿使用,若不慎使用则会被当做keyword_text类型
      */
     NONE("none"),
     /**
