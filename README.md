@@ -192,7 +192,7 @@ QQ | 微信:252645816
 </br>
 
 <a href="http://www.yunchengxc.com/">
-  <img alt="ad" src="https://iknow.hs.net/e2e9a211-e8ae-4a89-bd0b-1d348e19ffd7.jpg">
+  <img alt="ad" src="https://iknow.hs.net/ea88661b-3d02-4dba-aacb-8907a4ca8f11.jpg">
 </a>
 
 
