@@ -21,7 +21,9 @@
 # 官方地址 | Official website
 ---
 
-**easy-es官网** https://easy-es.cn/ (如遇打不开,可访"无言"捐赠的备用地址 http://47.92.157.199)
+**easy-es官网** https://easy-es.cn/ 
+
+(如偶遇官网打不开,可访"无言"先生捐赠的备用访问地址 http://47.92.157.199)
 
 **easy-es官方gitee** https://gitee.com/dromara/easy-es
 
