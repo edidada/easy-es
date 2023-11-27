@@ -24,6 +24,7 @@
 **easy-es官网** https://easy-es.cn/ 
 
 **easy-es备用官网** http://47.92.157.199 
+
 (国内用户如偶遇官网打不开,可访"无言"先生捐赠的此备用地址,更新可能存在滞后,不太推荐)
 
 **easy-es官方gitee** https://gitee.com/dromara/easy-es
