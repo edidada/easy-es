@@ -75,4 +75,21 @@ public class UpdateTest {
         int successCount = documentMapper.updateBatchByIds(documentList);
         System.out.println(successCount);
     }
+
+    @Test
+    public void testUpdateByIdsAndIndex(){
+        // 测试是否存在指定名称的索引
+        String indexName = Document.class.getSimpleName().toLowerCase();
+        boolean existsIndex = documentMapper.existsIndex(indexName);
+        if(existsIndex){
+            Document document = new Document();
+            document.setEsId("O2EQCIAB0E2Rzy0qHFNV");
+            document.setTitle("老王ba");
+            document.setContent("推*技术过硬???");
+            document.setCreator("老王ba");
+            // 按照id和索引进行更新
+            int successCount = documentMapper.updateById(document,indexName);
+            System.out.println(successCount);
+        }
+    }
 }
