@@ -1104,8 +1104,14 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                         if (CollectionUtils.isNotEmpty(highlightFields) && nestedIdentity != null) {
                             highlightFields.forEach((k1, v1) -> {
                                 String highLightContent = Arrays.stream(v1.getFragments()).map(Text::string).collect(Collectors.joining());
-                                String[] split = k1.split(SIGN);
-                                String highLightField = split[split.length - 1];
+
+                                SearchHit.NestedIdentity tmpNestedIdentity = nestedIdentity;
+                                List<String> pathList = new ArrayList<>();
+                                while (tmpNestedIdentity != null) {
+                                    pathList.add(tmpNestedIdentity.getField().toString());
+                                    tmpNestedIdentity = tmpNestedIdentity.getChild();
+                                }
+                                String highLightField = k1.replace(String.join(STR_SIGN, pathList) + STR_SIGN, "");
                                 processInnerHighlight(nestedIdentity.getField().string(), root, nestedIdentity,
                                         highLightField, highLightContent, nestedHighlightFieldMap);
                             });

@@ -417,7 +417,7 @@ public class EntityInfoHelper {
         if (multiIndexField != null) {
             for (InnerIndexField innerIndexField : multiIndexField.otherIndexFields()) {
                 addHighlightParam(entityInfo, nestedClass, highLight,
-                        realHighLightField + '.' + innerIndexField.suffix(), mappingField);
+                        realHighLightField + STR_SIGN + innerIndexField.suffix(), mappingField);
             }
         }
     }
