@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.dromara.easyes.annotation.HighLight;
 import org.dromara.easyes.annotation.IndexField;
+import org.dromara.easyes.annotation.InnerIndexField;
+import org.dromara.easyes.annotation.MultiIndexField;
 import org.dromara.easyes.annotation.rely.Analyzer;
 import org.dromara.easyes.annotation.rely.FieldType;
 
@@ -21,8 +23,12 @@ public class User {
     /**
      * 用户名
      */
-    @IndexField(value = "user_name", fieldType = FieldType.TEXT, analyzer = Analyzer.IK_SMART)
     @HighLight(mappingField = "highlightUsername")
+    @MultiIndexField(mainIndexField = @IndexField("user_name"),
+    otherIndexFields = {
+            @InnerIndexField(suffix = "ik", fieldType = FieldType.TEXT, analyzer = Analyzer.IK_MAX_WORD),
+            @InnerIndexField(suffix = "py", fieldType = FieldType.TEXT, analyzer = Analyzer.PINYIN)
+    })
     private String username;
     /**
      * 年龄

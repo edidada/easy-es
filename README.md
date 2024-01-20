@@ -21,7 +21,11 @@
 # 官方地址 | Official website
 ---
 
-**easy-es官网** https://easy-es.cn/
+**easy-es官网** https://easy-es.cn/ 
+
+**easy-es备用官网** http://47.92.157.199 
+
+(国内用户如偶遇官网打不开,可访"无言"先生捐赠的此备用地址,更新可能存在滞后,不推荐)
 
 **easy-es官方gitee** https://gitee.com/dromara/easy-es
 
@@ -44,7 +48,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 
 底层采用Es官方提供的RestHighLevelClient,保证其原生性能及拓展性.
 
-技术讨论 QQ 群 ：729148550 群内可在群文件中免费领取 颈椎保护 | 增肌 | 减脂 等健身计划 无套路
+技术讨论 QQ 群 ：897570597 群内可在群文件中免费领取 颈椎保护 | 增肌 | 减脂 等健身计划 无套路
 
 微信群请先添加作者微信,由作者拉入 (亦可咨询健身问题,作者是健身教练)
 
@@ -58,7 +62,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 - **全自动索引托管:** 全球开源首创的索引托管模式,开发者无需关心索引的创建更新及数据迁移等繁琐步骤,索引全生命周期皆可托管给框架,由框架自动完成,过程零停机,用户无感知,彻底解放开发者
 - **智能字段类型推断:** 根据索引类型和当前查询类型上下文综合智能判断当前查询是否需要拼接.keyword后缀,减少小白误用的可能
 - **屏蔽语言差异:** 开发者只需要会MySQL语法即可使用Es
-- **代码量极少:** 与直接使用RestHighLevelClient相比,相同的查询平均可以节3-8倍左右的代码量
+- **代码量极少:** 与直接使用RestHighLevelClient相比,相同的查询平均可以节3-80倍左右的代码量
 - **零魔法值:** 字段名称直接从实体中获取,无需输入字段名称字符串这种魔法值
 - **零额外学习成本:** 开发者只要会国内最受欢迎的Mybatis-Plus语法,即可无缝迁移至Easy-Es
 - **降低开发者门槛:** 即便是只了解ES基础的初学者也可以轻松驾驭ES完成绝大多数需求的开发
@@ -100,8 +104,36 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
             e.printStackTrace();
         }
 ```
-> * 以上只是简单查询演示,实际使用场景越复杂,效果就越好,平均可节省至少3-8倍代码量
-> * 传统功夫,点到为止! 上述功能仅供演示,仅为Easy-Es支持功能的冰山一角,Easy-Es就是这么Easy到不讲武德💪,不用的请耗子尾汁.
+> * 以上只是简单查询演示,实际使用场景越复杂,效果就越好,平均可节省至少3-80倍代码量
+> * 传统功夫,点到为止! 阁下若有不服,可继续"往下看"! 上述功能仅供演示,仅为Easy-Es支持功能的冰山一角,Easy-Es就是这么Easy到不讲武德💪,不用的请耗子尾汁.
+
+# 深度对比 | Deep Compare
+---
+
+```java
+ // MySQL语法  
+ where business_type = 1
+ and (state = 9 or (state = 8 and bidding_sign = 1))
+ or (business_type = 2 and state in (2,3));
+
+ // Easy-Es及Mybatis-Plus语法 
+ wrapper.eq("business_type", 1)
+ .and(a -> a.eq("state", 9).or(b -> b.eq("state", 8).eq("bidding_sign", 1)))
+ .or(i -> i.eq("business_type", 2).in("state", 2, 3));
+        
+
+ // ES原生的RestHighLevel语法
+ List<Integer> values = Arrays.asList(2, 3);
+ BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+ boolQueryBuilder.must(QueryBuilders.termQuery("business_type", 1));
+ boolQueryBuilder.must(QueryBuilders.boolQuery()
+                 .must(QueryBuilders.termQuery("state", 9))
+                      .should(QueryBuilders.boolQuery().must(QueryBuilders.termQuery("state", 8))
+                              .must(QueryBuilders.termQuery("bidding_sign", 1))));
+ boolQueryBuilder.should(QueryBuilders.boolQuery().must(QueryBuilders.termQuery("business_type", 2))
+               	 .must(QueryBuilders.termsQuery("state", values)));
+```
+> 上面的例子树的最大深度仅为2,如果深度超过2以后ES原生语法就很难看得懂了,更别说正确编码,就算您是ES老手也容易栽坑里,但使用EASY-ES则可以1:1轻松又简单还原复杂SQL!
 
 # 架构 | Architecture
 ---
@@ -183,6 +215,17 @@ QQ | 微信:252645816
   <img alt="ad" src="https://iknow.hs.net/26a6e238-8b23-463c-8cf9-f62cc3f52e0f.png">
 </a>
 
+</br>
+
+<a href="https://www.misboot.com/?from=easy-es">
+  <img alt="ad" src="https://iknow.hs.net/68963214-7a61-4f38-b5b5-a068c07a35f1.png">
+</a>
+
+</br>
+
+<a href="http://www.yunchengxc.com/">
+  <img alt="ad" src="https://iknow.hs.net/ea88661b-3d02-4dba-aacb-8907a4ca8f11.jpg">
+</a>
 
 
 # 赞助商 | Sponsor

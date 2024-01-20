@@ -416,6 +416,19 @@ public class EntityInfoHelper {
         if (dbConfig.isMapUnderscoreToCamelCase()) {
             realHighLightField = StringUtils.camelToUnderline(realHighLightField);
         }
+        addHighlightParam(entityInfo, nestedClass, highLight, realHighLightField, mappingField);
+
+        MultiIndexField multiIndexField = field.getAnnotation(MultiIndexField.class);
+        if (multiIndexField != null) {
+            for (InnerIndexField innerIndexField : multiIndexField.otherIndexFields()) {
+                addHighlightParam(entityInfo, nestedClass, highLight,
+                        realHighLightField + STR_SIGN + innerIndexField.suffix(), mappingField);
+            }
+        }
+    }
+
+    private static void addHighlightParam(EntityInfo entityInfo, Class<?> nestedClass, HighLight highLight,
+                                          String realHighLightField, String mappingField) {
         if (nestedClass == null) {
             entityInfo.getHighlightFieldMap().putIfAbsent(realHighLightField, mappingField);
         } else {
