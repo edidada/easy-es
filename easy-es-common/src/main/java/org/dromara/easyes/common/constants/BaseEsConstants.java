@@ -60,6 +60,10 @@ public interface BaseEsConstants {
      */
     String COLON = ":";
     /**
+     * 逗号
+     */
+    String COMMA = ",";
+    /**
      * 百分号
      */
     String PERCENT_SIGN = "%";

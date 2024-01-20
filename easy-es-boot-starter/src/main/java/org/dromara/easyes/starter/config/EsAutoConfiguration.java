@@ -4,9 +4,14 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.utils.ExceptionUtils;
-import org.dromara.easyes.common.utils.RestHighLevelClientBuilder;
+import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.common.utils.StringUtils;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -20,13 +25,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.net.ssl.SSLContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.dromara.easyes.common.constants.BaseEsConstants.COLON;
-import static org.dromara.easyes.common.constants.BaseEsConstants.DEFAULT_SCHEMA;
+import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
 /**
  * es自动配置
@@ -61,9 +66,9 @@ public class EsAutoConfiguration {
         String schema = StringUtils.isEmpty(easyEsConfigProperties.getSchema())
                 ? DEFAULT_SCHEMA : easyEsConfigProperties.getSchema();
         List<HttpHost> hostList = new ArrayList<>();
-        Arrays.stream(easyEsConfigProperties.getAddress().split(","))
-                .forEach(item -> hostList.add(new HttpHost(item.split(":")[0],
-                        Integer.parseInt(item.split(":")[1]), schema)));
+        Arrays.stream(easyEsConfigProperties.getAddress().split(COMMA))
+                .forEach(item -> hostList.add(new HttpHost(item.split(COLON)[0],
+                        Integer.parseInt(item.split(COLON)[1]), schema)));
 
         // 转换成 HttpHost 数组
         HttpHost[] httpHost = hostList.toArray(new HttpHost[]{});
@@ -85,6 +90,21 @@ public class EsAutoConfiguration {
                         new UsernamePasswordCredentials(username, password));
                 httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
             }
+
+            // https ssl ignore
+            if (SchemaEnum.https.name().equals(schema)) {
+                try {
+                    // 信任所有
+                    SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (TrustStrategy) (chain, authType) -> true).build();
+                    SSLIOSessionStrategy sessionStrategy = new SSLIOSessionStrategy(sslContext, NoopHostnameVerifier.INSTANCE);
+                    httpClientBuilder.disableAuthCaching();
+                    httpClientBuilder.setSSLStrategy(sessionStrategy);
+                } catch (Exception e) {
+                    LogUtils.error("restHighLevelClient build SSLContext exception: %s", e.getMessage());
+                    e.printStackTrace();
+                    throw ExceptionUtils.eee(e);
+                }
+            }
             return httpClientBuilder;
         });
 
@@ -96,8 +116,7 @@ public class EsAutoConfiguration {
                     .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
             return requestConfigBuilder;
         });
-
-        return RestHighLevelClientBuilder.build(builder);
+        return new RestHighLevelClient(builder);
     }
 
 }

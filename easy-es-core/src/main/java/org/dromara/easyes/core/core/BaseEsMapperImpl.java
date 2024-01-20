@@ -516,7 +516,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 请求es获取数据
         SearchHit[] searchHits = getSearchHitArray(wrapper);
         if (ArrayUtils.isEmpty(searchHits)) {
-            return new ArrayList<>(0);
+            return Collections.emptyList();
         }
 
         // 批量解析
@@ -808,7 +808,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 请求es获取数据
         SearchHit[] searchHitArray = getSearchHitArray(searchRequest);
         if (ArrayUtils.isEmpty(searchHitArray)) {
-            return new ArrayList<>(0);
+            return Collections.emptyList();
         }
 
         // 批量解析数据

@@ -332,6 +332,11 @@ public class EntityInfoHelper {
                 entityFieldInfo.setIgnoreAbove(indexField.ignoreAbove());
             }
 
+            // 向量的维度大小
+            if (indexField.dims() > ZERO) {
+                entityFieldInfo.setDims(indexField.dims());
+            }
+
             // 其它
             entityFieldInfo.setMappingColumn(mappingColumn);
             entityFieldInfo.setAnalyzer(indexField.analyzer());
@@ -506,6 +511,11 @@ public class EntityInfoHelper {
                     // 缩放因子
                     if (MINUS_ONE != indexField.scalingFactor()) {
                         entityFieldInfo.setScalingFactor(indexField.scalingFactor());
+                    }
+
+                    // 向量的维度大小
+                    if (indexField.dims() > ZERO) {
+                        entityFieldInfo.setDims(indexField.dims());
                     }
 
                     // 处理内部字段
