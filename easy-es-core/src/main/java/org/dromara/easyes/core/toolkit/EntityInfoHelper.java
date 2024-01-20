@@ -427,6 +427,15 @@ public class EntityInfoHelper {
         }
     }
 
+    /**
+     * 添加高亮参数
+     *
+     * @param entityInfo         实体信息
+     * @param nestedClass        嵌套类
+     * @param highLight          高亮注解
+     * @param realHighLightField 实际高亮字段
+     * @param mappingField       映射字段
+     */
     private static void addHighlightParam(EntityInfo entityInfo, Class<?> nestedClass, HighLight highLight,
                                           String realHighLightField, String mappingField) {
         if (nestedClass == null) {
@@ -477,11 +486,23 @@ public class EntityInfoHelper {
         allFields.forEach(field -> {
             String mappingColumn;
             FieldType fieldType;
+
+            // 初始化封装嵌套类中的HighLight注解信息
+            if (field.isAnnotationPresent(HighLight.class)) {
+                initHighLightAnnotation(dbConfig, entityInfo, field, mappingColumnMap, nestedClass);
+            }
+
             // 处理TableField注解
             MultiIndexField multiIndexField = field.getAnnotation(MultiIndexField.class);
             IndexField indexField = Optional.ofNullable(multiIndexField).map(MultiIndexField::mainIndexField)
                     .orElse(field.getAnnotation(IndexField.class));
             if (Objects.isNull(indexField)) {
+                // 跳过无关字段
+                Set<String> notSerializeFields = Optional.ofNullable(entityInfo.getNestedNotSerializeField().get(nestedClass)).orElse(Collections.emptySet());
+                if (notSerializeFields.contains(field.getName())) {
+                    return;
+                }
+
                 mappingColumn = getMappingColumn(dbConfig, field);
                 EntityFieldInfo entityFieldInfo = new EntityFieldInfo(dbConfig, field);
                 entityFieldInfo.setMappingColumn(mappingColumn);
@@ -546,10 +567,7 @@ public class EntityInfoHelper {
             mappingColumnMap.putIfAbsent(field.getName(), mappingColumn);
             fieldTypeMap.putIfAbsent(field.getName(), fieldType.getType());
 
-            // 初始化封装嵌套类中的HighLight注解信息
-            if (field.isAnnotationPresent(HighLight.class)) {
-                initHighLightAnnotation(dbConfig, entityInfo, field, mappingColumnMap, nestedClass);
-            }
+
         });
         entityInfo.getNestedNotSerializeField().putIfAbsent(nestedClass, notSerializedFields);
         entityInfo.getNestedClassColumnMappingMap().putIfAbsent(nestedClass, columnMappingMap);
