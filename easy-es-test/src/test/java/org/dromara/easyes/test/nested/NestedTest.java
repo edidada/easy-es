@@ -18,10 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 嵌套测试
@@ -85,6 +82,17 @@ public class NestedTest {
         document.setUsers(users);
         successCount = documentMapper.insert(document);
         Assertions.assertEquals(successCount, 1);
+
+        document.setEsId("7");
+        users.clear();
+        faqs.clear();
+        faqs1.clear();
+
+        users.add(new User("葡萄糖", 8, "12345", faqs));
+        faqs.add(new Faq("口服溶液", "a4"));
+        document.setUsers(users);
+        successCount = documentMapper.insert(document);
+        Assertions.assertEquals(successCount, 1);
     }
 
     @Test
@@ -120,6 +128,20 @@ public class NestedTest {
         wrapper3.nested("users.faqs", w -> w.match("users.faqs.faq_name", "q3").or().match("users.faqs.faq_name", "q4"));
         List<Document> documents3 = documentMapper.selectList(wrapper3);
         System.out.println(documents3);
+    }
+
+    @Test
+    @Order(3)
+    public void testNestedMatchHighlight() {
+        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+        wrapper.nested("users", w -> w.match("users.user_name.ik", "葡萄")
+                        .or()
+                        .match("users.user_name.py", "葡萄"))
+                .nested("users.faqs", w -> w.match("users.faqs.faqName.ik", "kou")
+                        .or()
+                        .match("users.faqs.faqName.py", "kou"));
+        List<Document> documents = documentMapper.selectList(wrapper);
+        System.out.println(documents);
     }
 
 }

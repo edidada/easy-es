@@ -6,6 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.dromara.easyes.annotation.HighLight;
 import org.dromara.easyes.annotation.IndexField;
+import org.dromara.easyes.annotation.InnerIndexField;
+import org.dromara.easyes.annotation.MultiIndexField;
+import org.dromara.easyes.annotation.rely.Analyzer;
+import org.dromara.easyes.annotation.rely.FieldType;
 
 /**
  * 问答
@@ -31,10 +35,16 @@ public class Faq {
      * 问题 高亮内容直接覆盖在原字段值上进行返回,故不需要指定高亮注解中的mappingField
      */
     @HighLight
+    @MultiIndexField(mainIndexField = @IndexField,
+            otherIndexFields = {
+                    @InnerIndexField(suffix = "ik", fieldType = FieldType.TEXT, analyzer = Analyzer.IK_MAX_WORD),
+                    @InnerIndexField(suffix = "py", fieldType = FieldType.TEXT, analyzer = Analyzer.PINYIN)
+            })
     private String faqName;
-    @IndexField(value = "answer")
+
     /**
      * 答案
      */
+    @IndexField(value = "answer")
     private String faqAnswer;
 }
