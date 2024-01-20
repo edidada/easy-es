@@ -1055,9 +1055,9 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         T entity = JSON.parseObject(searchHit.getSourceAsString(), entityClass, entityInfo.getExtraProcessor());
 
         // 主类中高亮字段处理
-        if (CollectionUtils.isNotEmpty(entityInfo.getHighlightParams())) {
+        Map<String, HighlightField> highlightFields = searchHit.getHighlightFields();
+        if (CollectionUtils.isNotEmpty(entityInfo.getHighlightParams()) && CollectionUtils.isNotEmpty(highlightFields)) {
             Map<String, String> highlightFieldMap = getHighlightFieldMap();
-            Map<String, HighlightField> highlightFields = searchHit.getHighlightFields();
             highlightFields.forEach((key, value) -> {
                 String highLightValue = Arrays.stream(value.getFragments()).map(Text::string).collect(Collectors.joining());
                 setHighlightValue(entity, highlightFieldMap.get(key), highLightValue);
@@ -1104,14 +1104,13 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                         if (CollectionUtils.isNotEmpty(highlightFields) && nestedIdentity != null) {
                             highlightFields.forEach((k1, v1) -> {
                                 String highLightContent = Arrays.stream(v1.getFragments()).map(Text::string).collect(Collectors.joining());
-
                                 SearchHit.NestedIdentity tmpNestedIdentity = nestedIdentity;
                                 List<String> pathList = new ArrayList<>();
                                 while (tmpNestedIdentity != null) {
-                                    pathList.add(tmpNestedIdentity.getField().toString());
+                                    Optional.ofNullable(tmpNestedIdentity.getField()).ifPresent(field -> pathList.add(field.toString()));
                                     tmpNestedIdentity = tmpNestedIdentity.getChild();
                                 }
-                                String highLightField = k1.replace(String.join(STR_SIGN, pathList) + STR_SIGN, "");
+                                String highLightField = k1.replace(String.join(STR_SIGN, pathList) + STR_SIGN, EMPTY_STR);
                                 processInnerHighlight(nestedIdentity.getField().string(), root, nestedIdentity,
                                         highLightField, highLightContent, nestedHighlightFieldMap);
                             });
