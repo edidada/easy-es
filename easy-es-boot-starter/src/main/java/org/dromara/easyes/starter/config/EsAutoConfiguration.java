@@ -10,15 +10,12 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.dromara.easyes.common.enums.SchemaEnum;
-import org.dromara.easyes.common.utils.ExceptionUtils;
-import org.dromara.easyes.common.utils.LogUtils;
-import org.dromara.easyes.common.utils.StringUtils;
+import org.dromara.easyes.common.utils.*;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,12 +23,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.net.ssl.SSLContext;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
+import static org.dromara.easyes.common.utils.RestHighLevelClientUtils.DEFAULT_DS;
 
 /**
  * es自动配置
@@ -40,12 +35,16 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.*;
  **/
 @Configuration
 @ConditionalOnClass(RestHighLevelClient.class)
-@EnableConfigurationProperties(EasyEsConfigProperties.class)
-@ConditionalOnExpression("'${easy-es.address:x}'!='x'")
+@EnableConfigurationProperties(value = {DynamicEsProperties.class, EasyEsConfigProperties.class})
+//@ConditionalOnExpression("'${easy-es.address:x}'!='x'")
 @ConditionalOnProperty(prefix = "easy-es", name = {"enable"}, havingValue = "true", matchIfMissing = true)
 public class EsAutoConfiguration {
     @Autowired
     private EasyEsConfigProperties easyEsConfigProperties;
+    @Autowired
+    private DynamicEsProperties dynamicEsProperties;
+
+    private final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
     /**
      * 装配RestHighLevelClient
@@ -55,6 +54,26 @@ public class EsAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RestHighLevelClient restHighLevelClient() {
+        return restHighLevelClient(easyEsConfigProperties);
+    }
+
+    @Bean
+    public RestHighLevelClientUtils restHighLevelClientUtils() {
+        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
+        Map<String, EasyEsConfigProperties> datasourceMap = dynamicEsProperties.getDatasource();
+        if (CollectionUtils.isEmpty(datasourceMap)) {
+            // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
+            datasourceMap.put(DEFAULT_DS, easyEsConfigProperties);
+        }
+        for (String key : datasourceMap.keySet()) {
+            EasyEsConfigProperties easyEsConfigProperties = datasourceMap.get(key);
+            RestHighLevelClientUtils.registerRestHighLevelClient(key, restHighLevelClient(easyEsConfigProperties));
+        }
+        return restHighLevelClientUtils;
+    }
+
+
+    private RestHighLevelClient restHighLevelClient(EasyEsConfigProperties easyEsConfigProperties) {
         // 处理地址
         String address = easyEsConfigProperties.getAddress();
         if (StringUtils.isEmpty(address)) {
