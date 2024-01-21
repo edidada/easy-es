@@ -1,9 +1,9 @@
 easy-es:
-#  enable: true
-  address: 10.20.64.228:9200
-  schema: http
-#  username: elastic
-#  password: WG7WVmuNMtM4GwNYkyWH
+  #  enable: true
+  #  address: 10.20.64.228:9200
+  #  schema: http
+  #  username: elastic
+  #  password: WG7WVmuNMtM4GwNYkyWH
   keep-alive-millis: 18000
   global-config:
     i-kun-mode: true
@@ -17,6 +17,14 @@ easy-es:
       field-strategy: not_empty
       refresh-policy: immediate
       enable-track-total-hits: true
+  dynamic:
+    datasource:
+      ds1:
+        address: 10.20.64.228:9200
+      ds2:
+        address: 49.234.28.111:9200
+        #username: '若无可去掉此行'
+        #password: '若无可去掉此行'
 #logging:
 #  level:
 #   tracer: trace
