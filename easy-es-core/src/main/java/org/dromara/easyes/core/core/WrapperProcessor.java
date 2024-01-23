@@ -325,9 +325,9 @@ public class WrapperProcessor {
             // 嵌套类型
             Class<?> clazz = entityInfo.getPathClassMap().get(path);
             mappingColumnMap = Optional.ofNullable(entityInfo.getNestedClassMappingColumnMap().get(clazz))
-                    .orElse(new HashMap<>(0));
+                    .orElse(Collections.emptyMap());
             fieldTypeMap = Optional.ofNullable(entityInfo.getNestedClassFieldTypeMap().get(clazz))
-                    .orElse(new HashMap<>(0));
+                    .orElse(Collections.emptyMap());
         } else {
             mappingColumnMap = entityInfo.getMappingColumnMap();
             fieldTypeMap = entityInfo.getFieldTypeMap();

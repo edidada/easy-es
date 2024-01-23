@@ -12,11 +12,11 @@ easy-es:
     print-dsl: true
     db-config:
       map-underscore-to-camel-case: true
-      #      table-prefix: dev_
       id-type: customize
       field-strategy: not_empty
       refresh-policy: immediate
       enable-track-total-hits: true
+#      index-prefix: dev_
 #logging:
 #  level:
 #   tracer: trace

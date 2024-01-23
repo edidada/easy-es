@@ -233,7 +233,7 @@ public class EntityInfo {
     public Map<String, String> getNestedMappingColumnMapByPath(String path) {
         return Optional.ofNullable(pathClassMap.get(path))
                 .map(nestedClassMappingColumnMap::get)
-                .orElse(new HashMap<>(0));
+                .orElse(Collections.emptyMap());
     }
 
 

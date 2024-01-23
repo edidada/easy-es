@@ -156,16 +156,16 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Boolean refresh() {
+    public Integer refresh() {
         return this.refresh(EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
     @Override
-    public Boolean refresh(String... indexNames) {
+    public Integer refresh(String... indexNames) {
         RefreshRequest request = new RefreshRequest(indexNames);
         try {
             RefreshResponse refresh = client.indices().refresh(request, RequestOptions.DEFAULT);
-            return refresh.getSuccessfulShards() == Arrays.stream(indexNames).count();
+            return refresh.getSuccessfulShards();
         } catch (IOException e) {
             e.printStackTrace();
             throw ExceptionUtils.eee("refresh index exception e", e);
