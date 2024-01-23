@@ -27,6 +27,7 @@ public class RestHighLevelClientUtils {
         }
         RestHighLevelClient restHighLevelClient = restHighLevelClientMap.get(restHighLevelClientId);
         if (restHighLevelClient == null) {
+            LogUtils.formatError("restHighLevelClientId: %s can not find any data source, please check your config", restHighLevelClientId);
             ExceptionUtils.eee("找不到RestHighLevelClient,restHighLevelClientId:%s", restHighLevelClientId);
 
         }
