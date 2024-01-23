@@ -36,15 +36,12 @@ import static org.dromara.easyes.common.utils.RestHighLevelClientUtils.DEFAULT_D
 @Configuration
 @ConditionalOnClass(RestHighLevelClient.class)
 @EnableConfigurationProperties(value = {DynamicEsProperties.class, EasyEsConfigProperties.class})
-//@ConditionalOnExpression("'${easy-es.address:x}'!='x'")
 @ConditionalOnProperty(prefix = "easy-es", name = {"enable"}, havingValue = "true", matchIfMissing = true)
 public class EsAutoConfiguration {
     @Autowired
     private EasyEsConfigProperties easyEsConfigProperties;
     @Autowired
     private DynamicEsProperties dynamicEsProperties;
-
-    private final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
     /**
      * 装配RestHighLevelClient
