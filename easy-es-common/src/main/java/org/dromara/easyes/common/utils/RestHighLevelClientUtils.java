@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author lyy
- * @date 2023年03月14日 16:05
  */
 public class RestHighLevelClientUtils {
 

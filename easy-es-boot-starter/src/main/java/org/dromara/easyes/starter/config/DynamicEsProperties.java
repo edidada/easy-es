@@ -8,7 +8,6 @@ import java.util.Map;
 
 /**
  * @author lyy
- * @date 2023年03月14日 15:57
  */
 @Data
 @ConfigurationProperties(prefix = "easy-es.dynamic")
