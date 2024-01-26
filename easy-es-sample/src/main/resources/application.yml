@@ -5,15 +5,37 @@ easy-es:
   username: elastic
   password: WG7WVmuNMtM4GwNYkyWH
   keep-alive-millis: 18000
+  #  address: 10.20.64.228:9200
+  #  schema: http
+  #  username: elastic
+  #  password: WG7WVmuNMtM4GwNYkyWH
+  #  keep-alive-millis: 18000
   global-config:
-    process-index-mode: smoothly
-    async-process-index-blocking: true
-    print-dsl: false
-    db-config:
-      map-underscore-to-camel-case: true
-      #      table-prefix: dev_
-      id-type: customize
-      field-strategy: not_empty
-      refresh-policy: immediate
-      enable-track-total-hits: true
-      enable-must2-filter: false
+    process-index-mode: manual
+    distributed: false
+  #    async-process-index-blocking: true
+  #    print-dsl: false
+  #    db-config:
+  #      map-underscore-to-camel-case: true
+  #      #      table-prefix: dev_
+  #      id-type: customize
+  #      field-strategy: not_empty
+  #      refresh-policy: immediate
+  #      enable-track-total-hits: true
+  #      enable-must2-filter: false
+  dynamic:
+    datasource:
+      db1:
+        address:  #填你的es连接地址
+        username: 'username1'
+        password: 'pwd'
+      db2:
+        address:  #填你的es连接地址
+        username: 'username2'
+        password: 'pwd2'
+
+
+management:
+  health:
+    elasticsearch:
+      enabled: false

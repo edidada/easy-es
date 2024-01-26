@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  为简化开发工作、提高生产效率而生
+  您的Star是我继续前进的动力，如果喜欢EE请右上角帮忙点亮星星⭐!
 </p>
 
 <p align="center">
   <a href="https://search.maven.org/search?q=g:io.github.xpc1024%20a:easy-*">
     <img alt="maven" src="https://img.shields.io/github/v/release/xpc1024/easy-es?include_prereleases&logo=xpc&style=plastic">
   </a>
-  <a href="https://www.murphysec.com/dr/1hRHmuH0DE3RYL9uE0" alt="OSCS Status"><img src="https://www.oscs1024.com/platform/badge/dromara/easy-es.git.svg?size=small"/></a>
+  <a href="https://www.murphysec.com/dr/htY0sMYDQaDn4X8iXp" alt="OSCS Status"><img src="https://www.oscs1024.com/platform/badge/dromara/easy-es.git.svg?size=small"/></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0">
     <img alt="code style" src="https://img.shields.io/badge/license-Apache%202-4EB1BA.svg?style=flat-square">
   </a>
@@ -44,7 +44,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 
 底层采用Es官方提供的RestHighLevelClient,保证其原生性能及拓展性.
 
-技术讨论 QQ 群 ：247637156 群内可免费领取 颈椎保护 | 增肌 | 减脂 等健身计划
+技术讨论 QQ 群 ：729148550 群内可在群文件中免费领取 颈椎保护 | 增肌 | 减脂 等健身计划 无套路
 
 微信群请先添加作者微信,由作者拉入 (亦可咨询健身问题,作者是健身教练)
 
@@ -144,15 +144,6 @@ compile group: 'cn.easy-es', name: 'easy-es-boot-starter', version: 'Latest Vers
 
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
-# 捐赠 | Donate
----
-
-[捐赠记录,感谢你们的支持！](https://easy-es.cn/pages/b52ac5/)
-
-> 您的支持是鼓励我们前行的动力，无论金额多少都足够表达您这份心意。
-
-> 如果您愿意捐赠本项目,推荐直接在右下方通过Gitee直接捐赠.
-
 # 关注我 | About Me
 ---
 
@@ -163,3 +154,21 @@ QQ | 微信:252645816
 # 知识星球 | Planet Of Knowledge
 ---
 <img alt="zsxq" src="https://iknow.hs.net/9038b7ab-c0d9-4a87-9492-e839907a8978.png">
+
+# 捐赠 | Donate
+---
+
+[捐赠记录,感谢你们的支持！](https://easy-es.cn/pages/b52ac5/)
+
+> 您的支持是鼓励我们前行的动力，无论金额多少都足够表达您这份心意。
+
+> 如果您愿意捐赠本项目,推荐直接在右下方通过Gitee直接捐赠.
+
+# 赞助商 | Sponsor
+---
+
+> 如果您想支持我们,奈何囊中羞涩,没事,您可以花30秒借花献佛,点击下方链接进入注册,则该赞助商会代您捐赠一笔小钱给社区开发者们买包辣条。
+
+<a href="http://apifox.cn/a103easyse">
+  <img alt="ad" src="https://iknow.hs.net/a26897a9-d408-4985-9ed6-b3180ea6ed98.png">
+</a>
