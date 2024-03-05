@@ -221,22 +221,12 @@ public class WrapperProcessor {
                 queryBuilder = QueryBuilders.geoShapeQuery(realField, (Geometry) param.getVal()).relation((ShapeRelation) param.getExt1()).boost(param.getBoost());
                 setBool(bool, queryBuilder, param.getPrevQueryType());
                 break;
-            case HAS_CHILD:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = new HasChildQueryBuilder(param.getExt1().toString(), QueryBuilders.matchQuery(param.getExt1().toString() + PATH_FIELD_JOIN + realField, param.getVal()).boost(param.getBoost()), (ScoreMode) param.getExt2());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
-                break;
-            case HAS_PARENT:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = new HasParentQueryBuilder(param.getExt1().toString(), QueryBuilders.matchQuery(param.getExt1().toString() + PATH_FIELD_JOIN + realField, param.getVal()).boost(param.getBoost()), (boolean) param.getExt2());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
-                break;
             case PARENT_ID:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 queryBuilder = new ParentIdQueryBuilder(realField, param.getVal().toString());
                 setBool(bool, queryBuilder, param.getPrevQueryType());
                 break;
-            // 下面五种嵌套类型 需要对孩子节点递归处理
+            // 下面几种特殊嵌套类型 需要对孩子节点递归处理
             case NESTED_AND:
             case NESTED_FILTER:
             case NESTED_NOT:
@@ -254,6 +244,18 @@ public class WrapperProcessor {
                 setNestedHighlight(path, param.getColumn(), nestedQueryBuilder, entityInfo);
                 // 设置bool查询参数
                 setBool(bool, nestedQueryBuilder, param.getPrevQueryType());
+                break;
+            case HAS_PARENT:
+                realField = getRealField(param.getColumn(), mappingColumnMap);
+                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, param.getColumn());
+                HasParentQueryBuilder hasParentQueryBuilder = new HasParentQueryBuilder(realField, queryBuilder, (boolean) param.getVal());
+                setBool(bool, hasParentQueryBuilder, param.getPrevQueryType());
+                break;
+            case HAS_CHILD:
+                realField = getRealField(param.getColumn(), mappingColumnMap);
+                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, param.getColumn());
+                HasChildQueryBuilder hasChildQueryBuilder = new HasChildQueryBuilder(realField, queryBuilder, (ScoreMode) param.getVal());
+                setBool(bool, hasChildQueryBuilder, param.getPrevQueryType());
                 break;
             default:
                 // just ignore,almost never happen

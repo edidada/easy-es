@@ -187,15 +187,14 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
         return addParam(condition, MATCH, column, val, boost);
     }
 
-
     @Override
-    public Children hasChild(boolean condition, String type, String column, Object val, ScoreMode scoreMode, Float boost) {
-        return addParam(condition, HAS_CHILD, column, val, type, scoreMode, boost);
+    public Children hasChild(boolean condition, String type, Consumer<Children> consumer, ScoreMode scoreMode) {
+        return addJoin(condition, HAS_CHILD, type, scoreMode, consumer);
     }
 
     @Override
-    public Children hasParent(boolean condition, String type, String column, Object val, boolean score, Float boost) {
-        return addParam(condition, HAS_PARENT, column, val, type, score, boost);
+    public Children hasParent(boolean condition, String parentType, Consumer<Children> consumer, boolean score) {
+        return addJoin(condition, HAS_PARENT, parentType, score, consumer);
     }
 
     @Override
@@ -537,6 +536,14 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
+    public Children routing(boolean condition, String routing) {
+        if (condition) {
+            this.routing = routing;
+        }
+        return typedThis;
+    }
+
+    @Override
     public Children preference(boolean condition, String preference) {
         if (condition) {
             if (StringUtils.isBlank(preference)) {
@@ -669,8 +676,6 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     public Children join(String column, String parentName, String childName) {
         EsIndexParam esIndexParam = new EsIndexParam();
         esIndexParam.setFieldName(column);
-        esIndexParam.setParentName(parentName);
-        esIndexParam.setChildName(childName);
         esIndexParam.setFieldType(FieldType.JOIN.getType());
         esIndexParamList.add(esIndexParam);
         return typedThis;
@@ -888,6 +893,25 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     private Children addNested(boolean condition, EsQueryTypeEnum queryTypeEnum, Consumer<Children> consumer) {
         if (condition) {
             Param param = new Param();
+            addBaseNested(param, queryTypeEnum, consumer);
+        }
+        return typedThis;
+    }
+
+    /**
+     * 重载，追加加嵌套类型查询条件
+     *
+     * @param condition 条件
+     * @param path      路径
+     * @param ext       评分模式 或 是否计算评分
+     * @param consumer  消费者
+     * @return wrapper
+     */
+    private Children addJoin(boolean condition, EsQueryTypeEnum queryTypeEnum, String path, Object ext, Consumer<Children> consumer) {
+        if (condition) {
+            Param param = new Param();
+            param.setColumn(path);
+            param.setVal(ext);
             addBaseNested(param, queryTypeEnum, consumer);
         }
         return typedThis;

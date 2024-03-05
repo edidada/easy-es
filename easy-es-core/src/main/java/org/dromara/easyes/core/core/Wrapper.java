@@ -61,6 +61,10 @@ public abstract class Wrapper<T> implements Cloneable {
      */
     protected String[] indexNames;
     /**
+     * 路由
+     */
+    protected String routing;
+    /**
      * 参数列表
      */
     protected LinkedList<Param> paramQueue;
