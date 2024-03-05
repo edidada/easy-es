@@ -60,4 +60,9 @@ public @interface HighLight {
      * @return 高亮模式
      */
     HighLightTypeEnum highLightType() default HighLightTypeEnum.UNIFIED;
+
+    /**
+     * 是否需要与查询字段匹配
+     */
+    boolean requireFieldMatch() default true;
 }
