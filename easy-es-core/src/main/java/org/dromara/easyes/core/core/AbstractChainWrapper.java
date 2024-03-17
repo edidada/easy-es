@@ -13,6 +13,7 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -651,6 +652,13 @@ public abstract class AbstractChainWrapper<T, R, Children extends AbstractChainW
     @Override
     public Children mix(boolean condition, QueryBuilder queryBuilder) {
         getWrapper().mix(condition, queryBuilder);
+        return typedThis;
+    }
+
+
+    @Override
+    public Children bucketOrder(boolean condition, List<BucketOrder> bucketOrders) {
+        getWrapper().bucketOrder(condition, bucketOrders);
         return typedThis;
     }
 

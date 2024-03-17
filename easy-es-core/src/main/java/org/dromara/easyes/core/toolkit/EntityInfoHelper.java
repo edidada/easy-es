@@ -107,7 +107,7 @@ public class EntityInfoHelper {
      */
     private static void initJoin(Class<?> clazz, GlobalConfig globalConfig, EntityInfo entityInfo) {
         Join join = clazz.getAnnotation(Join.class);
-        if (join == null || ArrayUtils.isEmpty(join.children())) {
+        if (join == null || ArrayUtils.isEmpty(join.nodes())) {
             return;
         }
         boolean camelCase = globalConfig.getDbConfig().isMapUnderscoreToCamelCase();
@@ -119,7 +119,7 @@ public class EntityInfoHelper {
         entityInfo.setJoinAlias(underlineJoinAlias);
 
         Map<String, List<String>> relationMap = entityInfo.getRelationMap();
-        Arrays.stream(join.children())
+        Arrays.stream(join.nodes())
                 .forEach(child -> {
                     String parentAlias = StringUtils.isBlank(child.parentAlias()) ? child.parentClass().getSimpleName().toLowerCase() : child.parentAlias();
                     String underlineParentAlias = camelToUnderline(parentAlias, camelCase);

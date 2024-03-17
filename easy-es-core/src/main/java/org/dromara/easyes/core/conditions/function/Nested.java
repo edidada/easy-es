@@ -214,6 +214,15 @@ public interface Nested<Param, Children> extends Serializable {
      */
     Children hasChild(boolean condition, String type, Consumer<Param> consumer, ScoreMode scoreMode);
 
+    /**
+     * 父子类型-根据子查父匹配 返回子文档 无需指定父,由框架根据@Join注解自行推断其父
+     *
+     * @param consumer 嵌套条件函数
+     * @return wrapper
+     */
+    default Children hasParent(Consumer<Param> consumer) {
+        return hasParent(true, null, consumer);
+    }
 
     /**
      * 父子类型-根据子查父匹配 返回子文档

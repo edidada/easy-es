@@ -330,48 +330,66 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public Integer insert(T entity) {
-        Assert.notNull(entity, "insert entity must not be null");
-        return insert(null, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+        return insert(null, null, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
     @Override
-    public Integer insert(T entity, String routing) {
-        Assert.notNull(entity, "insert entity must not be null");
-        return insert(routing, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+    public Integer insert(String routing, T entity) {
+        return insert(routing, null, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+    }
+
+    @Override
+    public Integer insert(String routing, String parentId, T entity) {
+        return insert(routing, parentId, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
     @Override
     public Integer insert(T entity, String... indexNames) {
-        return insert(null, entity, indexNames);
+        return insert(null, null, entity, indexNames);
     }
 
     @Override
     public Integer insert(String routing, T entity, String... indexNames) {
+        return insert(routing, null, entity, indexNames);
+    }
+
+    @Override
+    public Integer insert(String routing, String parentId, T entity, String... indexNames) {
         Assert.notNull(entity, "insert entity must not be null");
 
         // 执行插入
         return Arrays.stream(getIndexNames(indexNames))
-                .mapToInt(indexName -> doInsert(entity, routing, indexName))
+                .mapToInt(indexName -> doInsert(entity, routing, parentId, indexName))
                 .sum();
     }
 
     @Override
     public Integer insertBatch(Collection<T> entityList) {
-        return insertBatch(null, entityList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+        return insertBatch(null, null, entityList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
     @Override
-    public Integer insertBatch(Collection<T> entityList, String routing) {
+    public Integer insertBatch(String routing, Collection<T> entityList) {
         return insertBatch(routing, entityList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
     @Override
+    public Integer insertBatch(String routing, String parentId, Collection<T> entityList) {
+        return insertBatch(routing, parentId, entityList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+    }
+
+    @Override
     public Integer insertBatch(Collection<T> entityList, String... indexNames) {
-        return insertBatch(null, entityList, indexNames);
+        return insertBatch(null, null, entityList, indexNames);
     }
 
     @Override
     public Integer insertBatch(String routing, Collection<T> entityList, String... indexNames) {
+        return insertBatch(routing, null, entityList, indexNames);
+    }
+
+    @Override
+    public Integer insertBatch(String routing, String parentId, Collection<T> entityList, String... indexNames) {
         // 老汉裤子都脱了 你告诉我没有数据 怎么*入?
         if (CollectionUtils.isEmpty(entityList)) {
             return BaseEsConstants.ZERO;
@@ -379,7 +397,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 在每条指定的索引上批量执行数据插入
         return Arrays.stream(getIndexNames(indexNames))
-                .mapToInt(indexName -> doInsertBatch(entityList, routing, indexName))
+                .mapToInt(indexName -> doInsertBatch(entityList, routing, parentId, indexName))
                 .sum();
     }
 
@@ -389,7 +407,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Integer deleteById(Serializable id, String routing) {
+    public Integer deleteById(String routing, Serializable id) {
         return deleteById(routing, id, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -411,7 +429,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Integer deleteBatchIds(Collection<? extends Serializable> idList, String routing) {
+    public Integer deleteBatchIds(String routing, Collection<? extends Serializable> idList) {
         return deleteBatchIds(routing, idList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -457,7 +475,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Integer updateById(T entity, String routing) {
+    public Integer updateById(String routing, T entity) {
         return updateById(routing, entity, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -485,7 +503,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Integer updateBatchByIds(Collection<T> entityList, String routing) {
+    public Integer updateBatchByIds(String routing, Collection<T> entityList) {
         return updateBatchByIds(routing, entityList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -524,7 +542,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public T selectById(Serializable id, String routing) {
+    public T selectById(String routing, Serializable id) {
         return selectById(routing, id, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -553,7 +571,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public List<T> selectBatchIds(Collection<? extends Serializable> idList, String routing) {
+    public List<T> selectBatchIds(String routing, Collection<? extends Serializable> idList) {
         return selectBatchIds(routing, idList, EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
     }
 
@@ -686,12 +704,14 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      *
      * @param entity    插入对象
      * @param routing   路由
+     * @param parentId  父id
      * @param indexName 索引名
      * @return 成功条数
      */
-    private Integer doInsert(T entity, String routing, String indexName) {
+    private Integer doInsert(T entity, String routing, String parentId, String indexName) {
         // 构建请求入参
-        IndexRequest indexRequest = buildIndexRequest(entity, routing, indexName);
+        IndexRequest indexRequest = buildIndexRequest(entity, routing, parentId, indexName);
+
         Optional.ofNullable(routing).ifPresent(indexRequest::routing);
         indexRequest.setRefreshPolicy(getRefreshPolicy());
 
@@ -716,16 +736,17 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      *
      * @param entityList 数据列表
      * @param routing    路由
+     * @param parentId   父id
      * @param indexName  索引名
      * @return 总成功条数
      */
-    private Integer doInsertBatch(Collection<T> entityList, String routing, String indexName) {
+    private Integer doInsertBatch(Collection<T> entityList, String routing, String parentId, String indexName) {
         // 构建批量请求参数
         BulkRequest bulkRequest = new BulkRequest();
         Optional.ofNullable(routing).ifPresent(bulkRequest::routing);
         bulkRequest.setRefreshPolicy(getRefreshPolicy());
         entityList.forEach(entity -> {
-            IndexRequest indexRequest = buildIndexRequest(entity, routing, indexName);
+            IndexRequest indexRequest = buildIndexRequest(entity, routing, parentId, indexName);
             bulkRequest.add(indexRequest);
         });
 
@@ -1033,10 +1054,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      *
      * @param entity    实体
      * @param routing   路由
+     * @param parentId  父id
      * @param indexName 索引名
      * @return es请求参数
      */
-    private IndexRequest buildIndexRequest(T entity, String routing, String indexName) {
+    private IndexRequest buildIndexRequest(T entity, String routing, String parentId, String indexName) {
         IndexRequest indexRequest = new IndexRequest();
 
         // id预处理,除下述情况,其它情况使用es默认的id
@@ -1058,7 +1080,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             joinField.setName(entityInfo.getJoinAlias());
             if (entityInfo.isChild()) {
                 // 子类型,需要追加父
-                joinField.setParent(routing);
+                joinField.setParent(parentId);
             }
             jsonObject.put(entityInfo.getJoinFieldName(), joinField);
             jsonData = jsonObject.toJSONString();

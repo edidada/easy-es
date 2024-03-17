@@ -11,7 +11,14 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * es 数据模型
+ * es 数据模型 其中Join父子类型结构如下所示
+ * <pre>
+ *         Document
+ *       /          \
+ *    Comment       Author
+ *                      \
+ *                    Contact
+ * </pre>
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
@@ -19,7 +26,7 @@ import java.util.List;
 @Accessors(chain = true)
 @Settings(shardsNum = 3, replicasNum = 2, settingsProvider = MySettingsProvider.class)
 @IndexName(value = "easyes_document", keepGlobalPrefix = true, refreshPolicy = RefreshPolicy.IMMEDIATE)
-@Join(children = {@Child(parentClass = Document.class, childClasses = {Author.class, Comment.class}), @Child(parentClass = Author.class, childClasses = Contact.class)})
+@Join(nodes = {@Node(parentClass = Document.class, childClasses = {Author.class, Comment.class}), @Node(parentClass = Author.class, childClasses = Contact.class)})
 public class Document {
     /**
      * es中的唯一id,字段名随便起,我这里演示用esId,你也可以用id(推荐),bizId等.

@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
  **/
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
-public @interface Child {
+public @interface Node {
     /**
-     * 父文档别名 非必填,默认值为当前类名小写
+     * 父文档别名 非必填,不指定时默认值为parentClass类名小写(推荐)
      *
      * @return 父文档别名
      */
@@ -28,9 +28,9 @@ public @interface Child {
     Class<?> parentClass();
 
     /**
-     * 子文档别名列表
+     * 子文档别名列表,不指定则为子文档类名小写列表(推荐) 若要自定义必须与childClasses数量和顺序一致
      *
-     * @return 子文档别名列表 非必填,默认值为子文档类名小写
+     * @return 子文档别名列表 非必填,默认值为子文档类名小写列表
      */
     String[] childAliases() default {};
 

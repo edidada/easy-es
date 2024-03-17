@@ -16,7 +16,7 @@ easy-es:
       field-strategy: not_empty
       refresh-policy: immediate
       enable-track-total-hits: true
-#      index-prefix: dev_
+  #      index-prefix: dev_
   dynamic:
     datasource:
       ds1:

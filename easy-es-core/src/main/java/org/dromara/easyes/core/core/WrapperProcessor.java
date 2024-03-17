@@ -21,6 +21,7 @@ import org.elasticsearch.join.query.HasParentQueryBuilder;
 import org.elasticsearch.join.query.ParentIdQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.collapse.CollapseBuilder;
@@ -246,7 +247,9 @@ public class WrapperProcessor {
                 setBool(bool, nestedQueryBuilder, param.getPrevQueryType());
                 break;
             case HAS_PARENT:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                // 如果用户没指定type框架可根据entityInfo上下文自行推断出其父type
+                String column = Optional.ofNullable(param.getColumn()).orElse(entityInfo.getParentJoinAlias());
+                realField = getRealField(column, mappingColumnMap);
                 queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, param.getColumn());
                 HasParentQueryBuilder hasParentQueryBuilder = new HasParentQueryBuilder(realField, queryBuilder, (boolean) param.getVal());
                 setBool(bool, hasParentQueryBuilder, param.getPrevQueryType());
@@ -555,7 +558,7 @@ public class WrapperProcessor {
         AggregationBuilder cursor = null;
         for (AggregationParam aggParam : aggregationParamList) {
             String realField = getRealField(aggParam.getField(), mappingColumnMap);
-            AggregationBuilder builder = getRealAggregationBuilder(aggParam.getAggregationType(), aggParam.getName(), realField);
+            AggregationBuilder builder = getRealAggregationBuilder(aggParam.getAggregationType(), aggParam.getName(), realField, wrapper.size, wrapper.bucketOrders);
             if (aggParam.isEnablePipeline()) {
                 // 管道聚合, 构造聚合树
                 if (root == null) {
@@ -588,9 +591,10 @@ public class WrapperProcessor {
      * @param aggType   聚合类型
      * @param name      聚合返回桶的名称 保持原字段名称
      * @param realField 原字段名称
+     * @param size      聚合桶大小
      * @return 聚合建造者
      */
-    private static AggregationBuilder getRealAggregationBuilder(AggregationTypeEnum aggType, String name, String realField) {
+    private static AggregationBuilder getRealAggregationBuilder(AggregationTypeEnum aggType, String name, String realField, Integer size, List<BucketOrder> bucketOrders) {
         AggregationBuilder aggregationBuilder;
         // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
         name += aggType.getValue();
@@ -608,7 +612,10 @@ public class WrapperProcessor {
                 aggregationBuilder = AggregationBuilders.sum(name).field(realField);
                 break;
             case TERMS:
-                aggregationBuilder = AggregationBuilders.terms(name).field(realField);
+                TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms(name).field(realField);
+                Optional.ofNullable(size).ifPresent(termsAggregationBuilder::size);
+                Optional.ofNullable(bucketOrders).ifPresent(termsAggregationBuilder::order);
+                aggregationBuilder = termsAggregationBuilder;
                 break;
             default:
                 throw new UnsupportedOperationException("不支持的聚合类型,参见AggregationTypeEnum");
