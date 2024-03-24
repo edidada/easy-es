@@ -10,6 +10,5 @@ import org.dromara.easyes.test.entity.Comment;
  * <p>
  * Copyright © 2022 xpc1024 All Rights Reserved
  **/
-@EsDS("ds1")
 public interface CommentMapper extends BaseEsMapper<Comment> {
 }

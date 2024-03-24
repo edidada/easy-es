@@ -584,4 +584,12 @@ public interface BaseEsMapper<T> {
      * @return 是否成功
      */
     Boolean setCurrentActiveIndex(String indexName);
+
+    /**
+     * 设置当前Mapper默认的RequestOptions,不设置则使用默认配置,务必谨慎操作,设置后全局生效,永驻jvm,除非项目重启
+     *
+     * @param requestOptions 请求配置
+     * @return 是否成功
+     */
+    Boolean setRequestOptions(RequestOptions requestOptions);
 }

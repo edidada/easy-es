@@ -10,6 +10,5 @@ import org.dromara.easyes.test.entity.Author;
  * <p>
  * Copyright © 2024 xpc1024 All Rights Reserved
  **/
-@EsDS("ds1")
 public interface AuthorMapper extends BaseEsMapper<Author> {
 }

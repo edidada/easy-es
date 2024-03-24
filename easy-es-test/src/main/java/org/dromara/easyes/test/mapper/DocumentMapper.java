@@ -9,6 +9,5 @@ import org.dromara.easyes.test.entity.Document;
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
-@EsDS("ds1")
 public interface DocumentMapper extends BaseEsMapper<Document> {
 }

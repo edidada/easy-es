@@ -2,6 +2,7 @@ package org.dromara.easyes.core.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeFilter;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.fastjson.serializer.SimplePropertyPreFilter;
@@ -20,10 +21,7 @@ import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.core.config.GlobalConfig;
-import org.dromara.easyes.core.toolkit.EntityInfoHelper;
-import org.dromara.easyes.core.toolkit.FieldUtils;
-import org.dromara.easyes.core.toolkit.IndexUtils;
-import org.dromara.easyes.core.toolkit.PageHelper;
+import org.dromara.easyes.core.toolkit.*;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -65,6 +63,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -119,14 +118,14 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     @Override
     public Boolean createIndex() {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-        CreateIndexParam createIndexParam = IndexUtils.getCreateIndexParam(entityInfo);
+        CreateIndexParam createIndexParam = IndexUtils.getCreateIndexParam(entityInfo, entityClass);
         return IndexUtils.createIndex(client, entityInfo, createIndexParam);
     }
 
     @Override
     public Boolean createIndex(String indexName) {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-        CreateIndexParam createIndexParam = IndexUtils.getCreateIndexParam(entityInfo);
+        CreateIndexParam createIndexParam = IndexUtils.getCreateIndexParam(entityInfo, entityClass);
         if (StringUtils.isNotBlank(indexName)) {
             createIndexParam.setIndexName(indexName);
         }
@@ -165,7 +164,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     public Integer refresh(String... indexNames) {
         RefreshRequest request = new RefreshRequest(indexNames);
         try {
-            RefreshResponse refresh = client.indices().refresh(request, RequestOptions.DEFAULT);
+            RefreshResponse refresh = client.indices().refresh(request, getRequestOptions());
             return refresh.getSuccessfulShards();
         } catch (IOException e) {
             e.printStackTrace();
@@ -320,7 +319,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             CountResponse count;
             try {
                 printCountDSL(countRequest);
-                count = client.count(countRequest, RequestOptions.DEFAULT);
+                count = client.count(countRequest, getRequestOptions());
             } catch (IOException e) {
                 throw ExceptionUtils.eee("selectCount exception", e);
             }
@@ -461,7 +460,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         request.setQuery(boolQueryBuilder);
         BulkByScrollResponse bulkResponse;
         try {
-            bulkResponse = client.deleteByQuery(request, RequestOptions.DEFAULT);
+            bulkResponse = client.deleteByQuery(request, getRequestOptions());
         } catch (IOException e) {
             throw ExceptionUtils.eee("delete error, dsl:%s", e, boolQueryBuilder.toString());
         }
@@ -633,6 +632,14 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return Boolean.TRUE;
     }
 
+    @Override
+    public Boolean setRequestOptions(RequestOptions requestOptions) {
+        synchronized (this) {
+            EntityInfoHelper.getEntityInfo(entityClass).setRequestOptions(requestOptions);
+        }
+        return Boolean.TRUE;
+    }
+
     /**
      * 执行创建索引
      *
@@ -692,7 +699,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         try {
-            AcknowledgedResponse acknowledgedResponse = client.indices().putMapping(putMappingRequest, RequestOptions.DEFAULT);
+            AcknowledgedResponse acknowledgedResponse = client.indices().putMapping(putMappingRequest, getRequestOptions());
             Assert.isTrue(acknowledgedResponse.isAcknowledged(), String.format("update index failed, index: %s", indexName));
         } catch (IOException e) {
             throw ExceptionUtils.eee("update index exception", e);
@@ -716,7 +723,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         indexRequest.setRefreshPolicy(getRefreshPolicy());
 
         try {
-            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+            IndexResponse indexResponse = client.index(indexRequest, getRequestOptions());
             if (Objects.equals(indexResponse.status(), RestStatus.CREATED)) {
                 setId(entity, indexResponse.getId());
                 return BaseEsConstants.ONE;
@@ -751,7 +758,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         });
 
         // 执行批量请求并返回结果
-        return doBulkRequest(bulkRequest, RequestOptions.DEFAULT, entityList);
+        return doBulkRequest(bulkRequest, getRequestOptions(), entityList);
     }
 
 
@@ -768,7 +775,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         Optional.ofNullable(routing).ifPresent(deleteRequest::routing);
         deleteRequest.setRefreshPolicy(getRefreshPolicy());
         try {
-            DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
+            DeleteResponse deleteResponse = client.delete(deleteRequest, getRequestOptions());
             if (Objects.equals(deleteResponse.status(), RestStatus.OK)) {
                 return BaseEsConstants.ONE;
             }
@@ -795,7 +802,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             DeleteRequest deleteRequest = generateDelRequest(id, indexName);
             bulkRequest.add(deleteRequest);
         });
-        return doBulkRequest(bulkRequest, RequestOptions.DEFAULT);
+        return doBulkRequest(bulkRequest, getRequestOptions());
     }
 
     /**
@@ -815,7 +822,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 执行更新
         try {
-            UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+            UpdateResponse updateResponse = client.update(updateRequest, getRequestOptions());
             if (Objects.equals(updateResponse.status(), RestStatus.OK)) {
                 return BaseEsConstants.ONE;
             }
@@ -846,7 +853,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         });
 
         // 执行批量请求
-        return doBulkRequest(bulkRequest, RequestOptions.DEFAULT);
+        return doBulkRequest(bulkRequest, getRequestOptions());
     }
 
     /**
@@ -888,7 +895,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
             bulkRequest.add(updateRequest);
         });
-        return doBulkRequest(bulkRequest, RequestOptions.DEFAULT);
+        return doBulkRequest(bulkRequest, getRequestOptions());
     }
 
 
@@ -977,7 +984,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 执行查询
         SearchResponse response;
         try {
-            response = client.search(searchRequest, RequestOptions.DEFAULT);
+            response = client.search(searchRequest, getRequestOptions());
         } catch (IOException e) {
             throw ExceptionUtils.eee("search exception", e);
         }
@@ -1038,7 +1045,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         printDSL(searchRequest);
         try {
             // 查询数据明细
-            SearchResponse response = client.search(searchRequest, RequestOptions.DEFAULT);
+            SearchResponse response = client.search(searchRequest, getRequestOptions());
             printResponseErrors(response);
             SearchHit[] searchHits = parseSearchHitArray(response);
             return Arrays.stream(searchHits)
@@ -1164,6 +1171,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      */
     private T parseOne(SearchHit searchHit, Wrapper<T> wrapper) {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
+
         // 解析json
         T entity = JSON.parseObject(searchHit.getSourceAsString(), entityClass, entityInfo.getExtraProcessor());
 
@@ -1374,7 +1382,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         printDSL(searchRequest);
         SearchResponse response;
         try {
-            response = client.search(searchRequest, RequestOptions.DEFAULT);
+            response = client.search(searchRequest, getRequestOptions());
         } catch (IOException e) {
             throw ExceptionUtils.eee("getSearchHitArray exception,searchRequest:%s", e, searchRequest.toString());
         }
@@ -1401,7 +1409,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         printDSL(searchRequest);
         SearchResponse response;
         try {
-            response = client.search(searchRequest, RequestOptions.DEFAULT);
+            response = client.search(searchRequest, getRequestOptions());
         } catch (IOException e) {
             throw ExceptionUtils.eee("getSearchHitArray IOException, searchRequest:%s", e, searchRequest.toString());
         }
@@ -1458,7 +1466,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 主类中的字段策略过滤
         SimplePropertyPreFilter simplePropertyPreFilter = FastJsonUtils.getSimplePropertyPreFilter(entity.getClass(), excludeColumn);
         Optional.ofNullable(simplePropertyPreFilter).ifPresent(serializeFilters::add);
-
         return JSON.toJSONString(entity, serializeFilters.toArray(new SerializeFilter[0]), SerializerFeature.WriteMapNullValue);
     }
 
@@ -1710,6 +1717,15 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 防止傻狍子用户在全局中把刷新策略修改为GLOBAL
         final RefreshPolicy refreshPolicy = Optional.ofNullable(EntityInfoHelper.getEntityInfo(entityClass).getRefreshPolicy()).orElse(RefreshPolicy.NONE);
         return RefreshPolicy.GLOBAL.equals(refreshPolicy) ? RefreshPolicy.NONE.getValue() : refreshPolicy.getValue();
+    }
+
+    /**
+     * 获取请求配置
+     *
+     * @return 请求配置
+     */
+    private RequestOptions getRequestOptions() {
+        return EntityInfoHelper.getEntityInfo(entityClass).getRequestOptions();
     }
 
 }
