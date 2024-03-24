@@ -79,7 +79,6 @@ public class AllTest {
     public void testInsert() {
         // 测试插入数据
         Document document = new Document();
-        document.setMyTime(LocalDateTime.now());
         document.setEsId("1");
         document.setCaseTest("Test");
         document.setTitle("测试文档1");
