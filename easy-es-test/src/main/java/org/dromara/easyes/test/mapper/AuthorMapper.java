@@ -1,8 +1,7 @@
 package org.dromara.easyes.test.mapper;
 
 
-import org.dromara.easyes.annotation.EsDS;
-import org.dromara.easyes.core.core.BaseEsMapper;
+import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.test.entity.Author;
 
 /**

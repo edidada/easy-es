@@ -1,4 +1,4 @@
-package org.dromara.easyes.core.core;
+package org.dromara.easyes.core.kernel;
 
 import org.apache.lucene.search.join.ScoreMode;
 import org.dromara.easyes.annotation.rely.FieldType;

@@ -1,8 +1,7 @@
-package org.dromara.easyes.core.core;
+package org.dromara.easyes.core.kernel;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeFilter;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.fastjson.serializer.SimplePropertyPreFilter;
@@ -22,7 +21,10 @@ import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.core.config.GlobalConfig;
-import org.dromara.easyes.core.toolkit.*;
+import org.dromara.easyes.core.toolkit.EntityInfoHelper;
+import org.dromara.easyes.core.toolkit.FieldUtils;
+import org.dromara.easyes.core.toolkit.IndexUtils;
+import org.dromara.easyes.core.toolkit.PageHelper;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -64,7 +66,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -1306,9 +1307,9 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     /**
      * 设置距离
      *
-     * @param entity     实体对象
-     * @param sortValues 排序值(含距离)
-     * @param entityInfo 实体信息
+     * @param entity         实体对象
+     * @param sortValues     排序值(含距离)
+     * @param entityInfo     实体信息
      * @param baseSortParams 用户输入的排序参数
      */
     private void setDistance(T entity, Object[] sortValues, EntityInfo entityInfo, List<BaseSortParam> baseSortParams) {
@@ -1318,10 +1319,10 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         // 按排序器顺序封装排序字段值
-        for (int i = 0, geoFieldIdx = 0; i < sortValues.length; i++, geoFieldIdx++) {
-            if (baseSortParams.get(i).getOrderTypeEnum() != OrderTypeEnum.GEO) {
-                // 当前sortValue不是地理位置的排序值，geoFieldIdx不需要变动
-                geoFieldIdx--;
+        for (int i = 0, geoFieldIndex = 0; i < sortValues.length; i++, geoFieldIndex++) {
+            if (OrderTypeEnum.GEO != baseSortParams.get(i).getOrderTypeEnum()) {
+                // 当前sortValue不是地理位置的排序值，geoFieldIndex不需要变动
+                geoFieldIndex--;
                 continue;
             }
             Object sortValue = sortValues[i];
@@ -1332,12 +1333,12 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             if (Double.isNaN(distance)) {
                 continue;
             }
-            Integer distanceDecimalPlaces = entityInfo.getDistanceDecimalPlaces().get(geoFieldIdx);
+            Integer distanceDecimalPlaces = entityInfo.getDistanceDecimalPlaces().get(geoFieldIndex);
             if (distanceDecimalPlaces > ZERO) {
                 distance = NumericUtils.setDecimalPlaces(distance, distanceDecimalPlaces);
             }
             try {
-                Method invokeMethod = BaseCache.setterMethod(entity.getClass(), distanceFields.get(geoFieldIdx));
+                Method invokeMethod = BaseCache.setterMethod(entity.getClass(), distanceFields.get(geoFieldIndex));
                 invokeMethod.invoke(entity, distance);
             } catch (Throwable e) {
                 // 遇到异常只提示, 不阻断流程 distance未设置不影核心业务

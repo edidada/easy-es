@@ -7,7 +7,7 @@ import org.dromara.easyes.core.biz.OrderByParam;
 import org.dromara.easyes.core.biz.SAPageInfo;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.core.conditions.update.LambdaEsUpdateWrapper;
-import org.dromara.easyes.core.core.EsWrappers;
+import org.dromara.easyes.core.kernel.EsWrappers;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.test.TestEasyEsApplication;
