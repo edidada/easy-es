@@ -63,6 +63,8 @@ public @interface HighLight {
 
     /**
      * 是否需要与查询字段匹配
+     *
+     * @return 是否需要与查询字段匹配
      */
     boolean requireFieldMatch() default true;
 }
