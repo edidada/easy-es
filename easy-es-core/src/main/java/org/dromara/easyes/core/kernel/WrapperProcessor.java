@@ -454,8 +454,8 @@ public class WrapperProcessor {
                         .orElse(highLightParam.getHighLightField());
                 HighlightBuilder.Field field = new HighlightBuilder.Field(highlightField);
                 field.highlighterType(highLightParam.getHighLightType().getValue());
+                field.requireFieldMatch(highLightParam.getRequireFieldMatch());
                 highlightBuilder.field(field);
-
                 highlightBuilder.fragmentSize(highLightParam.getFragmentSize());
                 highlightBuilder.preTags(highLightParam.getPreTag());
                 highlightBuilder.postTags(highLightParam.getPostTag());

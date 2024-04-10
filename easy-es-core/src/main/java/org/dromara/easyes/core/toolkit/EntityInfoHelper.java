@@ -574,7 +574,8 @@ public class EntityInfoHelper {
                 .setPreTag(highLight.preTag())
                 .setPostTag(highLight.postTag())
                 .setHighLightField(realHighLightField)
-                .setHighLightType(highLight.highLightType());
+                .setHighLightType(highLight.highLightType())
+                .setRequireFieldMatch(highLight.requireFieldMatch());
         if (MINUS_ONE != highLight.numberOfFragments() && highLight.numberOfFragments() > ZERO) {
             highlightParam.setNumberOfFragments(highLight.numberOfFragments());
         }
