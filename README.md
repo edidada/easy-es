@@ -143,7 +143,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 ![Architecture](https://iknow.hs.net/27fb40b8-22d4-45c2-92e0-1471112d5102.jpg)
 
 ## 功能结构图 | Functional structure diagram
-
+---
 ![Function](https://iknow.hs.net/5fad565b-8b4e-4274-ab59-a74c3492ac9d.png)
 
 # 相关链接 | Links
