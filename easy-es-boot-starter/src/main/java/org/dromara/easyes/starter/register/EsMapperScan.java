@@ -15,5 +15,5 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Import(MapperScannerRegister.class)
 public @interface EsMapperScan {
-    String value();
+    String[] value();
 }
