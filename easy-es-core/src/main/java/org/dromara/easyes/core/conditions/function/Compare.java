@@ -1955,6 +1955,9 @@ public interface Compare<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children between(boolean condition, String column, Object from, Object to, Float boost) {
+        if(Objects.equals(from, to)){
+            return eq(condition, column, from, boost);
+        }
         return between(condition, column, from, to, null, null, boost);
     }
 
