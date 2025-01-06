@@ -14,7 +14,7 @@ import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.HighLightParam;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

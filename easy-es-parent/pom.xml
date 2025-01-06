@@ -26,6 +26,7 @@
         <module>../easy-es-annotation</module>
         <module>../easy-es-common</module>
         <module>../easy-es-solon-plugin</module>
+        <module>../easy-es-spring</module>
     </modules>
 
     <properties>
@@ -36,6 +37,7 @@
         <fastjson.version>1.2.83</fastjson.version>
         <codec.version>1.13</codec.version>
         <spring-boot.version>2.6.10</spring-boot.version>
+        <spring.version>5.3.22</spring.version>
         <solon.version>3.0.5</solon.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     </properties>
@@ -105,10 +107,27 @@
                 <artifactId>solon</artifactId>
                 <version>${solon.version}</version>
             </dependency>
+
             <dependency>
-                <groupId>org.noear</groupId>
-                <artifactId>solon-serialization-fastjson</artifactId>
-                <version>${solon.version}</version>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>${spring.version}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring.version}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-aop</artifactId>
+                <version>${spring.version}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

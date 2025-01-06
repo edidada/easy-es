@@ -20,7 +20,7 @@ import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.core.toolkit.IndexUtils;

@@ -9,7 +9,7 @@ import org.dromara.easyes.common.utils.TypeUtils;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.proxy.EsMapperProxy;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.extension.context.Interceptor;

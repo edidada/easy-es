@@ -1,5 +1,4 @@
-package org.dromara.easyes.core.config;
-
+package org.dromara.easyes.common.property;
 
 import lombok.Data;
 import org.dromara.easyes.annotation.rely.FieldStrategy;

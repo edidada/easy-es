@@ -2,7 +2,7 @@ package org.dromara.easyes.solon.config;
 
 import lombok.Data;
 import org.dromara.easyes.common.enums.SchemaEnum;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Configuration;
 import org.noear.solon.annotation.Inject;

@@ -8,7 +8,7 @@ import lombok.Setter;
 import org.dromara.easyes.annotation.IndexField;
 import org.dromara.easyes.annotation.rely.FieldStrategy;
 import org.dromara.easyes.annotation.rely.FieldType;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 
 import java.lang.reflect.Field;
 import java.util.List;

@@ -2,7 +2,7 @@ package org.dromara.easyes.starter.config;
 
 import lombok.Data;
 import org.dromara.easyes.common.enums.SchemaEnum;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;

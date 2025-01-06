@@ -10,7 +10,7 @@ import org.dromara.easyes.common.utils.TypeUtils;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.core.proxy.EsMapperProxy;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
@@ -25,16 +25,12 @@ import org.noear.solon.Solon;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.BeanBuilder;
 import org.noear.solon.core.BeanWrap;
-import org.noear.solon.core.route.PathRule;
 import org.noear.solon.core.util.ClassUtil;
-import org.noear.solon.core.util.LogUtil;
-import org.noear.solon.core.util.ScanUtil;
 
 import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
