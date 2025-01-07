@@ -2,13 +2,13 @@ package org.dromara.easyes.spring.factory;
 
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
-import org.dromara.easyes.common.utils.Assert;
 import org.dromara.easyes.common.utils.ExceptionUtils;
 import org.dromara.easyes.core.service.AutoProcessIndexService;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,8 +42,10 @@ public class IndexStrategyFactory implements ApplicationContextAware, Initializi
     public void afterPropertiesSet() {
         Map<String, AutoProcessIndexService> beansOfType = this.applicationContext
                 .getBeansOfType(AutoProcessIndexService.class);
-        Assert.isTrue(beansOfType.isEmpty(), "AutoProcessIndexService must have implementation. " +
-                "AutoProcessIndexService接口必须要有索引策略实现。");
+        if (beansOfType.isEmpty()) {
+            throw ExceptionUtils.eee("AutoProcessIndexService must have implementation. " +
+                    "AutoProcessIndexService索引策略接口必须要有实现。");
+        }
         // 是否开启自动托管模式,默认开启
         ProcessIndexStrategyEnum strategy = this.applicationContext.getEnvironment()
                 .getProperty(BaseEsConstants.INDEX_MODE, ProcessIndexStrategyEnum.class, ProcessIndexStrategyEnum.MANUAL);

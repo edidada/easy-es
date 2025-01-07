@@ -10,6 +10,9 @@
 
     <bean id="indexStrategyFactory" class="org.dromara.easyes.spring.factory.IndexStrategyFactory"/>
 
+    <bean id="autoProcessIndexSmoothlyService" class="org.dromara.easyes.spring.index.AutoProcessIndexSmoothlyServiceImpl"/>
+
+    <bean id="autoProcessIndexNotSmoothlyService" class="org.dromara.easyes.spring.index.AutoProcessIndexNotSmoothlyServiceImpl"/>
     <!-- easy-es配置 -->
     <bean id="mapperScannerConfigurer" class="org.dromara.easyes.spring.MapperScannerConfigurer">
         <property name="basePackage" value="org.dromara.easyes.test.mapper"/>
