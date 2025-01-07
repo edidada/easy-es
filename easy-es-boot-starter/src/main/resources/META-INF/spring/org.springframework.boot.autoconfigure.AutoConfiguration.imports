@@ -1,5 +1,1 @@
-org.dromara.easyes.starter.config.EsAutoConfiguration
-org.dromara.easyes.starter.factory.IndexStrategyFactory
-org.dromara.easyes.starter.service.impl.AutoProcessIndexSmoothlyServiceImpl
-org.dromara.easyes.starter.service.impl.AutoProcessIndexNotSmoothlyServiceImpl
-org.dromara.easyes.starter.config.GeneratorConfiguration
+org.dromara.easyes.starter.EsAutoConfiguration

@@ -22,15 +22,13 @@ import java.util.Set;
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
+@Setter
 public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
 
-    @Setter
     private IndexStrategyFactory indexStrategyFactory;
 
-    @Setter
     private RestHighLevelClientUtils restHighLevelClientUtils;
 
-    @Setter
     private GlobalConfig globalConfig;
 
     public ClassPathMapperScanner(BeanDefinitionRegistry registry) {

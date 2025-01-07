@@ -1,8 +1,8 @@
 package org.dromara.easyes.solon.factory;
 
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.utils.ExceptionUtils;
-import org.dromara.easyes.solon.config.EasyEsConfigProperties;
 import org.dromara.easyes.solon.service.AutoProcessIndexService;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
@@ -28,7 +28,7 @@ public class IndexStrategyFactory implements LifecycleBean {
      * 配置
      */
     @Inject
-    private EasyEsConfigProperties esConfigProperties;
+    private EasyEsProperties esConfigProperties;
     /**
      * 预估初始策略工厂容量
      */

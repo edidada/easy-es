@@ -13,7 +13,8 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
-import org.dromara.easyes.spring.property.EasyEsProperty;
+import org.dromara.easyes.common.property.EasyEsDynamicProperties;
+import org.dromara.easyes.common.property.EasyEsProperties;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -57,6 +58,12 @@ public class MapperScannerConfigurer
     @Setter
     private RestHighLevelClientUtils restHighLevelClientUtils;
 
+    @Setter
+    private EasyEsProperties easyEsProperties = new EasyEsProperties();
+
+    @Setter
+    private EasyEsDynamicProperties easyEsDynamicProperties = new EasyEsDynamicProperties();
+
     private ApplicationContext applicationContext;
 
     private String beanName;
@@ -93,19 +100,19 @@ public class MapperScannerConfigurer
         scanner.registerFilters();
         // 索引策略工厂 -- 需要spring 注册bean xml/component 注解方式均可
         scanner.setIndexStrategyFactory(this.indexStrategyFactory);
-        EasyEsProperty easyEsProperty = new EasyEsProperty(this.getEnvironment());
-        scanner.setGlobalConfig(easyEsProperty.getGlobalConfig());
+        scanner.setGlobalConfig(easyEsProperties.getGlobalConfig());
         // easy-es的连接对象注册 需要spring 注册bean xml/component 注解方式均可
         if (this.restHighLevelClientUtils == null) {
             RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
-            Map<String, EasyEsProperty> datasourceMap = easyEsProperty.getDatasource();
+            Map<String, EasyEsProperties> datasourceMap = this.easyEsDynamicProperties.getDatasource();
             if (CollectionUtils.isEmpty(datasourceMap)) {
                 // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-                datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, easyEsProperty);
+                datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, easyEsProperties);
             }
             for (String key : datasourceMap.keySet()) {
-                EasyEsProperty easyEsConfigProperties = datasourceMap.get(key);
-                RestHighLevelClientUtils.registerRestHighLevelClient(key, restHighLevelClient(easyEsConfigProperties));
+                EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
+                RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
+                        .restHighLevelClient(easyEsConfigProperties));
             }
             this.restHighLevelClientUtils = restHighLevelClientUtils;
         }
@@ -232,84 +239,5 @@ public class MapperScannerConfigurer
             System.out.println("----------------------------------------------------------->");
         }
     }
-
-    private Map<String, Object> getDatasource() {
-        String dynamic = this.applicationContext.getEnvironment().getRequiredProperty("easy-es.dynamic");
-        Properties properties = new Properties();
-        Map<String, Object> map = new HashMap<>();
-        try {
-            properties.load(new java.io.StringReader(dynamic));
-            properties.forEach((key, value) -> map.put(key.toString(), value.toString()));
-        } catch (Exception e) {
-            // Handle exception
-        }
-        return map;
-    }
-
-    private static RestHighLevelClient restHighLevelClient(EasyEsProperty easyEsConfigProperties) {
-        // 处理地址
-        String address = easyEsConfigProperties.getAddress();
-        if (StringUtils.isEmpty(address)) {
-            throw ExceptionUtils.eee("please config the es address");
-        }
-        if (!address.contains(COLON)) {
-            throw ExceptionUtils.eee("the address must contains port and separate by ':'");
-        }
-        String schema = StringUtils.isEmpty(easyEsConfigProperties.getSchema())
-                ? DEFAULT_SCHEMA : easyEsConfigProperties.getSchema();
-        List<HttpHost> hostList = new ArrayList<>();
-        Arrays.stream(easyEsConfigProperties.getAddress().split(COMMA))
-                .forEach(item -> hostList.add(new HttpHost(item.split(COLON)[0],
-                        Integer.parseInt(item.split(COLON)[1]), schema)));
-
-        // 转换成 HttpHost 数组
-        HttpHost[] httpHost = hostList.toArray(new HttpHost[]{});
-
-        // 构建连接对象
-        RestClientBuilder builder = RestClient.builder(httpHost);
-        builder.setHttpClientConfigCallback(httpClientBuilder -> {
-            // 设置心跳时间,最大连接数,最大连接路由
-            Optional.ofNullable(easyEsConfigProperties.getKeepAliveMillis()).ifPresent(p -> httpClientBuilder.setKeepAliveStrategy((response, context) -> p));
-            Optional.ofNullable(easyEsConfigProperties.getMaxConnTotal()).ifPresent(httpClientBuilder::setMaxConnTotal);
-            Optional.ofNullable(easyEsConfigProperties.getMaxConnPerRoute()).ifPresent(httpClientBuilder::setMaxConnPerRoute);
-
-            // 设置账号密码
-            String username = easyEsConfigProperties.getUsername();
-            String password = easyEsConfigProperties.getPassword();
-            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
-                final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-                credentialsProvider.setCredentials(AuthScope.ANY,
-                        new UsernamePasswordCredentials(username, password));
-                httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-
-            // https ssl ignore
-            if (SchemaEnum.https.name().equals(schema)) {
-                try {
-                    // 信任所有
-                    SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (TrustStrategy) (chain, authType) -> true).build();
-                    SSLIOSessionStrategy sessionStrategy = new SSLIOSessionStrategy(sslContext, NoopHostnameVerifier.INSTANCE);
-                    httpClientBuilder.disableAuthCaching();
-                    httpClientBuilder.setSSLStrategy(sessionStrategy);
-                } catch (Exception e) {
-                    LogUtils.error("restHighLevelClient build SSLContext exception: %s", e.getMessage());
-                    e.printStackTrace();
-                    throw ExceptionUtils.eee(e);
-                }
-            }
-            return httpClientBuilder;
-        });
-
-        // 设置超时时间之类的
-        builder.setRequestConfigCallback(requestConfigBuilder -> {
-            Optional.ofNullable(easyEsConfigProperties.getConnectTimeout()).ifPresent(requestConfigBuilder::setConnectTimeout);
-            Optional.ofNullable(easyEsConfigProperties.getSocketTimeout()).ifPresent(requestConfigBuilder::setSocketTimeout);
-            Optional.ofNullable(easyEsConfigProperties.getConnectionRequestTimeout())
-                    .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
-            return requestConfigBuilder;
-        });
-        return new RestHighLevelClient(builder);
-    }
-
 
 }

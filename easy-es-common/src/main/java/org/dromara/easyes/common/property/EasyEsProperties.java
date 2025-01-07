@@ -1,11 +1,7 @@
-package org.dromara.easyes.solon.config;
+package org.dromara.easyes.common.property;
 
 import lombok.Data;
 import org.dromara.easyes.common.enums.SchemaEnum;
-import org.dromara.easyes.common.property.GlobalConfig;
-import org.noear.solon.annotation.Condition;
-import org.noear.solon.annotation.Configuration;
-import org.noear.solon.annotation.Inject;
 
 /**
  * easy-es基础配置项
@@ -13,10 +9,8 @@ import org.noear.solon.annotation.Inject;
  * Copyright © 2022 xpc1024 All Rights Reserved
  **/
 @Data
-@Configuration
-@Inject(value = "${easy-es}", autoRefreshed = true)
-@Condition(onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
-public class EasyEsConfigProperties {
+public class EasyEsProperties {
+
     /**
      * 是否开启easy-es 默认开启
      */
@@ -69,4 +63,5 @@ public class EasyEsConfigProperties {
      * global config 全局配置
      */
     private GlobalConfig globalConfig = new GlobalConfig();
+
 }

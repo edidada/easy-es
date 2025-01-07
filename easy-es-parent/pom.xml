@@ -70,6 +70,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.dromara.easy-es</groupId>
+                <artifactId>easy-es-spring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
