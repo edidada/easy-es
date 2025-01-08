@@ -1,18 +1,18 @@
-package org.dromara.easyes.spring;
+package org.dromara.easyes.spring.config;
 
-import lombok.Setter;
 import org.dromara.easyes.annotation.EsDS;
 import org.dromara.easyes.annotation.Intercepts;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.property.EasyEsProperties;
+import org.dromara.easyes.common.property.GlobalConfig;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.common.utils.RestHighLevelClientUtils;
 import org.dromara.easyes.common.utils.TypeUtils;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.proxy.EsMapperProxy;
-import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.InterceptorChain;
@@ -43,15 +43,6 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Setter
-    private IndexStrategyFactory indexStrategyFactory;
-
-    @Setter
-    private GlobalConfig globalConfig;
-
-    @Setter
-    private RestHighLevelClientUtils restHighLevelClientUtils;
-
     public MapperFactoryBean() {
     }
 
@@ -66,13 +57,16 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
 
         // 获取实体类
         Class<?> entityClass = TypeUtils.getInterfaceT(mapperInterface, ZERO);
-
+        EasyEsProperties easyEsProperties = this.applicationContext.getBean(EasyEsProperties.class);
+        GlobalConfig globalConfig = easyEsProperties.getGlobalConfig();
         // 初始化缓存
         GlobalConfigCache.setGlobalConfig(globalConfig);
 
         //获取动态数据源 若未配置多数据源,则使用默认数据源
-        String restHighLevelClientId = Optional.ofNullable(mapperInterface.getAnnotation(EsDS.class)).map(EsDS::value).orElse(DEFAULT_DS);
-        RestHighLevelClient client = restHighLevelClientUtils.getClient(restHighLevelClientId);
+        String restHighLevelClientId = Optional.ofNullable(mapperInterface.getAnnotation(EsDS.class))
+                .map(EsDS::value).orElse(DEFAULT_DS);
+        RestHighLevelClient client = this.applicationContext.getBean(RestHighLevelClientUtils.class)
+                .getClient(restHighLevelClientId);
         BaseCache.initCache(mapperInterface, entityClass, client);
 
         // 创建代理
@@ -87,7 +81,7 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
             EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
             boolean isChild = entityInfo.isChild();
             if (!isChild) {
-                AutoProcessIndexStrategy autoProcessIndexService = indexStrategyFactory
+                AutoProcessIndexStrategy autoProcessIndexService = this.applicationContext.getBean(IndexStrategyFactory.class)
                         .getByStrategyType(globalConfig.getProcessIndexMode().getStrategyType());
                 autoProcessIndexService.processIndexAsync(entityClass, client);
             }

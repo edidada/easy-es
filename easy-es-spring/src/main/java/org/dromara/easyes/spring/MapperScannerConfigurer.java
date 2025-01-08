@@ -1,23 +1,9 @@
 package org.dromara.easyes.spring;
 
 import lombok.Setter;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.dromara.easyes.common.enums.SchemaEnum;
-import org.dromara.easyes.common.utils.*;
-import org.dromara.easyes.spring.factory.IndexStrategyFactory;
-import org.dromara.easyes.common.property.EasyEsDynamicProperties;
-import org.dromara.easyes.common.property.EasyEsProperties;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.dromara.easyes.common.utils.EEVersionUtils;
+import org.dromara.easyes.common.utils.LogUtils;
+import org.dromara.easyes.spring.config.ClassPathMapperScanner;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -36,8 +22,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 
-import javax.net.ssl.SSLContext;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
@@ -51,18 +37,6 @@ public class MapperScannerConfigurer
 
     @Setter
     private String basePackage;
-
-    @Setter
-    private IndexStrategyFactory indexStrategyFactory;
-
-    @Setter
-    private RestHighLevelClientUtils restHighLevelClientUtils;
-
-    @Setter
-    private EasyEsProperties easyEsProperties = new EasyEsProperties();
-
-    @Setter
-    private EasyEsDynamicProperties easyEsDynamicProperties = new EasyEsDynamicProperties();
 
     private ApplicationContext applicationContext;
 
@@ -98,25 +72,6 @@ public class MapperScannerConfigurer
         // 在mybatis中配置了很多扫描拦截属性，这里放到后面拓展
         ClassPathMapperScanner scanner = new ClassPathMapperScanner(beanDefinitionRegistry, getEnvironment());
         scanner.registerFilters();
-        // 索引策略工厂 -- 需要spring 注册bean xml/component 注解方式均可
-        scanner.setIndexStrategyFactory(this.indexStrategyFactory);
-        scanner.setGlobalConfig(easyEsProperties.getGlobalConfig());
-        // easy-es的连接对象注册 需要spring 注册bean xml/component 注解方式均可
-        if (this.restHighLevelClientUtils == null) {
-            RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
-            Map<String, EasyEsProperties> datasourceMap = this.easyEsDynamicProperties.getDatasource();
-            if (CollectionUtils.isEmpty(datasourceMap)) {
-                // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-                datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, easyEsProperties);
-            }
-            for (String key : datasourceMap.keySet()) {
-                EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-                RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
-                        .restHighLevelClient(easyEsConfigProperties));
-            }
-            this.restHighLevelClientUtils = restHighLevelClientUtils;
-        }
-        scanner.setRestHighLevelClientUtils(this.restHighLevelClientUtils);
         scanner.doScan(this.basePackage);
     }
 
@@ -154,8 +109,6 @@ public class MapperScannerConfigurer
     @Override
     public void afterPropertiesSet() throws Exception {
         Assert.notNull(this.basePackage, "Property 'basePackage' is required. mapper扫包路径为必填。");
-        Assert.notNull(this.indexStrategyFactory, "Property 'indexStrategyFactory' is required. " +
-                "请注册索引策略工厂实现。");
     }
 
     @Override

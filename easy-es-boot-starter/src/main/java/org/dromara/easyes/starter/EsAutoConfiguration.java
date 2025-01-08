@@ -1,12 +1,12 @@
 package org.dromara.easyes.starter;
 
-import org.dromara.easyes.common.utils.*;
+import org.dromara.easyes.common.property.EasyEsDynamicProperties;
+import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
+import org.dromara.easyes.common.utils.RestHighLevelClientUtils;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
-import org.dromara.easyes.common.property.EasyEsDynamicProperties;
-import org.dromara.easyes.common.property.EasyEsProperties;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -15,6 +15,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 /**
  * es自动配置
@@ -53,6 +55,22 @@ public class EsAutoConfiguration {
     @Bean
     public IndexStrategyFactory indexStrategyFactory() {
         return new IndexStrategyFactory();
+    }
+
+    @Bean
+    public RestHighLevelClientUtils restHighLevelClientUtils() {
+        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
+        Map<String, EasyEsProperties> datasourceMap = this.easyEsDynamicProperties().getDatasource();
+        if (datasourceMap.isEmpty()) {
+            // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
+            datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, this.easyEsProperties());
+        }
+        for (String key : datasourceMap.keySet()) {
+            EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
+            RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
+                    .restHighLevelClient(easyEsConfigProperties));
+        }
+        return restHighLevelClientUtils;
     }
 
     /**

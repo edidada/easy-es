@@ -1,6 +1,5 @@
 package org.dromara.easyes.spring.annotation;
 
-import org.dromara.easyes.spring.MapperScannerRegister;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;

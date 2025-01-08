@@ -37,7 +37,7 @@
         <fastjson.version>1.2.83</fastjson.version>
         <codec.version>1.13</codec.version>
         <spring-boot.version>2.6.10</spring-boot.version>
-        <spring.version>5.3.22</spring.version>
+        <spring.version>5.3.20</spring.version>
         <solon.version>3.0.5</solon.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     </properties>
@@ -117,22 +117,16 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-beans</artifactId>
                 <version>${spring.version}</version>
-                <scope>provided</scope>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
                 <version>${spring.version}</version>
-                <scope>provided</scope>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-aop</artifactId>
                 <version>${spring.version}</version>
-                <scope>provided</scope>
-                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

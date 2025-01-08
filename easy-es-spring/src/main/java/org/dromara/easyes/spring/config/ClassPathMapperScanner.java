@@ -1,10 +1,6 @@
-package org.dromara.easyes.spring;
+package org.dromara.easyes.spring.config;
 
-import lombok.Setter;
-import org.dromara.easyes.common.utils.RestHighLevelClientUtils;
-import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
-import org.dromara.easyes.spring.factory.IndexStrategyFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -22,14 +18,7 @@ import java.util.Set;
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
-@Setter
 public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
-
-    private IndexStrategyFactory indexStrategyFactory;
-
-    private RestHighLevelClientUtils restHighLevelClientUtils;
-
-    private GlobalConfig globalConfig;
 
     public ClassPathMapperScanner(BeanDefinitionRegistry registry) {
         super(registry, false);
@@ -89,12 +78,6 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
             // but, the actual class of the bean is MapperFactoryBean
             definition.getConstructorArgumentValues().addGenericArgumentValue(beanClassName);
             definition.setBeanClass(MapperFactoryBean.class);
-            // 属性注入
-            definition.getPropertyValues().add("globalConfig", this.globalConfig);
-            // 索引策略工厂注入
-            definition.getPropertyValues().add("indexStrategyFactory", this.indexStrategyFactory);
-            // easy-es client连接工具类
-            definition.getPropertyValues().add("restHighLevelClientUtils", this.restHighLevelClientUtils);
             logger.debug("Enabling autowire by type for MapperFactoryBean with name '" + holder.getBeanName() + "'.");
             definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
         }

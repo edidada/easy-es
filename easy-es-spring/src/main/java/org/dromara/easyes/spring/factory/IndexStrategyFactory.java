@@ -42,8 +42,8 @@ public class IndexStrategyFactory implements ApplicationContextAware, Initializi
         Map<String, AutoProcessIndexStrategy> beansOfType = this.applicationContext
                 .getBeansOfType(AutoProcessIndexStrategy.class);
         if (beansOfType.isEmpty()) {
-            throw ExceptionUtils.eee("AutoProcessIndexService must have implementation. " +
-                    "AutoProcessIndexService索引策略接口必须要有实现。");
+            throw ExceptionUtils.eee("AutoProcessIndexStrategy must have implementation. " +
+                    "AutoProcessIndexStrategy索引策略接口必须要有实现并注册到容器。");
         }
         // 是否开启自动托管模式,默认开启
         ProcessIndexStrategyEnum strategy = this.applicationContext.getEnvironment()

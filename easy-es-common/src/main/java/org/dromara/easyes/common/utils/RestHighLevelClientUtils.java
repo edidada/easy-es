@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
-import static org.dromara.easyes.common.constants.BaseEsConstants.COLON;
 
 /**
  * @author lyy
