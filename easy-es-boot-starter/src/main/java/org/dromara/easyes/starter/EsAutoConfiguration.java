@@ -56,7 +56,7 @@ public class EsAutoConfiguration {
     }
 
     /**
-     * 索引
+     * 索引策略注册
      * @return {@link AutoProcessIndexStrategy}
      * @author MoJie
      */

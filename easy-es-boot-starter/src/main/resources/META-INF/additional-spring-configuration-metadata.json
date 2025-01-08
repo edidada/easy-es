@@ -85,10 +85,10 @@
             "type": "java.lang.Integer"
         },
         {
-            "defaultValue": 72,
+            "defaultValue": true,
             "name": "easy-es.global-config.async-process-index-blocking",
             "description": "process index blocking main thread true by default 异步处理索引是否阻塞主线程 默认阻塞.",
-            "type": "java.lang.Integer"
+            "type": "java.lang.Boolean"
         },
         {
             "defaultValue": true,
