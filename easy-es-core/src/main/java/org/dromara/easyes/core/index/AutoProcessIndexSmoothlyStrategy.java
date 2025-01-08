@@ -1,16 +1,14 @@
-package org.dromara.easyes.solon.service.impl;
+package org.dromara.easyes.core.index;
 
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.core.biz.CreateIndexParam;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.IndexUtils;
-import org.dromara.easyes.solon.service.AutoProcessIndexService;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.noear.solon.annotation.Component;
-import org.noear.solon.annotation.Condition;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.S1_SUFFIX;
 import static org.dromara.easyes.common.constants.BaseEsConstants.SO_SUFFIX;
@@ -20,9 +18,8 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.SO_SUFFIX;
  * <p>
  * Copyright © 2022 xpc1024 All Rights Reserved
  **/
-@Component
-@Condition(onBean = RestHighLevelClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
-public class AutoProcessIndexSmoothlyServiceImpl implements AutoProcessIndexService {
+public class AutoProcessIndexSmoothlyStrategy implements AutoProcessIndexStrategy {
+
     @Override
     public Integer getStrategyType() {
         return ProcessIndexStrategyEnum.SMOOTHLY.getStrategyType();
@@ -33,7 +30,6 @@ public class AutoProcessIndexSmoothlyServiceImpl implements AutoProcessIndexServ
         LogUtils.info("===> Smoothly process index mode activated");
         IndexUtils.supplyAsync(this::process, entityClass, client);
     }
-
 
     private synchronized boolean process(Class<?> entityClass, RestHighLevelClient client) {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);

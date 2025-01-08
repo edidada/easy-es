@@ -3,12 +3,11 @@ package org.dromara.easyes.spring.factory;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
 import org.dromara.easyes.common.utils.ExceptionUtils;
-import org.dromara.easyes.core.service.AutoProcessIndexService;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class IndexStrategyFactory implements ApplicationContextAware, Initializi
     /**
      * 策略容器
      */
-    private static final Map<Integer, AutoProcessIndexService> SERVICE_MAP = new HashMap<>(DEFAULT_SIZE);
+    private static final Map<Integer, AutoProcessIndexStrategy> SERVICE_MAP = new HashMap<>(DEFAULT_SIZE);
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -40,8 +39,8 @@ public class IndexStrategyFactory implements ApplicationContextAware, Initializi
 
     @Override
     public void afterPropertiesSet() {
-        Map<String, AutoProcessIndexService> beansOfType = this.applicationContext
-                .getBeansOfType(AutoProcessIndexService.class);
+        Map<String, AutoProcessIndexStrategy> beansOfType = this.applicationContext
+                .getBeansOfType(AutoProcessIndexStrategy.class);
         if (beansOfType.isEmpty()) {
             throw ExceptionUtils.eee("AutoProcessIndexService must have implementation. " +
                     "AutoProcessIndexService索引策略接口必须要有实现。");
@@ -55,7 +54,7 @@ public class IndexStrategyFactory implements ApplicationContextAware, Initializi
         }
     }
 
-    public AutoProcessIndexService getByStrategyType(Integer strategyType) {
+    public AutoProcessIndexStrategy getByStrategyType(Integer strategyType) {
         return Optional.ofNullable(SERVICE_MAP.get(strategyType))
                 .orElseThrow(() -> ExceptionUtils.eee("no such service strategyType:{}", strategyType));
     }

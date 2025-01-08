@@ -2,7 +2,10 @@ package org.dromara.easyes.solon.config;
 
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.*;
+import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
+import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Condition;
@@ -58,6 +61,16 @@ public class EsAutoConfiguration {
                     .restHighLevelClient(easyEsConfigProperties));
         }
         return restHighLevelClientUtils;
+    }
+
+    @Bean
+    public AutoProcessIndexStrategy autoProcessIndexSmoothlyStrategy() {
+        return new AutoProcessIndexSmoothlyStrategy();
+    }
+
+    @Bean
+    public AutoProcessIndexStrategy autoProcessIndexNotSmoothlyStrategy() {
+        return new AutoProcessIndexNotSmoothlyStrategy();
     }
 
 }

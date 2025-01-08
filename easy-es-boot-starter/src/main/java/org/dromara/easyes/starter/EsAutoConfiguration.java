@@ -1,24 +1,12 @@
 package org.dromara.easyes.starter;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.utils.*;
-import org.dromara.easyes.core.service.AutoProcessIndexService;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
+import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
+import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
-import org.dromara.easyes.spring.index.AutoProcessIndexNotSmoothlyServiceImpl;
-import org.dromara.easyes.spring.index.AutoProcessIndexSmoothlyServiceImpl;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -27,11 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import javax.net.ssl.SSLContext;
-import java.util.*;
-
-import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
 /**
  * es自动配置
@@ -72,14 +55,19 @@ public class EsAutoConfiguration {
         return new IndexStrategyFactory();
     }
 
+    /**
+     * 索引
+     * @return {@link AutoProcessIndexStrategy}
+     * @author MoJie
+     */
     @Bean
-    public AutoProcessIndexService autoProcessIndexSmoothlyServiceImpl() {
-        return new AutoProcessIndexSmoothlyServiceImpl();
+    public AutoProcessIndexStrategy autoProcessIndexSmoothlyStrategy() {
+        return new AutoProcessIndexSmoothlyStrategy();
     }
 
     @Bean
-    public AutoProcessIndexService autoProcessIndexNotSmoothlyServiceImpl() {
-        return new AutoProcessIndexNotSmoothlyServiceImpl();
+    public AutoProcessIndexStrategy autoProcessIndexNotSmoothlyStrategy() {
+        return new AutoProcessIndexNotSmoothlyStrategy();
     }
 
 }

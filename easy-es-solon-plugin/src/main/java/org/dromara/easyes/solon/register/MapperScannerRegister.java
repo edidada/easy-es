@@ -14,12 +14,12 @@ import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.core.proxy.EsMapperProxy;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.InterceptorChain;
 import org.dromara.easyes.extension.context.InterceptorChainHolder;
 import org.dromara.easyes.solon.factory.IndexStrategyFactory;
-import org.dromara.easyes.solon.service.AutoProcessIndexService;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
 import org.noear.solon.core.AppContext;
@@ -161,7 +161,7 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
             boolean isChild = entityInfo.isChild();
             if (!isChild) {
                 IndexStrategyFactory indexStrategyFactory = context.getBeanOrNew(IndexStrategyFactory.class);
-                AutoProcessIndexService autoProcessIndexService = indexStrategyFactory
+                AutoProcessIndexStrategy autoProcessIndexService = indexStrategyFactory
                         .getByStrategyType(globalConfig.getProcessIndexMode().getStrategyType());
                 autoProcessIndexService.processIndexAsync(entityClass, client);
             }
