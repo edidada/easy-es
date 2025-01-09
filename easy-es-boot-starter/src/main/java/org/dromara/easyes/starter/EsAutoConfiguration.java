@@ -52,40 +52,4 @@ public class EsAutoConfiguration {
         return new EasyEsDynamicProperties();
     }
 
-    @Bean
-    public IndexStrategyFactory indexStrategyFactory() {
-        return new IndexStrategyFactory();
-    }
-
-    @Bean
-    public RestHighLevelClientUtils restHighLevelClientUtils() {
-        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
-        Map<String, EasyEsProperties> datasourceMap = this.easyEsDynamicProperties().getDatasource();
-        if (datasourceMap.isEmpty()) {
-            // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-            datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, this.easyEsProperties());
-        }
-        for (String key : datasourceMap.keySet()) {
-            EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-            RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
-                    .restHighLevelClient(easyEsConfigProperties));
-        }
-        return restHighLevelClientUtils;
-    }
-
-    /**
-     * 索引策略注册
-     * @return {@link AutoProcessIndexStrategy}
-     * @author MoJie
-     */
-    @Bean
-    public AutoProcessIndexStrategy autoProcessIndexSmoothlyStrategy() {
-        return new AutoProcessIndexSmoothlyStrategy();
-    }
-
-    @Bean
-    public AutoProcessIndexStrategy autoProcessIndexNotSmoothlyStrategy() {
-        return new AutoProcessIndexNotSmoothlyStrategy();
-    }
-
 }

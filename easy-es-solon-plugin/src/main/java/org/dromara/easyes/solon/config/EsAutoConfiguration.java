@@ -31,7 +31,10 @@ public class EsAutoConfiguration {
 
     @Bean
     public EasyEsDynamicProperties easyEsDynamicProperties(
-            @Inject(value = "${easy-es.dynamic}", autoRefreshed = true) EasyEsDynamicProperties dynamicProperties) {
+            @Inject(value = "${easy-es.dynamic:}", autoRefreshed = true) EasyEsDynamicProperties dynamicProperties) {
+        if (dynamicProperties == null) {
+            return new EasyEsDynamicProperties();
+        }
         return dynamicProperties;
     }
 

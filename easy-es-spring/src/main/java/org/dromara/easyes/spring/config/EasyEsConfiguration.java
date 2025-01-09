@@ -9,6 +9,7 @@ import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.Assert;
@@ -26,6 +27,12 @@ public class EasyEsConfiguration implements InitializingBean {
     private EasyEsProperties easyEsProperties;
 
     private EasyEsDynamicProperties easyEsDynamicProperties;
+
+    @Autowired
+    public EasyEsConfiguration(EasyEsProperties easyEsProperties, EasyEsDynamicProperties easyEsDynamicProperties) {
+        this.easyEsProperties = easyEsProperties;
+        this.easyEsDynamicProperties = easyEsDynamicProperties;
+    }
 
     @Override
     public void afterPropertiesSet() throws Exception {
