@@ -61,7 +61,7 @@ public class FieldUtils {
             Method method = func.getClass().getDeclaredMethod("writeReplace");
             method.setAccessible(Boolean.TRUE);
             // 利用jdk的SerializedLambda 解析方法引用
-            java.lang.invoke.SerializedLambda serializedLambda = (SerializedLambda) method.invoke(func);
+            SerializedLambda serializedLambda = (SerializedLambda) method.invoke(func);
             String getter = serializedLambda.getImplMethodName();
             return resolveFieldName(getter);
         } catch (ReflectiveOperationException e) {

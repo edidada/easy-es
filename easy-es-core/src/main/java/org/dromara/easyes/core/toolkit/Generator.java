@@ -6,8 +6,6 @@ import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.config.GeneratorConfig;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 
@@ -18,8 +16,7 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.ZERO;
  *
  * @author hwy
  **/
-@Component
-public class Generator {
+public abstract class Generator {
     private final static String PROPERTIES = "properties";
     private final static String TYPE = "type";
 
@@ -30,16 +27,7 @@ public class Generator {
 
     private final static Set<String> SKIP_TYPE = new HashSet<>(Arrays.asList("join"));
 
-    @Autowired
-    private RestHighLevelClient client;
-
-    public Boolean generate(GeneratorConfig config) {
-        // generateEntityClass
-        generateEntity(config);
-
-        // TODO generate others in future
-        return Boolean.TRUE;
-    }
+    public abstract Boolean generate(GeneratorConfig config);
 
     /**
      * generate model entity 生成实体类
@@ -47,8 +35,7 @@ public class Generator {
      * @param config 配置
      */
     @SneakyThrows
-
-    private void generateEntity(GeneratorConfig config) {
+    public void generateEntity(GeneratorConfig config, RestHighLevelClient client) {
         // get index info
         EsIndexInfo esIndexInfo = IndexUtils.getIndexInfo(client, config.getIndexName());
         Map<String, Object> mapping = esIndexInfo.getMapping();

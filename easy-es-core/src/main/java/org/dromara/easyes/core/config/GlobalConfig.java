@@ -6,7 +6,6 @@ import org.dromara.easyes.annotation.rely.FieldStrategy;
 import org.dromara.easyes.annotation.rely.IdType;
 import org.dromara.easyes.annotation.rely.RefreshPolicy;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.EMPTY_STR;
 
@@ -54,7 +53,6 @@ public class GlobalConfig {
     /**
      * es db config 数据库配置
      */
-    @NestedConfigurationProperty
     private DbConfig dbConfig = new DbConfig();
 
     /**
