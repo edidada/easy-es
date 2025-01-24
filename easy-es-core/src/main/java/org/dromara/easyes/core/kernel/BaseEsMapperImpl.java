@@ -61,6 +61,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+import org.elasticsearch.search.sort.SortBuilder;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -272,7 +273,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // searchAfter必须要进行排序，不排序无法进行分页
         boolean notSort = CollectionUtils.isEmpty(wrapper.baseSortParams) && CollectionUtils.isEmpty(wrapper.orderByParams);
         if (notSort) {
-            throw ExceptionUtils.eee("sortParamList cannot be empty");
+            // 混合查询中 排序
+            List<SortBuilder<?>> sorts = Objects.nonNull(wrapper.searchSourceBuilder) ? wrapper.searchSourceBuilder.sorts() : new ArrayList<>();
+            if (CollectionUtils.isEmpty(sorts)) {
+                throw ExceptionUtils.eee("sortParamList cannot be empty");
+            }
         }
 
         // 兼容分页参数
