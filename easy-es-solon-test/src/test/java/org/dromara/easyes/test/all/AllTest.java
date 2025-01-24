@@ -49,7 +49,6 @@ import java.util.*;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.KEYWORD_SUFFIX;
 
-
 /**
  * 全部核心功能测试-除手动挡索引相关API
  * 提交PR前 须确保以下所有自动化单元测试全部跑通

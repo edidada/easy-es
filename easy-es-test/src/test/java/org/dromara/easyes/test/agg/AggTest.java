@@ -1,6 +1,5 @@
 package org.dromara.easyes.test.agg;
 
-
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;

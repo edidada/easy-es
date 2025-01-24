@@ -1,29 +1,18 @@
 package org.dromara.easyes.solon.config;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.dromara.easyes.common.enums.SchemaEnum;
+import org.dromara.easyes.common.property.EasyEsDynamicProperties;
+import org.dromara.easyes.common.property.EasyEsProperties;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.*;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
+import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
+import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Configuration;
 import org.noear.solon.annotation.Inject;
 
-import javax.net.ssl.SSLContext;
 import java.util.*;
-
-import static org.dromara.easyes.common.constants.BaseEsConstants.*;
-import static org.dromara.easyes.common.utils.RestHighLevelClientUtils.DEFAULT_DS;
 
 /**
  * es自动配置
@@ -34,10 +23,20 @@ import static org.dromara.easyes.common.utils.RestHighLevelClientUtils.DEFAULT_D
 @Condition(onClass = RestHighLevelClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
 public class EsAutoConfiguration {
 
-    @Inject
-    private EasyEsConfigProperties easyEsConfigProperties;
-    @Inject
-    private DynamicEsProperties dynamicEsProperties;
+    @Bean
+    public EasyEsProperties easyEsProperties(
+            @Inject(value = "${easy-es}", autoRefreshed = true) EasyEsProperties properties) {
+        return properties;
+    }
+
+    @Bean
+    public EasyEsDynamicProperties easyEsDynamicProperties(
+            @Inject(value = "${easy-es.dynamic:}", autoRefreshed = true) EasyEsDynamicProperties dynamicProperties) {
+        if (dynamicProperties == null) {
+            return new EasyEsDynamicProperties();
+        }
+        return dynamicProperties;
+    }
 
     /**
      * 装配RestHighLevelClient
@@ -46,88 +45,35 @@ public class EsAutoConfiguration {
      */
     @Bean
     @Condition(onMissingBean = RestHighLevelClient.class)
-    public RestHighLevelClient restHighLevelClient() {
-        return restHighLevelClient(easyEsConfigProperties);
+    public RestHighLevelClient restHighLevelClient(EasyEsProperties easyEsProperties) {
+        return RestHighLevelClientUtils.restHighLevelClient(easyEsProperties);
     }
 
     @Bean
-    public RestHighLevelClientUtils restHighLevelClientUtils() {
+    public RestHighLevelClientUtils restHighLevelClientUtils(
+            EasyEsProperties properties, EasyEsDynamicProperties dynamicProperties) {
         RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
-        Map<String, EasyEsConfigProperties> datasourceMap = dynamicEsProperties.getDatasource();
+        Map<String, EasyEsProperties> datasourceMap = dynamicProperties.getDatasource();
         if (CollectionUtils.isEmpty(datasourceMap)) {
             // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-            datasourceMap.put(DEFAULT_DS, easyEsConfigProperties);
+            datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, properties);
         }
         for (String key : datasourceMap.keySet()) {
-            EasyEsConfigProperties easyEsConfigProperties = datasourceMap.get(key);
-            RestHighLevelClientUtils.registerRestHighLevelClient(key, restHighLevelClient(easyEsConfigProperties));
+            EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
+            RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
+                    .restHighLevelClient(easyEsConfigProperties));
         }
         return restHighLevelClientUtils;
     }
 
+    @Bean
+    public AutoProcessIndexStrategy autoProcessIndexSmoothlyStrategy() {
+        return new AutoProcessIndexSmoothlyStrategy();
+    }
 
-    private RestHighLevelClient restHighLevelClient(EasyEsConfigProperties easyEsConfigProperties) {
-        // 处理地址
-        String address = easyEsConfigProperties.getAddress();
-        if (StringUtils.isEmpty(address)) {
-            throw ExceptionUtils.eee("please config the es address");
-        }
-        if (!address.contains(COLON)) {
-            throw ExceptionUtils.eee("the address must contains port and separate by ':'");
-        }
-        String schema = StringUtils.isEmpty(easyEsConfigProperties.getSchema())
-                ? DEFAULT_SCHEMA : easyEsConfigProperties.getSchema();
-        List<HttpHost> hostList = new ArrayList<>();
-        Arrays.stream(easyEsConfigProperties.getAddress().split(COMMA))
-                .forEach(item -> hostList.add(new HttpHost(item.split(COLON)[0],
-                        Integer.parseInt(item.split(COLON)[1]), schema)));
-
-        // 转换成 HttpHost 数组
-        HttpHost[] httpHost = hostList.toArray(new HttpHost[]{});
-
-        // 构建连接对象
-        RestClientBuilder builder = RestClient.builder(httpHost);
-        builder.setHttpClientConfigCallback(httpClientBuilder -> {
-            // 设置心跳时间,最大连接数,最大连接路由
-            Optional.ofNullable(easyEsConfigProperties.getKeepAliveMillis()).ifPresent(p -> httpClientBuilder.setKeepAliveStrategy((response, context) -> p));
-            Optional.ofNullable(easyEsConfigProperties.getMaxConnTotal()).ifPresent(httpClientBuilder::setMaxConnTotal);
-            Optional.ofNullable(easyEsConfigProperties.getMaxConnPerRoute()).ifPresent(httpClientBuilder::setMaxConnPerRoute);
-
-            // 设置账号密码
-            String username = easyEsConfigProperties.getUsername();
-            String password = easyEsConfigProperties.getPassword();
-            if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
-                final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-                credentialsProvider.setCredentials(AuthScope.ANY,
-                        new UsernamePasswordCredentials(username, password));
-                httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            }
-
-            // https ssl ignore
-            if (SchemaEnum.https.name().equals(schema)) {
-                try {
-                    // 信任所有
-                    SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (TrustStrategy) (chain, authType) -> true).build();
-                    SSLIOSessionStrategy sessionStrategy = new SSLIOSessionStrategy(sslContext, NoopHostnameVerifier.INSTANCE);
-                    httpClientBuilder.disableAuthCaching();
-                    httpClientBuilder.setSSLStrategy(sessionStrategy);
-                } catch (Exception e) {
-                    LogUtils.error("restHighLevelClient build SSLContext exception: %s", e.getMessage());
-                    throw ExceptionUtils.eee(e);
-                }
-            }
-            return httpClientBuilder;
-        });
-
-        // 设置超时时间之类的
-        builder.setRequestConfigCallback(requestConfigBuilder -> {
-            Optional.ofNullable(easyEsConfigProperties.getConnectTimeout()).ifPresent(requestConfigBuilder::setConnectTimeout);
-            Optional.ofNullable(easyEsConfigProperties.getSocketTimeout()).ifPresent(requestConfigBuilder::setSocketTimeout);
-            Optional.ofNullable(easyEsConfigProperties.getConnectionRequestTimeout())
-                    .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
-            return requestConfigBuilder;
-        });
-        return new RestHighLevelClient(builder);
+    @Bean
+    public AutoProcessIndexStrategy autoProcessIndexNotSmoothlyStrategy() {
+        return new AutoProcessIndexNotSmoothlyStrategy();
     }
 
 }

@@ -1,9 +1,9 @@
 package org.dromara.easyes.solon.factory;
 
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.utils.ExceptionUtils;
-import org.dromara.easyes.solon.config.EasyEsConfigProperties;
-import org.dromara.easyes.solon.service.AutoProcessIndexService;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
 import org.noear.solon.annotation.Component;
@@ -28,7 +28,7 @@ public class IndexStrategyFactory implements LifecycleBean {
      * 配置
      */
     @Inject
-    private EasyEsConfigProperties esConfigProperties;
+    private EasyEsProperties esConfigProperties;
     /**
      * 预估初始策略工厂容量
      */
@@ -36,7 +36,7 @@ public class IndexStrategyFactory implements LifecycleBean {
     /**
      * 策略容器
      */
-    private static final Map<Integer, AutoProcessIndexService> SERVICE_MAP = new HashMap<>(DEFAULT_SIZE);
+    private static final Map<Integer, AutoProcessIndexStrategy> SERVICE_MAP = new HashMap<>(DEFAULT_SIZE);
 
     /**
      * bean初始化完成后执行
@@ -47,13 +47,13 @@ public class IndexStrategyFactory implements LifecycleBean {
         // 是否开启自动托管模式,默认开启
         if (!ProcessIndexStrategyEnum.MANUAL.equals(esConfigProperties.getGlobalConfig().getProcessIndexMode())) {
             // 将bean注册进工厂
-            Solon.context().getBeansMapOfType(AutoProcessIndexService.class)
+            Solon.context().getBeansMapOfType(AutoProcessIndexStrategy.class)
                     .values()
                     .forEach(v -> SERVICE_MAP.putIfAbsent(v.getStrategyType(), v));
         }
     }
 
-    public AutoProcessIndexService getByStrategyType(Integer strategyType) {
+    public AutoProcessIndexStrategy getByStrategyType(Integer strategyType) {
         return Optional.ofNullable(SERVICE_MAP.get(strategyType))
                 .orElseThrow(() -> ExceptionUtils.eee("no such service strategyType:{}", strategyType));
 

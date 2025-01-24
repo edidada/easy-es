@@ -5,7 +5,7 @@ import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.params.SFunction;
 import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

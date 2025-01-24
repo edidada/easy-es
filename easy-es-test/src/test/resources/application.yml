@@ -1,6 +1,6 @@
 easy-es:
   #  enable: true
-  address: 10.18.2.45:9200
+  address: 127.0.0.1:9200
   #  schema: http
   #  username: elastic
   #  password: WG7WVmuNMtM4GwNYkyWH
@@ -25,7 +25,6 @@ easy-es:
 #        address: 10.18.2.45:9200 # 数据源2
         #username: '若无可去掉此行'
         #password: '若无可去掉此行'
-
 #logging:
 #  level:
 #   tracer: trace

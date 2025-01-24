@@ -3,6 +3,7 @@ package org.dromara.easyes.solon.register;
 import org.dromara.easyes.annotation.EsDS;
 import org.dromara.easyes.annotation.Intercepts;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.utils.EEVersionUtils;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.common.utils.RestHighLevelClientUtils;
@@ -10,31 +11,26 @@ import org.dromara.easyes.common.utils.TypeUtils;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.config.GlobalConfig;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.core.proxy.EsMapperProxy;
+import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.InterceptorChain;
 import org.dromara.easyes.extension.context.InterceptorChainHolder;
-import org.dromara.easyes.solon.config.EasyEsConfigProperties;
 import org.dromara.easyes.solon.factory.IndexStrategyFactory;
-import org.dromara.easyes.solon.service.AutoProcessIndexService;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.BeanBuilder;
 import org.noear.solon.core.BeanWrap;
-import org.noear.solon.core.route.PathRule;
 import org.noear.solon.core.util.ClassUtil;
-import org.noear.solon.core.util.LogUtil;
-import org.noear.solon.core.util.ScanUtil;
 
 import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
@@ -120,13 +116,16 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
             System.out.println("----------------------------------------------------------->");
         }
         // 查找es mapper
-        Collection<Class<?>> classPath = ClassUtil.scanClasses(anno.value());
-        for (Class<?> clazz : classPath) {
-            // 跳过非ee的mapper,比如瞎几把写的接口,没有继承BaseEsMapper，继承了的推入容器
-            if (BaseEsMapper.class.isAssignableFrom(clazz)) {
-                this.beanWrapPut(clazz);
+        for (String doScan : anno.value()) {
+            Collection<Class<?>> classPath = ClassUtil.scanClasses(doScan);
+            for (Class<?> clazz : classPath) {
+                // 跳过非ee的mapper,比如瞎几把写的接口,没有继承BaseEsMapper，继承了的推入容器
+                if (BaseEsMapper.class.isAssignableFrom(clazz)) {
+                    this.beanWrapPut(clazz);
+                }
             }
         }
+
     }
 
     /**
@@ -135,7 +134,7 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
      * @author MoJie
      */
     private void beanWrapPut(Class<?> clazz) {
-        EasyEsConfigProperties esConfigProperties = context.getBean(EasyEsConfigProperties.class);
+        EasyEsProperties esConfigProperties = context.getBean(EasyEsProperties.class);
         RestHighLevelClientUtils restHighLevelClientUtils = context.getBeanOrNew(RestHighLevelClientUtils.class);
         EsMapperProxy<?> esMapperProxy = new EsMapperProxy<>(clazz, new ConcurrentHashMap<>());
         // 获取实体类
@@ -162,7 +161,7 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
             boolean isChild = entityInfo.isChild();
             if (!isChild) {
                 IndexStrategyFactory indexStrategyFactory = context.getBeanOrNew(IndexStrategyFactory.class);
-                AutoProcessIndexService autoProcessIndexService = indexStrategyFactory
+                AutoProcessIndexStrategy autoProcessIndexService = indexStrategyFactory
                         .getByStrategyType(globalConfig.getProcessIndexMode().getStrategyType());
                 autoProcessIndexService.processIndexAsync(entityClass, client);
             }
