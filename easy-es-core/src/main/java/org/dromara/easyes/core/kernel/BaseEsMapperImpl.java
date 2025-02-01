@@ -16,11 +16,11 @@ import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.enums.MethodEnum;
 import org.dromara.easyes.common.enums.OrderTypeEnum;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.core.toolkit.IndexUtils;
@@ -49,7 +49,6 @@ import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.text.Text;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -62,6 +61,7 @@ import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -274,7 +274,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         boolean notSort = CollectionUtils.isEmpty(wrapper.baseSortParams) && CollectionUtils.isEmpty(wrapper.orderByParams);
         if (notSort) {
             // 混合查询中 排序
-            List<SortBuilder<?>> sorts = Objects.nonNull(wrapper.searchSourceBuilder) ? wrapper.searchSourceBuilder.sorts() : new ArrayList<>();
+            List<SortBuilder<?>> sorts = Objects.nonNull(wrapper.searchSourceBuilder) ? wrapper.searchSourceBuilder.sorts() : Collections.emptyList();
             if (CollectionUtils.isEmpty(sorts)) {
                 throw ExceptionUtils.eee("sortParamList cannot be empty");
             }

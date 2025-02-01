@@ -9,10 +9,10 @@ import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.JdkDataTypeEnum;
 import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.common.property.GlobalConfig;
 import org.elasticsearch.action.admin.indices.alias.Alias;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -28,12 +28,12 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ReindexRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.util.*;
@@ -81,6 +81,15 @@ public class IndexUtils {
      */
     private static final String DIMS_KEY;
     /**
+     * 是否索引
+     */
+    private static final String INDEX_KEY;
+    /**
+     * 复制索引字段名
+     */
+    private static final String COPY_TO_KEY;
+
+    /**
      * 急切全局系数,join父子类型默认字段
      */
     private static final String EAGER_GLOBAL_ORDINALS;
@@ -93,6 +102,8 @@ public class IndexUtils {
         LOWERCASE = "lowercase";
         DIMS_KEY = "dims";
         EAGER_GLOBAL_ORDINALS = "eager_global_ordinals";
+        INDEX_KEY = "index";
+        COPY_TO_KEY = "copy_to";
     }
 
     /**
@@ -486,6 +497,16 @@ public class IndexUtils {
 
             // 设置权重
             Optional.ofNullable(indexParam.getBoost()).ifPresent(boost -> info.put(BOOST_KEY, indexParam.getBoost()));
+
+            // 是否索引
+            if (!indexParam.isIndex()) {
+                info.put(INDEX_KEY, indexParam.isIndex());
+            }
+
+            // 复制
+            if (StringUtils.isNotBlank(indexParam.getCopyTo())) {
+                info.put(COPY_TO_KEY, indexParam.getCopyTo());
+            }
 
             // 设置嵌套类型
             if (FieldType.NESTED.getType().equals(indexParam.getFieldType())) {

@@ -63,6 +63,14 @@ public class EsIndexParam {
      * 字段最大索引长度 默认256
      */
     private Integer ignoreAbove;
+    /**
+     * 是否索引
+     */
+    private boolean index;
+    /**
+     * 复制属性
+     */
+    private String copyTo;
 
     /**
      * 内部字段列表
