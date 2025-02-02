@@ -34,13 +34,6 @@ public @interface IndexField {
     boolean exist() default true;
 
     /**
-     * 是否参与搜索，考虑到文档的部分字段，在有些场景下，不参与搜索，只做展示
-     *
-     * @return 是否设置可聚合
-     */
-    boolean index() default true;
-
-    /**
      * 用于将多个字段的值复制到一个新的字段中，以便在查询时可以简化查询语句，提高检索效率
      *
      * @return 复制当前字段至指定字段中

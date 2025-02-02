@@ -81,10 +81,6 @@ public class IndexUtils {
      */
     private static final String DIMS_KEY;
     /**
-     * 是否索引
-     */
-    private static final String INDEX_KEY;
-    /**
      * 复制索引字段名
      */
     private static final String COPY_TO_KEY;
@@ -102,7 +98,6 @@ public class IndexUtils {
         LOWERCASE = "lowercase";
         DIMS_KEY = "dims";
         EAGER_GLOBAL_ORDINALS = "eager_global_ordinals";
-        INDEX_KEY = "index";
         COPY_TO_KEY = "copy_to";
     }
 
@@ -497,11 +492,6 @@ public class IndexUtils {
 
             // 设置权重
             Optional.ofNullable(indexParam.getBoost()).ifPresent(boost -> info.put(BOOST_KEY, indexParam.getBoost()));
-
-            // 是否索引
-            if (!indexParam.isIndex()) {
-                info.put(INDEX_KEY, indexParam.isIndex());
-            }
 
             // 复制
             if (StringUtils.isNotBlank(indexParam.getCopyTo())) {

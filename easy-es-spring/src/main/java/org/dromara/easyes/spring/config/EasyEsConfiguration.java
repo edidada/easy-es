@@ -65,6 +65,7 @@ public class EasyEsConfiguration implements InitializingBean {
 
     /**
      * 索引策略注册
+     *
      * @return {@link AutoProcessIndexStrategy}
      * @author MoJie
      */
