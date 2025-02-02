@@ -118,8 +118,7 @@ public class EntityInfoHelper {
         }
         boolean camelCase = globalConfig.getDbConfig().isMapUnderscoreToCamelCase();
         String joinFieldName = camelToUnderline(JoinField.class.getSimpleName(), camelCase);
-        entityInfo.setJoinFieldName(StringUtils.isBlank(join.joinField()) ? joinFieldName : join.joinField());
-
+        entityInfo.setJoinFieldName(joinFieldName);
         String joinAlias = StringUtils.isBlank(join.rootAlias()) ? clazz.getSimpleName() : join.rootAlias();
         String underlineJoinAlias = camelToUnderline(joinAlias, camelCase);
         entityInfo.setJoinAlias(underlineJoinAlias);

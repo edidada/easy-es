@@ -13,10 +13,10 @@
 
     <modules>
         <module>easy-es-parent</module>
-        <module>easy-es-sample</module>
         <module>easy-es-solon-test</module>
         <module>easy-es-spring-test</module>
-        <module>easy-es-test</module>
+        <module>easy-es-springboot-sample</module>
+        <module>easy-es-springboot-test</module>
 
     </modules>
 
@@ -35,7 +35,7 @@
             </dependency>
             <dependency>
                 <groupId>org.dromara.easy-es</groupId>
-                <artifactId>easy-es-solon-plugin</artifactId>
+                <artifactId>easy-es-solon</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

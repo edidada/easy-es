@@ -7,7 +7,7 @@
         <relativePath>../easy-es-parent</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>easy-es-solon-plugin</artifactId>
+    <artifactId>easy-es-solon</artifactId>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
