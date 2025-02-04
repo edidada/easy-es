@@ -15,7 +15,7 @@ import org.noear.solon.core.Plugin;
  * @author MoJie
  * @since 2.0
  */
-public class XPluginImp implements Plugin {
+public class EasyEsSolonPlugin implements Plugin {
 
     @Override
     public void start(AppContext context) throws Throwable {
