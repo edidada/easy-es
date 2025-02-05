@@ -25,7 +25,7 @@
         <module>../easy-es-extension</module>
         <module>../easy-es-annotation</module>
         <module>../easy-es-common</module>
-        <module>../easy-es-solon</module>
+        <module>../easy-es-solon-plugin</module>
         <module>../easy-es-spring</module>
     </modules>
 
