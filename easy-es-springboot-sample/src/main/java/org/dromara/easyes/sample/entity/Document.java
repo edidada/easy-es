@@ -38,7 +38,7 @@ public class Document {
     /**
      * 作者 加@TableField注解,并指明strategy = FieldStrategy.NOT_EMPTY 表示更新的时候的策略为 创建者不为空字符串时才更新
      */
-    @IndexField(strategy = FieldStrategy.NOT_EMPTY)
+    @IndexField(strategy = FieldStrategy.NOT_EMPTY, copyTo = "copyToField")
     private String creator;
     /**
      * 创建时间
@@ -65,6 +65,11 @@ public class Document {
      */
     @IndexField(value = "wu-la", fieldType = FieldType.TEXT, analyzer = Analyzer.IK_SMART, searchAnalyzer = Analyzer.IK_SMART, fieldData = true)
     private String customField;
+
+    /**
+     * 演示copy_to复制字段
+     */
+    private String copyToField;
 
     /**
      * 高亮返回值被映射的字段
