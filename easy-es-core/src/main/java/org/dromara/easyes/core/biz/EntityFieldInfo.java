@@ -100,6 +100,11 @@ public class EntityFieldInfo {
     private NameFilter nameFilter;
 
     /**
+     * 复制字段
+     */
+    private List<String> copyToList;
+
+    /**
      * 内部字段列表
      */
     private List<InnerFieldInfo> innerFieldInfoList;

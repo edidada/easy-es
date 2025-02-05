@@ -38,7 +38,7 @@ public @interface IndexField {
      *
      * @return 复制当前字段至指定字段中
      */
-    String copyTo() default "";
+    String[] copyTo() default {};
 
     /**
      * 字段在es索引中的类型,建议根据业务场景指定,若不指定则由本框架自动推断

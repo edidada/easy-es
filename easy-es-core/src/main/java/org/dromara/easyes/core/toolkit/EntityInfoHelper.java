@@ -8,13 +8,13 @@ import com.alibaba.fastjson.serializer.ValueFilter;
 import lombok.SneakyThrows;
 import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.*;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.EntityFieldInfo;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.HighLightParam;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.common.property.GlobalConfig;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -469,6 +469,20 @@ public class EntityInfoHelper {
             // 向量的维度大小
             if (indexField.dims() > ZERO) {
                 entityFieldInfo.setDims(indexField.dims());
+            }
+
+            // 复制字段
+            if (ArrayUtils.isNotEmpty(indexField.copyTo())){
+                List<String> collect;
+                if (dbConfig.isMapUnderscoreToCamelCase()){
+                    collect = Arrays.stream(indexField.copyTo())
+                            .map(StringUtils::camelToUnderline)
+                            .collect(Collectors.toList());
+                }else {
+                    collect = Arrays.stream(indexField.copyTo())
+                            .collect(Collectors.toList());
+                }
+                entityFieldInfo.setCopyToList(collect);
             }
 
             // 其它

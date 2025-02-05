@@ -64,13 +64,9 @@ public class EsIndexParam {
      */
     private Integer ignoreAbove;
     /**
-     * 是否索引
+     * 复制字段数组
      */
-    private boolean index;
-    /**
-     * 复制属性
-     */
-    private String copyTo;
+    private List<String> copyToList;
 
     /**
      * 内部字段列表

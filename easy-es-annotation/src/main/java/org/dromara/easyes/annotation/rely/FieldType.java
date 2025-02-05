@@ -62,9 +62,7 @@ public enum FieldType {
     TOKEN("token"),
     ATTACHMENT("attachment"),
     PERCOLATOR("percolator"),
-    DENSE_VECTOR("dense_vector"),
-    INDEX("index"),
-    COPY_TO("copy_to");
+    DENSE_VECTOR("dense_vector");
 
     private String type;
 

@@ -493,9 +493,15 @@ public class IndexUtils {
             // 设置权重
             Optional.ofNullable(indexParam.getBoost()).ifPresent(boost -> info.put(BOOST_KEY, indexParam.getBoost()));
 
-            // 复制
-            if (StringUtils.isNotBlank(indexParam.getCopyTo())) {
-                info.put(COPY_TO_KEY, indexParam.getCopyTo());
+            // 复制字段
+            if (CollectionUtils.isNotEmpty(indexParam.getCopyToList())) {
+                if (entityInfo.isIndexEqualStage()) {
+                    // 判定索引是否发生变动时,用数组,因为es返回的是数组
+                    info.put(COPY_TO_KEY, indexParam.getCopyToList());
+                } else {
+                    // 创建时,用逗号隔开,直接用数组会创建索引失败
+                    info.put(COPY_TO_KEY, String.join(COMMA, indexParam.getCopyToList()));
+                }
             }
 
             // 设置嵌套类型
@@ -636,6 +642,7 @@ public class IndexUtils {
             Map<String, String> dateFormatMap = entityInfo.getClassDateFormatMap().get(clazz);
             copyFieldList.forEach(field -> {
                 EsIndexParam esIndexParam = new EsIndexParam();
+                // base
                 String esFieldType = IndexUtils.getEsFieldType(field.getFieldType(), field.getColumnType());
                 esIndexParam.setFieldType(esFieldType);
                 if (field.isFieldData()) {
@@ -644,9 +651,14 @@ public class IndexUtils {
                 esIndexParam.setFieldName(field.getMappingColumn());
                 esIndexParam.setScalingFactor(field.getScalingFactor());
                 esIndexParam.setDims(field.getDims());
+                esIndexParam.setCopyToList(field.getCopyToList());
+
+                // 嵌套类型
                 if (FieldType.NESTED.equals(field.getFieldType())) {
                     esIndexParam.setNestedClass(entityInfo.getPathClassMap().get(field.getColumn()));
                 }
+
+                // 分词器
                 if (!Analyzer.NONE.equals(field.getAnalyzer())) {
                     esIndexParam.setAnalyzer(field.getAnalyzer());
                 }
@@ -705,6 +717,7 @@ public class IndexUtils {
         }
 
         // 根据实体类注解信息构建mapping
+        entityInfo.setIndexEqualStage(true);
         Map<String, Object> mapping = IndexUtils.initMapping(entityInfo, esIndexParamList);
 
         // 与查询到的已知index对比是否发生改变
