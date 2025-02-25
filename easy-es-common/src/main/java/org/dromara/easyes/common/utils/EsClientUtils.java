@@ -1,5 +1,8 @@
 package org.dromara.easyes.common.utils;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -11,52 +14,49 @@ import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.property.EasyEsProperties;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 
 import javax.net.ssl.SSLContext;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
 /**
  * @author lyy
  */
-public class RestHighLevelClientUtils {
+public class EsClientUtils {
 
     public static final String DEFAULT_DS = "DEFAULT_DS";
 
-    private final static Map<String, RestHighLevelClient> restHighLevelClientMap = new ConcurrentHashMap<>();
+    private final static Map<String, ElasticsearchClient> restHighLevelClientMap = new ConcurrentHashMap<>();
 
-    public RestHighLevelClientUtils() {
+    public EsClientUtils() {
     }
 
-    public static RestHighLevelClient getRestHighLevelClient(String restHighLevelClientId) {
+    public static ElasticsearchClient getElasticsearchClient(String restHighLevelClientId) {
         if (DEFAULT_DS.equals(restHighLevelClientId)) {
             return restHighLevelClientMap.values()
                     .stream()
                     .findFirst()
-                    .orElseThrow(() -> ExceptionUtils.eee("Could not found RestHighLevelClient,restHighLevelClientId:%s", restHighLevelClientId));
+                    .orElseThrow(() -> ExceptionUtils.eee("Could not found ElasticsearchClient,restHighLevelClientId:%s", restHighLevelClientId));
         }
-        RestHighLevelClient restHighLevelClient = restHighLevelClientMap.get(restHighLevelClientId);
-        if (restHighLevelClient == null) {
+        ElasticsearchClient client = restHighLevelClientMap.get(restHighLevelClientId);
+        if (client == null) {
             LogUtils.formatError("restHighLevelClientId: %s can not find any data source, please check your config", restHighLevelClientId);
-            throw ExceptionUtils.eee("Cloud not found RestHighLevelClient,restHighLevelClientId:%s", restHighLevelClientId);
+            throw ExceptionUtils.eee("Cloud not found ElasticsearchClient,restHighLevelClientId:%s", restHighLevelClientId);
         }
-        return restHighLevelClient;
+        return client;
     }
 
-    public RestHighLevelClient getClient(String restHighLevelClientId) {
-        return RestHighLevelClientUtils.getRestHighLevelClient(restHighLevelClientId);
+    public static void registerClient(String restHighLevelClientId, Supplier<ElasticsearchClient> restHighLevelClient) {
+        EsClientUtils.restHighLevelClientMap.putIfAbsent(restHighLevelClientId, restHighLevelClient.get());
     }
 
-    public static void registerRestHighLevelClient(String restHighLevelClientId, RestHighLevelClient restHighLevelClient) {
-        RestHighLevelClientUtils.restHighLevelClientMap.putIfAbsent(restHighLevelClientId, restHighLevelClient);
-    }
-
-    public static RestHighLevelClient restHighLevelClient(EasyEsProperties easyEsConfigProperties) {
+    public static ElasticsearchClient buildClient(EasyEsProperties easyEsConfigProperties) {
         // 处理地址
         String address = easyEsConfigProperties.getAddress();
         if (StringUtils.isEmpty(address)) {
@@ -118,6 +118,11 @@ public class RestHighLevelClientUtils {
                     .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
             return requestConfigBuilder;
         });
-        return new RestHighLevelClient(builder);
+
+        return new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper(JsonUtils.base())));
+    }
+
+    public ElasticsearchClient getClient(String clientId) {
+        return getElasticsearchClient(clientId);
     }
 }

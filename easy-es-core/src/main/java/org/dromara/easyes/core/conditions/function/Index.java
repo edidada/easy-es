@@ -1,11 +1,11 @@
 package org.dromara.easyes.core.conditions.function;
 
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.core.toolkit.FieldUtils;
-import org.elasticsearch.common.settings.Settings;
 
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * 索引相关
@@ -27,7 +27,7 @@ public interface Index<Children, R> extends Serializable {
      * @param maxResultWindow 最大返回数
      * @return wrapper
      */
-    Children maxResultWindow(Integer maxResultWindow);
+    Children maxResultWindow(Long maxResultWindow);
 
     /**
      * 设置索引的分片数和副本数
@@ -44,7 +44,7 @@ public interface Index<Children, R> extends Serializable {
      * @param settings settings
      * @return wrapper
      */
-    Children settings(Settings settings);
+    Children settings(IndexSettings.Builder settings);
 
     /**
      * 用户自行指定mapping
@@ -52,7 +52,7 @@ public interface Index<Children, R> extends Serializable {
      * @param mapping mapping信息
      * @return wrapper
      */
-    Children mapping(Map<String, Object> mapping);
+    Children mapping(TypeMapping.Builder mapping);
 
     /**
      * 设置mapping信息
@@ -85,7 +85,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost     权重
      * @return wrapper
      */
-    default Children mapping(R column, FieldType fieldType, Float boost) {
+    default Children mapping(R column, FieldType fieldType, Double boost) {
         return mapping(column, fieldType, null, null, null, null, boost);
     }
 
@@ -98,7 +98,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost     权重
      * @return wrapper
      */
-    default Children mapping(R column, FieldType fieldType, Boolean fieldData, Float boost) {
+    default Children mapping(R column, FieldType fieldType, Boolean fieldData, Double boost) {
         return mapping(column, fieldType, null, null, null, fieldData, boost);
     }
 
@@ -151,7 +151,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost          权重
      * @return wrapper
      */
-    default Children mapping(R column, FieldType fieldType, String analyzer, String searchAnalyzer, Float boost) {
+    default Children mapping(R column, FieldType fieldType, String analyzer, String searchAnalyzer, Double boost) {
         return mapping(column, fieldType, analyzer, searchAnalyzer, null, null, boost);
     }
 
@@ -167,7 +167,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost          权重值
      * @return wrapper
      */
-    default Children mapping(R column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Float boost) {
+    default Children mapping(R column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Double boost) {
         return mapping(FieldUtils.getFieldName(column), fieldType, analyzer, searchAnalyzer, dateFormat, fieldData, boost);
     }
 
@@ -202,7 +202,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost     权重
      * @return wrapper
      */
-    default Children mapping(String column, FieldType fieldType, Float boost) {
+    default Children mapping(String column, FieldType fieldType, Double boost) {
         return mapping(column, fieldType, null, null, null, boost);
     }
 
@@ -256,7 +256,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost          权重
      * @return wrapper
      */
-    default Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, Boolean fieldData, Float boost) {
+    default Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, Boolean fieldData, Double boost) {
         return mapping(column, fieldType, analyzer, searchAnalyzer, null, fieldData, boost);
     }
 
@@ -273,7 +273,7 @@ public interface Index<Children, R> extends Serializable {
      * @param boost          字段权重值
      * @return wrapper
      */
-    Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Float boost);
+    Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Double boost);
 
     /**
      * 设置创建别名信息

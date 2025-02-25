@@ -1,11 +1,11 @@
 package org.dromara.easyes.core.biz;
 
 
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import lombok.Data;
-import org.elasticsearch.common.settings.Settings;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 创建索引参数
@@ -37,7 +37,7 @@ public class CreateIndexParam {
     /**
      * 最大返回数
      */
-    private Integer maxResultWindow;
+    private Long maxResultWindow;
     /**
      * 索引字段及类型分词器等信息
      */
@@ -45,13 +45,13 @@ public class CreateIndexParam {
     /**
      * 用户手动指定的mapping信息,优先级最高
      */
-    private Map<String, Object> mapping;
+    private TypeMapping.Builder mapping;
     /**
      * 用户通过自定义注解指定的settings信息
      */
-    private Map<String, Object> settingsMap;
+    private IndexSettings.Builder indexSettings;
     /**
      * 用户手动指定的settings信息,优先级最高
      */
-    private Settings settings;
+    private IndexSettings.Builder settings;
 }

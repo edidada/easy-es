@@ -1,6 +1,7 @@
 package org.dromara.easyes.test.vector;
 
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
@@ -59,7 +60,7 @@ public class VectorTest {
         String scriptCode = "cosineSimilarity(params.vector, 'vector') + 1.0";
         QueryBuilder queryBuilder = QueryBuilders.scriptScoreQuery(QueryBuilders.matchAllQuery(), new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, scriptCode, params));
 
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(queryBuilder);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.setSearchSourceBuilder(searchSourceBuilder);

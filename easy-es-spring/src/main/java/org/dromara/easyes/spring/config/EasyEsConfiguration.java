@@ -4,7 +4,7 @@ import lombok.Setter;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
-import org.dromara.easyes.common.utils.RestHighLevelClientUtils;
+import org.dromara.easyes.common.utils.EsClientUtils;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
@@ -45,22 +45,21 @@ public class EasyEsConfiguration implements InitializingBean {
     }
 
     @Bean
-    public RestHighLevelClientUtils restHighLevelClientUtils() {
-        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
+    public EsClientUtils esClientUtils() {
+        EsClientUtils esClientUtils = new EsClientUtils();
         if (this.easyEsDynamicProperties == null) {
             this.easyEsDynamicProperties = new EasyEsDynamicProperties();
         }
         Map<String, EasyEsProperties> datasourceMap = this.easyEsDynamicProperties.getDatasource();
         if (datasourceMap.isEmpty()) {
             // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-            datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, this.easyEsProperties);
+            datasourceMap.put(EsClientUtils.DEFAULT_DS, this.easyEsProperties);
         }
         for (String key : datasourceMap.keySet()) {
             EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-            RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
-                    .restHighLevelClient(easyEsConfigProperties));
+            EsClientUtils.registerClient(key, () -> EsClientUtils.buildClient(easyEsConfigProperties));
         }
-        return restHighLevelClientUtils;
+        return esClientUtils;
     }
 
     /**

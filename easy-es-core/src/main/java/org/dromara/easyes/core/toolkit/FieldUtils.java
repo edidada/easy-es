@@ -1,13 +1,13 @@
 package org.dromara.easyes.core.toolkit;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.params.SFunction;
+import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.common.property.GlobalConfig;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -165,8 +165,8 @@ public class FieldUtils {
     /**
      * 获取实际字段名
      *
-     * @param field                      原字段名
-     * @param mappingColumnMap           字段映射关系map
+     * @param field            原字段名
+     * @param mappingColumnMap 字段映射关系map
      * @return 实际字段名
      */
     public static String getRealField(String field, Map<String, String> mappingColumnMap) {
@@ -231,11 +231,10 @@ public class FieldUtils {
      * @param mappingColumnMap 字段映射关系map
      * @return 实际字段数组
      */
-    public static String[] getRealFields(String[] fields, Map<String, String> mappingColumnMap) {
+    public static List<String> getRealFields(String[] fields, Map<String, String> mappingColumnMap) {
         return Arrays.stream(fields)
                 .map(field -> getRealField(field, mappingColumnMap))
-                .collect(Collectors.toList())
-                .toArray(new String[]{});
+                .collect(Collectors.toList());
     }
 
     /**
@@ -246,7 +245,8 @@ public class FieldUtils {
      * @return 实际字段数组
      */
     public static List<String> getRealFields(List<String> fields, Map<String, String> mappingColumnMap) {
-        return Arrays.stream(getRealFields(fields.toArray(new String[0]), mappingColumnMap))
+        return fields.stream()
+                .map(field -> getRealField(field, mappingColumnMap))
                 .collect(Collectors.toList());
     }
 

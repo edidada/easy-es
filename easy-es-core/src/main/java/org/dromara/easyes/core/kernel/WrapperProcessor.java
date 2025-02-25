@@ -1,8 +1,15 @@
 package org.dromara.easyes.core.kernel;
 
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.search.Highlight;
+import co.elastic.clients.elasticsearch.core.search.HighlightField;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.util.NamedValue;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import org.apache.lucene.search.join.ScoreMode;
 import org.dromara.easyes.common.enums.AggregationTypeEnum;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.utils.*;
@@ -11,25 +18,7 @@ import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.core.toolkit.TreeBuilder;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.geometry.Geometry;
-import org.elasticsearch.index.query.*;
-import org.elasticsearch.join.query.HasChildQueryBuilder;
-import org.elasticsearch.join.query.HasParentQueryBuilder;
-import org.elasticsearch.join.query.ParentIdQueryBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.BucketOrder;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.collapse.CollapseBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -54,15 +43,15 @@ public class WrapperProcessor {
      * @param entityClass 实体类
      * @return ES查询参数
      */
-    public static SearchSourceBuilder buildSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
+    public static SearchRequest.Builder buildSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
         // 初始化boolQueryBuilder 参数
-        BoolQueryBuilder boolQueryBuilder = initBoolQueryBuilder(wrapper.paramQueue, entityClass);
+        BoolQuery.Builder boolQueryBuilder = initBoolQueryBuilder(wrapper.paramQueue, entityClass);
 
         // 初始化searchSourceBuilder 参数
-        SearchSourceBuilder searchSourceBuilder = initSearchSourceBuilder(wrapper, entityClass);
+        SearchRequest.Builder searchSourceBuilder = initSearchSourceBuilder(wrapper, entityClass);
 
         // 设置boolQuery参数
-        searchSourceBuilder.query(boolQueryBuilder);
+        searchSourceBuilder.query(x -> x.bool(boolQueryBuilder.build()));
         return searchSourceBuilder;
     }
 
@@ -74,12 +63,12 @@ public class WrapperProcessor {
      * @param entityClass 实体类
      * @return BoolQueryBuilder
      */
-    public static BoolQueryBuilder initBoolQueryBuilder(List<Param> paramList, Class<?> entityClass) {
+    public static BoolQuery.Builder initBoolQueryBuilder(List<Param> paramList, Class<?> entityClass) {
         // 建立参数森林（无根树）
         List<Param> rootList = paramList.stream().filter(i -> Objects.isNull(i.getParentId())).collect(Collectors.toList());
         TreeBuilder treeBuilder = new TreeBuilder(rootList, paramList);
         List<Param> tree = (List<Param>) treeBuilder.build();
-        BoolQueryBuilder rootBool = QueryBuilders.boolQuery();
+        BoolQuery.Builder rootBool = QueryBuilders.bool();
 
         // 对森林的每个根节点递归封装 这里看似简单实则很绕很烧脑 整个框架的核心 主要依托树的递归 深度优先遍历 森林 还原lambda条件构造语句
         return getBool(tree, rootBool, EntityInfoHelper.getEntityInfo(entityClass), null);
@@ -92,11 +81,10 @@ public class WrapperProcessor {
      * @param param 查询参数
      */
     @SneakyThrows
-    private static void initBool(BoolQueryBuilder bool, Param param, EntityInfo entityInfo,
+    private static void initBool(BoolQuery.Builder bool, Param param, EntityInfo entityInfo,
                                  Map<String, String> mappingColumnMap, Map<String, String> fieldTypeMap) {
         List<Param> children = (List<Param>) param.getChildren();
-        QueryBuilder queryBuilder;
-        RangeQueryBuilder rangeBuilder;
+        Query query;
         String realField;
         switch (param.getQueryTypeEnum()) {
             case OR:
@@ -105,165 +93,244 @@ public class WrapperProcessor {
                 // 渣男行为,*完就不认人了,因为拼接类型在AbstractWrapper中已处理过了 直接跳过
                 break;
             case MIX:
-                setBool(bool, param.getQueryBuilder(), param.getPrevQueryType());
+                setBool(bool, param.getQueryBuilder().build(), param.getPrevQueryType());
                 break;
             case TERM:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                queryBuilder = QueryBuilders.termQuery(realField, param.getVal()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.term(p ->
+                        p.field(realField).value(fieldValue(param.getVal())).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.matchQuery(realField, param.getVal()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.match(p ->
+                        p.field(realField).query(fieldValue(param.getVal())).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH_PHRASE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.matchPhraseQuery(realField, param.getVal()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.matchPhrase(p ->
+                        p.field(realField).query((String) param.getVal()).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH_PHRASE_PREFIX:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.matchPhrasePrefixQuery(realField, param.getVal()).boost(param.getBoost()).maxExpansions((int) param.getExt1());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.matchPhrasePrefix(p ->
+                        p.field(realField).query((String) param.getVal()).boost(param.getBoost()).maxExpansions((int) param.getExt1())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case MULTI_MATCH:
-                String[] realFields = getRealFields(param.getColumns(), mappingColumnMap);
-                queryBuilder = QueryBuilders.multiMatchQuery(param.getVal(), realFields).operator((Operator) param.getExt1()).minimumShouldMatch(param.getExt2() + PERCENT_SIGN);
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                List<String> realFields = getRealFields(param.getColumns(), mappingColumnMap);
+                query = Query.of(q -> q.multiMatch(p -> p.query((String) param.getVal()).fields(realFields)
+                        .operator((Operator) param.getExt1()).minimumShouldMatch(param.getExt2() + PERCENT_SIGN)));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH_ALL:
-                queryBuilder = QueryBuilders.matchAllQuery().boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.matchAll(p -> p.boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case QUERY_STRING:
-                queryBuilder = QueryBuilders.queryStringQuery(param.getColumn()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.queryString(p -> p.query(param.getColumn()).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case PREFIX:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.prefixQuery(realField, (String) param.getVal()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.prefix(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GT:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                rangeBuilder = QueryBuilders.rangeQuery(realField).gt(param.getVal()).boost(param.getBoost());
-                Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> rangeBuilder.timeZone(((ZoneId) ext1).getId()));
-                Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> rangeBuilder.format(ext2.toString()));
-                setBool(bool, rangeBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.range(p ->
+                        p.untyped(v -> {
+                            v.field(realField).gt(JsonData.of(param.getVal())).boost(param.getBoost());
+                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
+                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            return v;
+                        })
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GE:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                rangeBuilder = QueryBuilders.rangeQuery(realField).gte(param.getVal()).boost(param.getBoost());
-                Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> rangeBuilder.timeZone(((ZoneId) ext1).getId()));
-                Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> rangeBuilder.format(ext2.toString()));
-                setBool(bool, rangeBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.range(p ->
+                        p.untyped(v -> {
+                            v.field(realField).gte(JsonData.of(param.getVal())).boost(param.getBoost());
+                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
+                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            return v;
+                        })
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case LT:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                rangeBuilder = QueryBuilders.rangeQuery(realField).lt(param.getVal()).boost(param.getBoost());
-                Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> rangeBuilder.timeZone(((ZoneId) ext1).getId()));
-                Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> rangeBuilder.format(ext2.toString()));
-                setBool(bool, rangeBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.range(p ->
+                        p.untyped(v -> {
+                            v.field(realField).lt(JsonData.of(param.getVal())).boost(param.getBoost());
+                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
+                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            return v;
+                        })
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case LE:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                rangeBuilder = QueryBuilders.rangeQuery(realField).lte(param.getVal()).boost(param.getBoost());
-                Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> rangeBuilder.timeZone(((ZoneId) ext1).getId()));
-                Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> rangeBuilder.format(ext2.toString()));
-                setBool(bool, rangeBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.range(p ->
+                        p.untyped(v -> {
+                            v.field(realField).lte(JsonData.of(param.getVal())).boost(param.getBoost());
+                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
+                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            return v;
+                        })
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case BETWEEN:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                rangeBuilder = QueryBuilders.rangeQuery(realField).gte(param.getExt1()).lte(param.getExt2()).boost(param.getBoost());
-                Optional.ofNullable(param.getExt3()).ifPresent(ext3 -> rangeBuilder.timeZone(((ZoneId) ext3).getId()));
-                Optional.ofNullable(param.getExt4()).ifPresent(ext4 -> rangeBuilder.format(ext4.toString()));
-                setBool(bool, rangeBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.range(p ->
+                        p.untyped(v -> {
+                            v.field(realField).gte(JsonData.of(param.getExt1())).lte(JsonData.of(param.getExt2())).boost(param.getBoost());
+                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
+                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            return v;
+                        })
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case WILDCARD:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                queryBuilder = QueryBuilders.wildcardQuery(realField, param.getVal().toString());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.wildcard(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case TERMS:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
-                queryBuilder = QueryBuilders.termsQuery(realField, (Collection<?>) param.getVal());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                List<FieldValue> fieldValueList = ((Collection<?>) param.getVal()).stream()
+                        .map(WrapperProcessor::fieldValue).collect(Collectors.toList());
+                query = Query.of(q -> q.terms(p -> p.field(realField).terms(t -> t.value(fieldValueList))));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case EXISTS:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.existsQuery(realField).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.exists(p -> p.field(realField).boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_BOUNDING_BOX:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.geoBoundingBoxQuery(realField).setCorners((GeoPoint) param.getExt1(), (GeoPoint) param.getExt2()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.geoBoundingBox(p -> p.field(realField)
+                        .boundingBox(x -> x.tlbr(y -> y
+                                .topLeft((GeoLocation) param.getExt1())
+                                .bottomRight((GeoLocation) param.getExt2())
+                        ))
+                        .boost(param.getBoost())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_DISTANCE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                GeoDistanceQueryBuilder geoDistanceBuilder = QueryBuilders.geoDistanceQuery(realField).point((GeoPoint) param.getExt2()).boost(param.getBoost());
-                MyOptional.ofNullable(param.getExt1()).ifPresent(ext1 -> geoDistanceBuilder.distance((double) param.getVal(), (DistanceUnit) ext1), () -> geoDistanceBuilder.distance((String) param.getVal()));
-                queryBuilder = geoDistanceBuilder;
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.geoDistance(p -> {
+                    p.field(realField).location(x -> x.latlon((LatLonGeoLocation) param.getExt2())).boost(param.getBoost());
+                    String unit = param.getExt1() == null ? DistanceUnit.Meters.jsonValue() : ((DistanceUnit) param.getExt1()).jsonValue();
+                    String val = (String) param.getVal();
+                    String distance = val.endsWith(unit) ? val : val + unit;
+                    p.distance(distance);
+                    return p;
+                }));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_POLYGON:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.geoPolygonQuery(realField, (List<GeoPoint>) param.getVal());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.geoPolygon(p -> p.field(realField).polygon(x ->
+                        x.points((List<GeoLocation>) param.getExt2()))));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_SHAPE_ID:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.geoShapeQuery(realField, param.getVal().toString()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.geoShape(p -> p.field(realField).shape(x ->
+                        x.indexedShape(y -> y.id((String) param.getVal())))));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_SHAPE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = QueryBuilders.geoShapeQuery(realField, (Geometry) param.getVal()).relation((ShapeRelation) param.getExt1()).boost(param.getBoost());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.geoShape(p -> p.field(realField).shape(x ->
+                                x.shape(JsonData.of((Geometry)param.getVal())).relation((GeoShapeRelation) param.getExt1())
+                        ).boost(param.getBoost())
+                ));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case PARENT_ID:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = new ParentIdQueryBuilder(realField, param.getVal().toString());
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(q -> q.parentId(p -> p.type(realField).id((String) param.getVal())));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             // 下面几种特殊嵌套类型 需要对孩子节点递归处理
             case NESTED_AND:
             case NESTED_FILTER:
             case NESTED_NOT:
             case NESTED_OR:
-                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, null);
-                setBool(bool, queryBuilder, param.getPrevQueryType());
+                query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, null)));
+                setBool(bool, query, param.getPrevQueryType());
                 break;
             case NESTED:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 String[] split = param.getColumn().split(SIGN);
                 String path = split[split.length - 1];
-                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, path);
-                NestedQueryBuilder nestedQueryBuilder = QueryBuilders.nestedQuery(realField, queryBuilder, (ScoreMode) param.getVal());
+                query = Query.of(b -> b.bool( x -> getBool(children, x, entityInfo, path)));
+                NestedQuery.Builder nestedQueryBuilder = QueryBuilders.nested().path(realField).query(query).scoreMode((ChildScoreMode) param.getVal());
                 // 设置嵌套类型高亮查询参数
                 setNestedHighlight(path, param.getColumn(), nestedQueryBuilder, entityInfo);
                 // 设置bool查询参数
-                setBool(bool, nestedQueryBuilder, param.getPrevQueryType());
+                setBool(bool, Query.of(x -> x.nested(nestedQueryBuilder.build())), param.getPrevQueryType());
                 break;
             case HAS_PARENT:
                 // 如果用户没指定type框架可根据entityInfo上下文自行推断出其父type
                 String column = Optional.ofNullable(param.getColumn()).orElse(entityInfo.getParentJoinAlias());
                 realField = getRealField(column, mappingColumnMap);
-                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, param.getColumn());
-                HasParentQueryBuilder hasParentQueryBuilder = new HasParentQueryBuilder(realField, queryBuilder, (boolean) param.getVal());
-                setBool(bool, hasParentQueryBuilder, param.getPrevQueryType());
+                query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, param.getColumn())));
+                HasParentQuery.Builder hasParentQueryBuilder = new HasParentQuery.Builder()
+                        .ignoreUnmapped(false)
+                        .parentType(realField)
+                        .query(query)
+                        .score((boolean) param.getVal());
+                setBool(bool, Query.of(x -> x.hasParent(hasParentQueryBuilder.build())), param.getPrevQueryType());
                 break;
             case HAS_CHILD:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                queryBuilder = getBool(children, QueryBuilders.boolQuery(), entityInfo, param.getColumn());
-                HasChildQueryBuilder hasChildQueryBuilder = new HasChildQueryBuilder(realField, queryBuilder, (ScoreMode) param.getVal());
-                setBool(bool, hasChildQueryBuilder, param.getPrevQueryType());
+                query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, param.getColumn())));
+                HasChildQuery.Builder hasChildQueryBuilder = new HasChildQuery.Builder()
+                        .minChildren(1)
+                        .maxChildren(Integer.MAX_VALUE)
+                        .ignoreUnmapped(false)
+                        .type(realField)
+                        .query(query)
+                        .minChildren(1)
+                        .scoreMode((ChildScoreMode) param.getVal())
+                        ;
+                setBool(bool, Query.of(x -> x.hasChild(hasChildQueryBuilder.build())), param.getPrevQueryType());
                 break;
             default:
                 // just ignore,almost never happen
                 throw ExceptionUtils.eee("非法参数类型");
         }
+    }
+
+    /**
+     * 获取FieldValue
+     *
+     * @param val 原字段值
+     * @return FieldValue
+     */
+    public static FieldValue fieldValue(Object val) {
+        return switch (val) {
+            case null -> FieldValue.NULL;
+            case FieldValue fieldValue -> fieldValue;
+            case Long l -> FieldValue.of((long) val);
+            case Integer i -> FieldValue.of((int) val);
+            case Double v -> FieldValue.of((double) val);
+            case Boolean b -> FieldValue.of((boolean) val);
+            case String s -> FieldValue.of(s);
+            default -> FieldValue.of(val);
+        };
+
     }
 
     /**
@@ -274,16 +341,16 @@ public class WrapperProcessor {
      * @param nestedQueryBuilder 嵌套查询条件构造器
      * @param entityInfo         实体信息缓存
      */
-    private static void setNestedHighlight(String path, String column, NestedQueryBuilder nestedQueryBuilder, EntityInfo entityInfo) {
+    private static void setNestedHighlight(String path, String column, NestedQuery.Builder nestedQueryBuilder, EntityInfo entityInfo) {
         // 嵌套类型的高亮查询语句构造
         Class<?> pathClass = entityInfo.getPathClassMap().get(path);
         Optional.ofNullable(pathClass)
-                .flatMap(i -> Optional.ofNullable(entityInfo.getNestedHighLightParamsMap().get(i)))
+                .flatMap(i -> Optional.ofNullable(entityInfo.getNestedOrObjectHighLightParamsMap().get(i)))
                 .ifPresent(i -> {
                     // 嵌套类型高亮字段名需要完整的path 例如users.faqs 所以此处用param.column而非path
-                    HighlightBuilder highlightBuilder = initHighlightBuilder(i, column);
+                    Highlight.Builder highlightBuilder = initHighlightBuilder(i, column);
                     Optional.ofNullable(highlightBuilder)
-                            .ifPresent(p -> nestedQueryBuilder.innerHit(new InnerHitBuilder().setHighlightBuilder(p)));
+                            .ifPresent(p -> nestedQueryBuilder.innerHits(x -> x.highlight(p.build())));
                 });
     }
 
@@ -294,7 +361,7 @@ public class WrapperProcessor {
      * @param queryBuilder 非根节点BoolQueryBuilder
      * @param parentType   查询类型
      */
-    private static void setBool(BoolQueryBuilder bool, QueryBuilder queryBuilder, EsQueryTypeEnum parentType) {
+    private static void setBool(BoolQuery.Builder bool, Query queryBuilder, EsQueryTypeEnum parentType) {
         if (NESTED_AND.equals(parentType)) {
             bool.must(queryBuilder);
         } else if (NESTED_OR.equals(parentType)) {
@@ -318,7 +385,7 @@ public class WrapperProcessor {
      * @param path       路径
      * @return 子节点bool合集, 统一封装至入参builder中
      */
-    private static BoolQueryBuilder getBool(List<Param> paramList, BoolQueryBuilder builder, EntityInfo entityInfo, String path) {
+    private static BoolQuery.Builder getBool(List<Param> paramList, BoolQuery.Builder builder, EntityInfo entityInfo, String path) {
         if (CollectionUtils.isEmpty(paramList)) {
             return builder;
         }
@@ -329,9 +396,9 @@ public class WrapperProcessor {
         if (StringUtils.isNotBlank(path)) {
             // 嵌套类型
             Class<?> clazz = entityInfo.getPathClassMap().get(path);
-            mappingColumnMap = Optional.ofNullable(entityInfo.getNestedClassMappingColumnMap().get(clazz))
+            mappingColumnMap = Optional.ofNullable(entityInfo.getNestedOrObjectClassMappingColumnMap().get(clazz))
                     .orElse(Collections.emptyMap());
-            fieldTypeMap = Optional.ofNullable(entityInfo.getNestedClassFieldTypeMap().get(clazz))
+            fieldTypeMap = Optional.ofNullable(entityInfo.getNestedOrObjectClassFieldTypeMap().get(clazz))
                     .orElse(Collections.emptyMap());
         } else {
             mappingColumnMap = entityInfo.getMappingColumnMap();
@@ -350,42 +417,78 @@ public class WrapperProcessor {
      * @param wrapper 条件
      * @return SearchSourceBuilder
      */
-    private static SearchSourceBuilder initSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
+    private static SearchRequest.Builder initSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
         // 获取自定义字段map
         Map<String, String> mappingColumnMap = entityInfo.getMappingColumnMap();
 
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder builder = new SearchRequest.Builder();
+
+        builder.index(getIndexName(entityClass, wrapper.indexNames));
+        builder.routing(wrapper.routing);
+        builder.preference(wrapper.preference);
 
         // 设置高亮
-        setHighLight(entityInfo.getHighlightParams(), searchSourceBuilder);
+        setHighLight(entityInfo.getHighlightParams(), builder);
 
         // 设置用户指定的各种排序规则
-        setSort(wrapper, mappingColumnMap, searchSourceBuilder);
+        setSort(wrapper, mappingColumnMap, builder);
 
         // 设置查询或不查询字段
-        setFetchSource(wrapper, mappingColumnMap, searchSourceBuilder);
+        setFetchSource(wrapper, mappingColumnMap, builder);
 
         // 设置排除_score 小于 min_score 中指定的最小值的文档
-        Optional.ofNullable(wrapper.minScore).ifPresent(searchSourceBuilder::minScore);
+        Optional.ofNullable(wrapper.minScore).ifPresent(builder::minScore);
 
         // 设置自定义排序时(如 脚本里面使用 _score) 是否计算分数
-        Optional.ofNullable(wrapper.trackScores).ifPresent(searchSourceBuilder::trackScores);
+        Optional.ofNullable(wrapper.trackScores).ifPresent(builder::trackScores);
 
         // 设置聚合参数
-        setAggregations(wrapper, mappingColumnMap, searchSourceBuilder);
+        setAggregations(wrapper, mappingColumnMap, builder);
 
         // 设置查询起止参数
-        Optional.ofNullable(wrapper.from).ifPresent(searchSourceBuilder::from);
-        MyOptional.ofNullable(wrapper.size).ifPresent(searchSourceBuilder::size,
-                entityInfo.getMaxResultWindow() != null ? entityInfo.getMaxResultWindow() : DEFAULT_SIZE);
+        Optional.ofNullable(wrapper.from).ifPresent(builder::from);
+        MyOptional.ofNullable(wrapper.size).ifPresent(builder::size,
+                entityInfo.getMaxResultWindow() != null ? entityInfo.getMaxResultWindow().intValue() : DEFAULT_SIZE);
 
         // 根据全局配置决定是否开启全部查询
         if (GlobalConfigCache.getGlobalConfig().getDbConfig().isEnableTrackTotalHits()) {
-            searchSourceBuilder.trackTotalHits(Boolean.TRUE);
+            builder.trackTotalHits(x -> x.enabled(true));
         }
 
-        return searchSourceBuilder;
+        return builder;
+    }
+
+    /**
+     * 获取兜底索引名称
+     *
+     * @return 索引名称
+     */
+    public static <T> String getIndexName(Class<T> entityClass, String indexName) {
+        // 优先按wrapper中指定的索引名,若未指定则取当前全局激活的索引名
+        if (StringUtils.isBlank(indexName)) {
+            return EntityInfoHelper.getEntityInfo(entityClass).getIndexName();
+        }
+        return indexName;
+    }
+
+    /**
+     * 获取兜底索引名称数组
+     *
+     * @param indexNames 原始索引名称数组
+     * @return 目标索引名称数组
+     */
+    public static <T> List<String> getIndexName(Class<T> entityClass, String[] indexNames) {
+        // 碰到傻狍子用户锤子索引都没指定, 给个兜底
+        if (ArrayUtils.isEmpty(indexNames)) {
+            return Collections.singletonList(EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+        }
+
+        // 指定了个空字符串之类的,需要给兜底
+        return Arrays.stream(indexNames)
+                .map(indexName -> getIndexName(entityClass, indexName))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     /**
@@ -413,15 +516,15 @@ public class WrapperProcessor {
      * @param mappingColumnMap    字段映射map
      * @param searchSourceBuilder 查询参数建造者
      */
-    private static void setFetchSource(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchSourceBuilder searchSourceBuilder) {
+    private static void setFetchSource(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchRequest.Builder searchSourceBuilder) {
         if (ArrayUtils.isEmpty(wrapper.include) && ArrayUtils.isEmpty(wrapper.exclude)) {
             return;
         }
 
         // 获取实际字段
-        String[] includes = FieldUtils.getRealFields(wrapper.include, mappingColumnMap);
-        String[] excludes = FieldUtils.getRealFields(wrapper.exclude, mappingColumnMap);
-        searchSourceBuilder.fetchSource(includes, excludes);
+        List<String> includes = FieldUtils.getRealFields(wrapper.include, mappingColumnMap);
+        List<String> excludes = FieldUtils.getRealFields(wrapper.exclude, mappingColumnMap);
+        searchSourceBuilder.source(x -> x.filter(y -> y.includes(includes).excludes(excludes)));
     }
 
 
@@ -431,37 +534,36 @@ public class WrapperProcessor {
      * @param highLightParams     高亮参数列表
      * @param searchSourceBuilder 查询参数建造者
      */
-    private static void setHighLight(List<HighLightParam> highLightParams, SearchSourceBuilder searchSourceBuilder) {
+    private static void setHighLight(List<HighLightParam> highLightParams, SearchRequest.Builder searchSourceBuilder) {
         if (CollectionUtils.isEmpty(highLightParams)) {
             return;
         }
 
         // 初始化高亮参数
-        HighlightBuilder highlightBuilder = initHighlightBuilder(highLightParams, null);
-        Optional.ofNullable(highlightBuilder).ifPresent(searchSourceBuilder::highlighter);
+        Highlight.Builder highlightBuilder = initHighlightBuilder(highLightParams, null);
+        Optional.ofNullable(highlightBuilder).map(Highlight.Builder::build).ifPresent(searchSourceBuilder::highlight);
     }
 
-    private static HighlightBuilder initHighlightBuilder(List<HighLightParam> highLightParams, String path) {
+    private static Highlight.Builder initHighlightBuilder(List<HighLightParam> highLightParams, String path) {
         if (CollectionUtils.isEmpty(highLightParams)) {
             return null;
         }
         // 封装高亮参数
-        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        Highlight.Builder highlightBuilder = new Highlight.Builder();
         highLightParams.forEach(highLightParam -> {
             if (StringUtils.isNotBlank(highLightParam.getHighLightField())) {
                 // 嵌套类型 须追加其完整path前缀
                 String highlightField = Optional.ofNullable(path).map(i -> i + STR_SIGN + highLightParam.getHighLightField())
                         .orElse(highLightParam.getHighLightField());
-                HighlightBuilder.Field field = new HighlightBuilder.Field(highlightField)
+                HighlightField field = HighlightField.of(x -> x
                         .preTags(highLightParam.getPreTag())
-                        .postTags(highLightParam.getPostTag());
-                field.highlighterType(highLightParam.getHighLightType().getValue());
-                if (Boolean.FALSE.equals(highLightParam.getRequireFieldMatch())) {
-                    field.requireFieldMatch(highLightParam.getRequireFieldMatch());
-                }
-                highlightBuilder.field(field);
+                        .postTags(highLightParam.getPostTag())
+                        .type(highLightParam.getHighLightType().getValue())
+                        .requireFieldMatch(highLightParam.getRequireFieldMatch())
+                );
+                highlightBuilder.fields(highlightField, field);
                 highlightBuilder.fragmentSize(highLightParam.getFragmentSize());
-                Optional.ofNullable(highLightParam.getNumberOfFragments()).ifPresent(highlightBuilder::numOfFragments);
+                Optional.ofNullable(highLightParam.getNumberOfFragments()).ifPresent(highlightBuilder::numberOfFragments);
             }
         });
         return highlightBuilder;
@@ -475,14 +577,14 @@ public class WrapperProcessor {
      * @param mappingColumnMap    字段映射map
      * @param searchSourceBuilder 查询参数建造者
      */
-    private static void setSort(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchSourceBuilder searchSourceBuilder) {
+    private static void setSort(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchRequest.Builder searchSourceBuilder) {
         // 批量设置排序字段
         if (CollectionUtils.isNotEmpty(wrapper.baseSortParams)) {
             wrapper.baseSortParams.forEach(baseSortParam -> {
                 // 获取es中的实际字段 有可能已经被用户自定义或者驼峰转成下划线
                 String realField = Objects.isNull(baseSortParam.getSortField()) ?
                         null : getRealField(baseSortParam.getSortField(), mappingColumnMap);
-                SortBuilder<?> sortBuilder = getSortBuilder(realField, baseSortParam);
+                SortOptions sortBuilder = getSortBuilder(realField, baseSortParam);
                 Optional.ofNullable(sortBuilder).ifPresent(searchSourceBuilder::sort);
             });
         }
@@ -491,16 +593,16 @@ public class WrapperProcessor {
         if (CollectionUtils.isNotEmpty(wrapper.orderByParams)) {
             wrapper.orderByParams.forEach(orderByParam -> {
                 // 设置排序字段
-                FieldSortBuilder fieldSortBuilder = new FieldSortBuilder(orderByParam.getOrder());
+                FieldSort.Builder fieldSortBuilder = new FieldSort.Builder().field(orderByParam.getOrder());
 
                 // 设置排序规则
-                if (SortOrder.ASC.toString().equalsIgnoreCase(orderByParam.getSort())) {
-                    fieldSortBuilder.order(SortOrder.ASC);
+                if (SortOrder.Asc.toString().equalsIgnoreCase(orderByParam.getSort())) {
+                    fieldSortBuilder.order(SortOrder.Asc);
                 }
-                if (SortOrder.DESC.toString().equalsIgnoreCase(orderByParam.getSort())) {
-                    fieldSortBuilder.order(SortOrder.DESC);
+                if (SortOrder.Desc.toString().equalsIgnoreCase(orderByParam.getSort())) {
+                    fieldSortBuilder.order(SortOrder.Desc);
                 }
-                searchSourceBuilder.sort(fieldSortBuilder);
+                searchSourceBuilder.sort(x -> x.field(fieldSortBuilder.build()));
             });
         }
     }
@@ -513,17 +615,20 @@ public class WrapperProcessor {
      * @param baseSortParam 排序参数
      * @return 排序器
      */
-    private static SortBuilder<?> getSortBuilder(String realField, BaseSortParam baseSortParam) {
+    private static SortOptions getSortBuilder(String realField, BaseSortParam baseSortParam) {
         switch (baseSortParam.getOrderTypeEnum()) {
             case FIELD:
-                return SortBuilders.fieldSort(realField).order(baseSortParam.getSortOrder());
+                return SortOptions.of(x -> x.field(y -> y.field(realField).order(baseSortParam.getSortOrder())));
             case SCORE:
-                return SortBuilders.scoreSort().order(baseSortParam.getSortOrder());
+                return SortOptions.of(x -> x.score(y -> y.order(baseSortParam.getSortOrder())));
             case GEO:
-                return SortBuilders.geoDistanceSort(realField, baseSortParam.getGeoPoints())
+                return SortOptions.of(x -> x.geoDistance(y -> y
+                        .field(realField)
+                        .location(baseSortParam.getGeoPoints())
                         .order(baseSortParam.getSortOrder())
-                        .geoDistance(baseSortParam.getGeoDistance())
-                        .unit(baseSortParam.getUnit());
+                        .distanceType(baseSortParam.getGeoDistance())
+                        .unit(baseSortParam.getUnit())
+                ));
             case CUSTOMIZE:
                 return baseSortParam.getSortBuilder();
             default:
@@ -540,13 +645,13 @@ public class WrapperProcessor {
      * @param searchSourceBuilder 查询参数建造者
      */
     private static void setAggregations(Wrapper<?> wrapper, Map<String, String> mappingColumnMap,
-                                        SearchSourceBuilder searchSourceBuilder) {
+                                        SearchRequest.Builder searchSourceBuilder) {
         // 设置折叠(去重)字段
         Optional.ofNullable(wrapper.distinctField)
                 .ifPresent(distinctField -> {
                     String realField = getRealField(distinctField, mappingColumnMap);
-                    searchSourceBuilder.collapse(new CollapseBuilder(realField));
-                    searchSourceBuilder.aggregation(AggregationBuilders.cardinality(REPEAT_NUM_KEY).field(realField));
+                    searchSourceBuilder.collapse(x -> x.field(realField));
+                    searchSourceBuilder.aggregations(REPEAT_NUM_KEY, x -> x.cardinality(y -> y.field(realField)));
                 });
 
         // 其它聚合
@@ -556,30 +661,38 @@ public class WrapperProcessor {
         }
 
         // 构建聚合树
-        AggregationBuilder root = null;
-        AggregationBuilder cursor = null;
+        String rootName = null;
+        Aggregation.Builder.ContainerBuilder root = null;
+        Aggregation.Builder.ContainerBuilder cursor = null;
         for (AggregationParam aggParam : aggregationParamList) {
             String realField = getRealField(aggParam.getField(), mappingColumnMap);
-            AggregationBuilder builder = getRealAggregationBuilder(aggParam.getAggregationType(), aggParam.getName(), realField, wrapper.size, wrapper.bucketOrders);
+            Aggregation.Builder.ContainerBuilder builder = getRealAggregationBuilder(aggParam.getAggregationType()
+                    , aggParam.getName(), realField, wrapper.size, wrapper.bucketOrders);
             if (aggParam.isEnablePipeline()) {
                 // 管道聚合, 构造聚合树
                 if (root == null) {
                     root = builder;
+                    rootName = aggParam.getName();
                     cursor = root;
                 } else {
-                    cursor.subAggregation(builder);
+                    Aggregation agg = builder.build();
+                    cursor.aggregations(aggParam.getName(), agg);
                     // 解决max、min、avg和sum聚合函数不支持sub-aggregations的问题
-                    if (builder instanceof TermsAggregationBuilder) {
+                    if (agg._kind().equals(Aggregation.Kind.Terms)) {
                         cursor = builder;
                     }
                 }
             } else {
                 // 非管道聚合
-                searchSourceBuilder.aggregation(builder);
+                if (builder != null) {
+                    searchSourceBuilder.aggregations(aggParam.getName(), builder.build());
+                }
             }
 
         }
-        Optional.ofNullable(root).ifPresent(searchSourceBuilder::aggregation);
+        if (root != null) {
+            searchSourceBuilder.aggregations(rootName, root.build());
+        }
 
         if (!GlobalConfigCache.getGlobalConfig().getDbConfig().isEnableAggHits()) {
             // 配置关闭了聚合返回结果集Hits, 可提升查询效率
@@ -596,32 +709,33 @@ public class WrapperProcessor {
      * @param size      聚合桶大小
      * @return 聚合建造者
      */
-    private static AggregationBuilder getRealAggregationBuilder(AggregationTypeEnum aggType, String name, String realField, Integer size, List<BucketOrder> bucketOrders) {
-        AggregationBuilder aggregationBuilder;
+    private static Aggregation.Builder.ContainerBuilder getRealAggregationBuilder(
+            AggregationTypeEnum aggType,
+            String name,
+            String realField,
+            Integer size,
+            List<NamedValue<SortOrder>> bucketOrders
+    ) {
         // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
-        name += aggType.getValue();
+        String finalName = name + aggType.getValue();
         switch (aggType) {
             case AVG:
-                aggregationBuilder = AggregationBuilders.avg(name).field(realField);
-                break;
+                return new Aggregation.Builder().avg(x -> x.field(realField));
             case MIN:
-                aggregationBuilder = AggregationBuilders.min(name).field(realField);
-                break;
+                return new Aggregation.Builder().min(x -> x.field(finalName));
             case MAX:
-                aggregationBuilder = AggregationBuilders.max(name).field(realField);
-                break;
+                return new Aggregation.Builder().max(x -> x.field(realField));
             case SUM:
-                aggregationBuilder = AggregationBuilders.sum(name).field(realField);
-                break;
+                return new Aggregation.Builder().sum(x -> x.field(realField));
             case TERMS:
-                TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders.terms(name).field(realField);
-                Optional.ofNullable(size).ifPresent(termsAggregationBuilder::size);
-                Optional.ofNullable(bucketOrders).ifPresent(termsAggregationBuilder::order);
-                aggregationBuilder = termsAggregationBuilder;
-                break;
+                return new Aggregation.Builder().terms(x -> {
+                    x.field(realField);
+                    Optional.ofNullable(size).ifPresent(x::size);
+                    Optional.ofNullable(bucketOrders).ifPresent(x::order);
+                    return x;
+                });
             default:
                 throw new UnsupportedOperationException("不支持的聚合类型,参见AggregationTypeEnum");
         }
-        return aggregationBuilder;
     }
 }

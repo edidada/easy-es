@@ -110,7 +110,7 @@ public class Document {
     /**
      * 嵌套类型 注意,务必像下面示例一样指定类型为nested及其nested class,否则会导致框架无法正常运行
      */
-    @IndexField(fieldType = FieldType.NESTED, nestedClass = User.class)
+    @IndexField(fieldType = FieldType.NESTED, nestedOrObjectClass = User.class)
     private List<User> users;
 
     /**

@@ -21,7 +21,7 @@
 ## What is Easy-Es?
 ---
 
-Easy-Es is a powerfully enhanced toolkit of RestHighLevelClient for simplify development. This toolkit provides some efficient, useful, out-of-the-box features for ElasticSearch. By using Easy-Es, you can use MySQL syntax to complete Es queries. Use it can effectively save your development time.
+Easy-Es is a powerfully enhanced toolkit of ElasticsearchClient for simplify development. This toolkit provides some efficient, useful, out-of-the-box features for ElasticSearch. By using Easy-Es, you can use MySQL syntax to complete Es queries. Use it can effectively save your development time.
 
 ## Official website
 ---
@@ -69,7 +69,7 @@ LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
 ```
 
 ```java
-// Query with RestHighLevelClient requires 11 lines of code, not including parsing JSON code
+// Query with ElasticsearchClient requires 11 lines of code, not including parsing JSON code
 String indexName = "document";
         SearchRequest searchRequest = new SearchRequest(indexName);
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
@@ -77,7 +77,7 @@ String indexName = "document";
         TermsQueryBuilder creatorTerm = QueryBuilders.termsQuery("creator", "Guy");
         boolQueryBuilder.must(titleTerm);
         boolQueryBuilder.must(creatorTerm);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(boolQueryBuilder);
         searchRequest.source(searchSourceBuilder);
         try {
@@ -166,8 +166,8 @@ String indexName = "document";
 | max | max |AggregationBuilders.max|
 | avg | avg |AggregationBuilders.avg|
 | sum | sum |AggregationBuilders.sum| 
-| order by xxx asc | orderByAsc | fieldSortBuilder.order(SortOrder.ASC)|
-| order by xxx desc | orderByDesc |fieldSortBuilder.order(SortOrder.DESC)|
+| order by xxx asc | orderByAsc | fieldSortBuilder.order(SortOrder.Asc)|
+| order by xxx desc | orderByDesc |fieldSortBuilder.order(SortOrder.Desc)|
 | - | match |matchQuery|
 | - | matchPhrase |QueryBuilders.matchPhraseQuery|
 | - | matchPrefix |QueryBuilders.matchPhrasePrefixQuery|

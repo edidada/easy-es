@@ -1,18 +1,10 @@
 package org.dromara.easyes.core.toolkit;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.*;
 import org.dromara.easyes.common.constants.BaseEsConstants;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 
@@ -36,12 +28,12 @@ public class LockUtils {
     /**
      * 尝试获取es分布式锁
      *
-     * @param client   RestHighLevelClient
+     * @param client   ElasticsearchClient
      * @param idValue  id字段值实际未entityClass名,一个entity对应一把锁
      * @param maxRetry 最大重试次数
      * @return 是否获取成功
      */
-    public static synchronized boolean tryLock(RestHighLevelClient client, String idValue, Integer maxRetry) {
+    public static synchronized boolean tryLock(ElasticsearchClient client, String idValue, Integer maxRetry) {
         boolean existsIndex = IndexUtils.existsIndex(client, LOCK_INDEX);
         if (!existsIndex) {
             IndexUtils.createEmptyIndex(client, LOCK_INDEX);
@@ -66,46 +58,46 @@ public class LockUtils {
     /**
      * 创建锁
      *
-     * @param client  RestHighLevelClient
+     * @param client  ElasticsearchClient
      * @param idValue id字段值实际未entityClass名,一个entity对应一把锁
      * @return 是否创建成功
      */
-    private static boolean createLock(RestHighLevelClient client, String idValue) {
-        IndexRequest indexRequest = new IndexRequest(LOCK_INDEX);
-        indexRequest.id(idValue);
-        indexRequest.source(BaseEsConstants.DISTRIBUTED_LOCK_TIP_JSON, XContentType.JSON);
+    private static boolean createLock(ElasticsearchClient client, String idValue) {
+        IndexRequest<?> indexRequest = IndexRequest.of(x -> x
+                .index(LOCK_INDEX).id(idValue).document(BaseEsConstants.DISTRIBUTED_LOCK_TIP_JSON)
+        );
         IndexResponse response;
         try {
-            response = client.index(indexRequest, RequestOptions.DEFAULT);
+            response = client.index(indexRequest);
         } catch (IOException e) {
             e.printStackTrace();
             return Boolean.FALSE;
         }
-        return response.status().equals(RestStatus.CREATED);
+        return response.result().equals(Result.Created);
     }
 
     /**
      * 释放锁
      *
-     * @param client   RestHighLevelClient
+     * @param client   ElasticsearchClient
      * @param idValue  id字段值实际未entityClass名,一个entity对应一把锁
      * @param maxRetry 最大重试次数
      * @return 是否释放成功
      */
-    public synchronized static boolean release(RestHighLevelClient client, String idValue, Integer maxRetry) {
-        DeleteRequest deleteRequest = new DeleteRequest(LOCK_INDEX);
-        deleteRequest.id(idValue);
+    public synchronized static boolean release(ElasticsearchClient client, String idValue, Integer maxRetry) {
         if (maxRetry <= BaseEsConstants.ZERO) {
             return Boolean.FALSE;
         }
-
+        DeleteRequest deleteRequest = DeleteRequest.of(x -> x
+                .index(LOCK_INDEX).id(idValue)
+        );
         DeleteResponse response;
         try {
-            response = client.delete(deleteRequest, RequestOptions.DEFAULT);
+            response = client.delete(deleteRequest);
         } catch (IOException e) {
             return retryRelease(client, idValue, --maxRetry);
         }
-        if (RestStatus.OK.equals(response.status())) {
+        if (Result.Deleted.equals(response.result())) {
             return Boolean.TRUE;
         } else {
             return retryRelease(client, idValue, maxRetry);
@@ -115,12 +107,12 @@ public class LockUtils {
     /**
      * 重试释放
      *
-     * @param client   RestHighLevelClient
+     * @param client   ElasticsearchClient
      * @param idValue  id字段值实际未entityClass名,一个entity对应一把锁
      * @param maxRetry 最大重试次数
      * @return 是否重试成功
      */
-    private static boolean retryRelease(RestHighLevelClient client, String idValue, Integer maxRetry) {
+    private static boolean retryRelease(ElasticsearchClient client, String idValue, Integer maxRetry) {
         try {
             Thread.sleep(WAIT_SECONDS / maxRetry);
         } catch (InterruptedException interruptedException) {
@@ -132,24 +124,22 @@ public class LockUtils {
     /**
      * 获取个数
      *
-     * @param client  RestHighLevelClient
+     * @param client  ElasticsearchClient
      * @param idValue id字段值实际未entityClass名,一个entity对应一把锁
      * @return 该id对应的锁的个数, 如果>0 说明已有锁,需重试获取,否则认为无锁
      */
-    private static Integer getCount(RestHighLevelClient client, String idValue) {
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(LOCK_INDEX);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.termQuery(ID_FIELD, idValue));
-        searchRequest.source(searchSourceBuilder);
-        SearchResponse response;
+    private static Integer getCount(ElasticsearchClient client, String idValue) {
+        co.elastic.clients.elasticsearch.core.SearchRequest.Builder searchRequest = new SearchRequest.Builder();
+        searchRequest.index(LOCK_INDEX);
+        searchRequest.query(Query.of(x -> x.term(y -> y.field(ID_FIELD).value(idValue))));
+        SearchResponse<?> response;
         try {
-            response = client.search(searchRequest, RequestOptions.DEFAULT);
+            response = client.search(searchRequest.build(), Object.class);
         } catch (IOException e) {
             e.printStackTrace();
             return BaseEsConstants.ONE;
         }
-        return (int) response.getHits().getTotalHits().value;
+        return (int) response.hits().total().value();
     }
 
 }

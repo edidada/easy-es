@@ -1,6 +1,12 @@
 package org.dromara.easyes.core.kernel;
 
-import org.apache.lucene.search.join.ScoreMode;
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
+import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.util.NamedValue;
 import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.common.enums.AggregationTypeEnum;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
@@ -9,18 +15,8 @@ import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.conditions.function.*;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
-import org.elasticsearch.common.geo.GeoDistance;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.DistanceUnit;
+import org.dromara.easyes.core.toolkit.GeoUtils;
 import org.elasticsearch.geometry.Geometry;
-import org.elasticsearch.index.query.Operator;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.aggregations.BucketOrder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -179,7 +175,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children nested(boolean condition, String path, Consumer<Children> consumer, ScoreMode scoreMode) {
+    public Children nested(boolean condition, String path, Consumer<Children> consumer, ChildScoreMode scoreMode) {
         return addNested(condition, path, scoreMode, consumer);
     }
 
@@ -189,7 +185,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children hasChild(boolean condition, String type, Consumer<Children> consumer, ScoreMode scoreMode) {
+    public Children hasChild(boolean condition, String type, Consumer<Children> consumer, ChildScoreMode scoreMode) {
         return addJoin(condition, HAS_CHILD, type, scoreMode, consumer);
     }
 
@@ -308,13 +304,13 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
         if (condition) {
             Assert.notBlank(topLeft, "TopLeft must not be null in geoBoundingBox query");
             Assert.notBlank(bottomRight, "BottomRight must not be null in geoBoundingBox query");
-            return geoBoundingBox(true, column, new GeoPoint(topLeft), new GeoPoint(bottomRight), boost);
+            return geoBoundingBox(true, column, GeoUtils.create(topLeft), GeoUtils.create(bottomRight), boost);
         }
         return typedThis;
     }
 
     @Override
-    public Children geoBoundingBox(boolean condition, String column, GeoPoint topLeft, GeoPoint bottomRight, Float boost) {
+    public Children geoBoundingBox(boolean condition, String column, GeoLocation topLeft, GeoLocation bottomRight, Float boost) {
         if (condition) {
             Assert.notNull(topLeft, "TopLeft point must not be null in geoBoundingBox query");
             Assert.notNull(bottomRight, "BottomRight point must not be null in geoBoundingBox query");
@@ -323,46 +319,46 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children geoDistance(boolean condition, String column, Double distance, DistanceUnit distanceUnit, GeoPoint centralGeoPoint, Float boost) {
+    public Children geoDistance(boolean condition, String column, Double distance, DistanceUnit distanceUnit, GeoLocation centralGeoLocation, Float boost) {
         if (condition) {
             Assert.notNull(distance, "Distance must not be null in geoDistance query");
             Assert.notNull(distanceUnit, "Distance unit must not be null in geoDistance query");
-            Assert.notNull(centralGeoPoint, "CentralGeoPoint must not be null in geoDistance query");
+            Assert.notNull(centralGeoLocation, "CentralGeoLocation must not be null in geoDistance query");
         }
-        return addParam(condition, GEO_DISTANCE, column, distance, distanceUnit, centralGeoPoint, boost);
+        return addParam(condition, GEO_DISTANCE, column, distance, distanceUnit, centralGeoLocation, boost);
     }
 
     @Override
-    public Children geoDistance(boolean condition, String column, Double distance, DistanceUnit distanceUnit, String centralGeoPoint, Float boost) {
+    public Children geoDistance(boolean condition, String column, Double distance, DistanceUnit distanceUnit, String centralGeoLocation, Float boost) {
         if (condition) {
-            Assert.notBlank(centralGeoPoint, "centralGeoPoint must not be null in geoDistance query");
-            return geoDistance(true, column, distance, distanceUnit, new GeoPoint(centralGeoPoint), boost);
+            Assert.notBlank(centralGeoLocation, "centralGeoLocation must not be null in geoDistance query");
+            return geoDistance(true, column, distance, distanceUnit, GeoUtils.create(centralGeoLocation), boost);
         }
         return typedThis;
     }
 
     @Override
-    public Children geoDistance(boolean condition, String column, String distance, GeoPoint centralGeoPoint, Float boost) {
+    public Children geoDistance(boolean condition, String column, String distance, GeoLocation centralGeoLocation, Float boost) {
         if (condition) {
             Assert.notBlank(distance, "Distance must not be null in geoDistance query");
-            Assert.notNull(centralGeoPoint, "CentralGeoPoint must not be null in geoDistance query");
+            Assert.notNull(centralGeoLocation, "CentralGeoLocation must not be null in geoDistance query");
         }
-        return addParam(condition, GEO_DISTANCE, column, distance, null, centralGeoPoint, boost);
+        return addParam(condition, GEO_DISTANCE, column, distance, null, centralGeoLocation, boost);
     }
 
     @Override
-    public Children geoDistance(boolean condition, String column, String distance, String centralGeoPoint, Float boost) {
+    public Children geoDistance(boolean condition, String column, String distance, String centralGeoLocation, Float boost) {
         if (condition) {
-            Assert.notBlank(centralGeoPoint, "centralGeoPoint must not be null in geoDistance query");
-            return geoDistance(true, column, distance, new GeoPoint(centralGeoPoint), boost);
+            Assert.notBlank(centralGeoLocation, "centralGeoLocation must not be null in geoDistance query");
+            return geoDistance(true, column, distance, GeoUtils.create(centralGeoLocation), boost);
         }
         return typedThis;
     }
 
     @Override
-    public Children geoPolygon(boolean condition, String column, List<GeoPoint> geoPoints, Float boost) {
+    public Children geoPolygon(boolean condition, String column, List<GeoLocation> geoPoints, Float boost) {
         if (condition) {
-            Assert.notEmpty(geoPoints, "GeoPoints must not be null in geoPolygon query");
+            Assert.notEmpty(geoPoints, "GeoLocations must not be null in geoPolygon query");
         }
         return addParam(condition, GEO_POLYGON, column, geoPoints, boost);
     }
@@ -376,10 +372,10 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children geoShape(boolean condition, String column, Geometry geometry, ShapeRelation shapeRelation, Float boost) {
+    public Children geoShape(boolean condition, String column, Geometry geometry, GeoShapeRelation shapeRelation, Float boost) {
         if (condition) {
             Assert.notNull(geometry, "Geometry must not be null in geoShape query");
-            Assert.notNull(geometry, "ShapeRelation must not be null in geoShape query");
+            Assert.notNull(geometry, "GeoShapeRelation must not be null in geoShape query");
         }
         return addParam(condition, GEO_SHAPE, column, geometry, shapeRelation, null, boost);
     }
@@ -395,7 +391,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
                     .forEach(column -> {
                         BaseSortParam baseSortParam = BaseSortParam.builder()
                                 .sortField(column)
-                                .sortOrder(isAsc ? SortOrder.ASC : SortOrder.DESC)
+                                .sortOrder(isAsc ? SortOrder.Asc : SortOrder.Desc)
                                 .orderTypeEnum(OrderTypeEnum.FIELD)
                                 .build();
                         baseSortParams.add(baseSortParam);
@@ -413,14 +409,14 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children orderByDistanceAsc(boolean condition, String column, DistanceUnit unit, GeoDistance geoDistance, GeoPoint... geoPoints) {
+    public Children orderByDistanceAsc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
         if (ArrayUtils.isNotEmpty(geoPoints)) {
             if (condition) {
                 BaseSortParam baseSortParam = BaseSortParam.builder()
                         .sortField(column)
-                        .sortOrder(SortOrder.ASC)
+                        .sortOrder(SortOrder.Asc)
                         .orderTypeEnum(OrderTypeEnum.GEO)
-                        .geoPoints(geoPoints)
+                        .geoPoints(Arrays.asList(geoPoints))
                         .unit(unit)
                         .geoDistance(geoDistance)
                         .build();
@@ -431,14 +427,14 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children orderByDistanceDesc(boolean condition, String column, DistanceUnit unit, GeoDistance geoDistance, GeoPoint... geoPoints) {
+    public Children orderByDistanceDesc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
         if (ArrayUtils.isNotEmpty(geoPoints)) {
             if (condition) {
                 BaseSortParam baseSortParam = BaseSortParam.builder()
                         .sortField(column)
-                        .sortOrder(SortOrder.DESC)
+                        .sortOrder(SortOrder.Desc)
                         .orderTypeEnum(OrderTypeEnum.GEO)
-                        .geoPoints(geoPoints)
+                        .geoPoints(Arrays.asList(geoPoints))
                         .unit(unit)
                         .geoDistance(geoDistance)
                         .build();
@@ -449,7 +445,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children sort(boolean condition, List<SortBuilder<?>> sortBuilders) {
+    public Children sort(boolean condition, List<SortOptions> sortBuilders) {
         if (CollectionUtils.isEmpty(sortBuilders)) {
             return typedThis;
         }
@@ -597,20 +593,20 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children setSearchSourceBuilder(boolean condition, SearchSourceBuilder searchSourceBuilder) {
+    public Children setSearchSourceBuilder(boolean condition, SearchRequest.Builder searchSourceBuilder) {
         if (condition) {
-            this.searchSourceBuilder = searchSourceBuilder;
+            this.searchBuilder = searchSourceBuilder;
         }
         return typedThis;
     }
 
     @Override
-    public Children mix(boolean condition, QueryBuilder queryBuilder) {
+    public Children mix(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query.Builder queryBuilder) {
         return addParam(condition, queryBuilder);
     }
 
     @Override
-    public Children bucketOrder(boolean condition, List<BucketOrder> bucketOrders) {
+    public Children bucketOrder(boolean condition, List<NamedValue<SortOrder>> bucketOrders) {
         if (condition) {
             this.bucketOrders = bucketOrders;
         }
@@ -637,7 +633,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children minScore(Float score) {
+    public Children minScore(Double score) {
         minScore = score;
         return typedThis;
     }
@@ -676,7 +672,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children maxResultWindow(Integer maxResultWindow) {
+    public Children maxResultWindow(Long maxResultWindow) {
         Optional.ofNullable(maxResultWindow).ifPresent(max -> this.maxResultWindow = maxResultWindow);
         return typedThis;
     }
@@ -693,19 +689,19 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children settings(Settings settings) {
+    public Children settings(IndexSettings.Builder settings) {
         this.settings = settings;
         return typedThis;
     }
 
     @Override
-    public Children mapping(Map<String, Object> mapping) {
+    public Children mapping(TypeMapping.Builder mapping) {
         this.mapping = mapping;
         return typedThis;
     }
 
     @Override
-    public Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Float boost) {
+    public Children mapping(String column, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Double boost) {
         addEsIndexParam(column, fieldType, analyzer, searchAnalyzer, dateFormat, fieldData, boost);
         return typedThis;
     }
@@ -833,7 +829,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
      * @param queryBuilder 原生查询参数
      * @return wrapper
      */
-    private Children addParam(boolean condition, QueryBuilder queryBuilder) {
+    private Children addParam(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query.Builder queryBuilder) {
         if (condition) {
             Param param = new Param();
             param.setQueryBuilder(queryBuilder);
@@ -976,7 +972,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
      * @param consumer  消费者
      * @return wrapper
      */
-    private Children addNested(boolean condition, String path, ScoreMode scoreMode, Consumer<Children> consumer) {
+    private Children addNested(boolean condition, String path, ChildScoreMode scoreMode, Consumer<Children> consumer) {
         if (condition) {
             Param param = new Param();
             param.setColumn(path);
@@ -1019,7 +1015,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
      * @param fieldData      是否将text类型字段添加fieldData,fieldData为true时,则text字段也支持聚合
      * @param boost          权重
      */
-    private void addEsIndexParam(String fieldName, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Float boost) {
+    private void addEsIndexParam(String fieldName, FieldType fieldType, String analyzer, String searchAnalyzer, String dateFormat, Boolean fieldData, Double boost) {
         EsIndexParam esIndexParam = new EsIndexParam();
         esIndexParam.setFieldName(fieldName);
         esIndexParam.setFieldType(fieldType.getType());

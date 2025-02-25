@@ -1,9 +1,7 @@
 package org.dromara.easyes.core.toolkit;
 
-import com.alibaba.fastjson.parser.deserializer.ExtraProcessor;
-import com.alibaba.fastjson.serializer.NameFilter;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import com.alibaba.fastjson.serializer.SerializeFilter;
-import com.alibaba.fastjson.serializer.SimplePropertyPreFilter;
 import com.alibaba.fastjson.serializer.ValueFilter;
 import lombok.SneakyThrows;
 import org.dromara.easyes.annotation.*;
@@ -13,15 +11,12 @@ import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.EntityFieldInfo;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.HighLightParam;
-import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,8 +38,7 @@ public class EntityInfoHelper {
     /**
      * 储存反射类表信息
      */
-    private static final Map<Class<?>, EntityInfo> ENTITY_INFO_CACHE = new ConcurrentHashMap<>();
-
+    public static final Map<Class<?>, EntityInfo> ENTITY_INFO_CACHE = new ConcurrentHashMap<>();
 
     /**
      * 获取实体映射表信息
@@ -119,12 +113,13 @@ public class EntityInfoHelper {
         boolean camelCase = globalConfig.getDbConfig().isMapUnderscoreToCamelCase();
         String joinFieldName = camelToUnderline(JoinField.class.getSimpleName(), camelCase);
         entityInfo.setJoinFieldName(joinFieldName);
-        String joinAlias = StringUtils.isBlank(join.rootAlias()) ? clazz.getSimpleName() : join.rootAlias();
+        String joinAlias = StringUtils.isBlank(join.rootAlias()) ? clazz.getSimpleName().toLowerCase() : join.rootAlias();
         String underlineJoinAlias = camelToUnderline(joinAlias, camelCase);
         entityInfo.setJoinAlias(underlineJoinAlias);
         entityInfo.setEagerGlobalOrdinals(join.eagerGlobalOrdinals());
 
-        Map<String, Object> relationMap = entityInfo.getRelationMap();
+        Map<String, List<String>> relationMap = entityInfo.getRelationMap();
+        Map<Class<?>, List<Class<?>>> relationClassMap = entityInfo.getRelationClassMap();
         Arrays.stream(join.nodes())
                 .forEach(child -> {
                     String parentAlias = StringUtils.isBlank(child.parentAlias()) ? child.parentClass().getSimpleName().toLowerCase() : child.parentAlias();
@@ -133,8 +128,8 @@ public class EntityInfoHelper {
                             Arrays.stream(child.childClasses()).map(Class::getSimpleName).map(i -> camelToUnderline(i.toLowerCase(), camelCase)).distinct().collect(Collectors.toList()) :
                             Arrays.stream(child.childAliases()).map(i -> camelToUnderline(i, camelCase)).collect(Collectors.toList());
                     // 大于1以数组形式置入,只有1个元素,则以object置入 否则会导致平滑模式下,从es中查询到的索引mapping与根据注解构造出的mapping结构有差异,被误判索引发生变动
-                    Object relation = childAliases.size() > ONE ? childAliases : childAliases.get(ZERO);
-                    relationMap.put(underlineParentAlias, relation);
+                    relationMap.put(underlineParentAlias, childAliases);
+                    relationClassMap.put(child.parentClass(), Arrays.asList(child.childClasses()));
 
                     // 在join-父加载时预加载join-子信息
                     AtomicInteger index = new AtomicInteger(ZERO);
@@ -198,43 +193,6 @@ public class EntityInfoHelper {
 
         // 字段列表
         entityInfo.setFieldList(fieldList);
-
-        // 添加fastjson 前置过滤器
-        addSimplePropertyPreFilter(entityInfo, clazz);
-
-        // 添加fastjson ExtraProcessor
-        addExtraProcessor(entityInfo);
-    }
-
-    /**
-     * 添加fastjson前置过滤器
-     *
-     * @param entityInfo 实体信息
-     * @param clazz      实体类
-     */
-    private static void addSimplePropertyPreFilter(EntityInfo entityInfo, Class<?> clazz) {
-        // 字段是否序列化过滤 针对notExists字段及高亮字段等
-        List<SerializeFilter> preFilters = new ArrayList<>();
-        SimplePropertyPreFilter entityClassPreFilter =
-                FastJsonUtils.getSimplePropertyPreFilter(clazz, entityInfo.getNotSerializeField());
-        Optional.ofNullable(entityClassPreFilter).ifPresent(preFilters::add);
-
-        // 日期等特殊字段过滤器
-        List<SerializeFilter> valueFilters = getValueFilter(entityInfo, clazz);
-        preFilters.addAll(valueFilters);
-
-        // 嵌套类的字段序列化过滤器
-        entityInfo.getNestedNotSerializeField()
-                .forEach((k, v) -> Optional.ofNullable(FastJsonUtils.getSimplePropertyPreFilter(k, v))
-                        .ifPresent(preFilters::add));
-
-        // 添加fastjson NameFilter 针对驼峰以及下划线转换
-        addNameFilter(entityInfo, preFilters);
-        entityInfo.getClassSimplePropertyPreFilterMap().putIfAbsent(clazz, preFilters);
-
-        // 置空闲置容器,节省少量内存
-        entityInfo.getNotSerializeField().clear();
-        entityInfo.getNestedNotSerializeField().clear();
     }
 
     /**
@@ -252,7 +210,7 @@ public class EntityInfoHelper {
             return serializeFilters;
         }
 
-        Map<Class<?>, Map<String, String>> nestedClassColumnMappingMap = entityInfo.getNestedClassColumnMappingMap();
+        Map<Class<?>, Map<String, String>> nestedClassColumnMappingMap = entityInfo.getNestedOrObjectClassColumnMappingMap();
         SerializeFilter serializeFilter = (ValueFilter) (object, name, value) -> {
             Map<String, String> nestedColumnMappingMap = nestedClassColumnMappingMap.get(object.getClass());
             if (nestedColumnMappingMap != null) {
@@ -270,115 +228,12 @@ public class EntityInfoHelper {
     }
 
     /**
-     * 预添加fastjson解析object时对非实体类字段的处理(比如自定义字段名,下划线等)
-     *
-     * @param entityInfo 实体信息
-     */
-    private static void addExtraProcessor(EntityInfo entityInfo) {
-        Map<String, String> columnMappingMap = entityInfo.getColumnMappingMap();
-        Map<Class<?>, Map<String, String>> nestedClassColumnMappingMap = entityInfo.getNestedClassColumnMappingMap();
-        ExtraProcessor extraProcessor = (object, key, value) -> {
-            Map<String, String> nestedColumnMappingMap = nestedClassColumnMappingMap.get(object.getClass());
-            if (nestedColumnMappingMap != null) {
-                // 嵌套类
-                invokeExtraProcessor(nestedColumnMappingMap, object, key, value, object.getClass());
-            } else {
-                // 主类
-                invokeExtraProcessor(columnMappingMap, object, key, value, object.getClass());
-            }
-        };
-        entityInfo.setExtraProcessor(extraProcessor);
-    }
-
-    /**
-     * fastjson字段转换 (由es中查询结果映射至对象)
-     *
-     * @param columnMappingMap 字段映射
-     * @param object           对象
-     * @param key              字段名
-     * @param value            字段值
-     * @param clazz            实体类
-     */
-    private static void invokeExtraProcessor(Map<String, String> columnMappingMap, Object object, String key, Object value, Class<?> clazz) {
-        Optional.ofNullable(columnMappingMap.get(key))
-                .flatMap(realMethodName -> Optional.ofNullable(BaseCache.setterMethod(clazz, realMethodName)))
-                .ifPresent(method -> {
-                    try {
-                        method.invoke(object, value);
-                    } catch (IllegalArgumentException illegalArgumentException) {
-                        illegalArgumentException.printStackTrace();
-                        // 日期类型失败按默认format格式重试 几乎不会走到这里,除非用户针对日期字段设置了别名
-                        reInvokeDate(object, value, method);
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
-                });
-    }
-
-    /**
-     * 日期类型重新反射
-     *
-     * @param object 对象
-     * @param value  值
-     * @param method 方法名
-     */
-    private static void reInvokeDate(Object object, Object value, Method method) {
-        if (value instanceof String) {
-            String paramTypeName = method.getParameterTypes()[0].getSimpleName();
-            Object parsed = null;
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DEFAULT_DATE_TIME_FORMAT);
-            if (LocalDateTime.class.getSimpleName().equals(paramTypeName)) {
-                parsed = LocalDateTime.parse(value.toString(), formatter);
-            } else if (LocalDate.class.getSimpleName().equals(paramTypeName)) {
-                parsed = LocalDate.parse(value.toString(), formatter);
-            } else if (Date.class.getSimpleName().equals(paramTypeName)) {
-                parsed = Date.from(LocalDateTime.parse(value.toString(), formatter).atZone(ZoneId.systemDefault()).toInstant());
-            }
-            try {
-                method.invoke(object, parsed);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * 添加fastjson字段过滤器
-     *
-     * @param entityInfo 实体信息
-     */
-    private static void addNameFilter(EntityInfo entityInfo, List<SerializeFilter> preFilters) {
-        Map<String, String> mappingColumnMap = entityInfo.getMappingColumnMap();
-        Map<Class<?>, Map<String, String>> nestedClassMappingColumnMap = entityInfo.getNestedClassMappingColumnMap();
-        if (!mappingColumnMap.isEmpty()) {
-            NameFilter nameFilter = (object, name, value) -> {
-                Map<String, String> nestedMappingColumnMap = nestedClassMappingColumnMap.get(object.getClass());
-                if (Objects.nonNull(nestedMappingColumnMap)) {
-                    String nestedMappingColumn = nestedMappingColumnMap.get(name);
-                    if (Objects.equals(nestedMappingColumn, name)) {
-                        return name;
-                    } else {
-                        return nestedMappingColumn;
-                    }
-                }
-                String mappingColumn = mappingColumnMap.get(name);
-                if (Objects.equals(mappingColumn, name)) {
-                    return name;
-                }
-                return mappingColumn;
-            };
-            preFilters.add(nameFilter);
-        }
-    }
-
-    /**
      * 字段属性初始化
      *
      * @param dbConfig   索引配置
      * @param fieldList  字段列表
      * @param field      字段
      * @param entityInfo 实体信息
-     * @return
      */
     private static boolean initIndexFieldWithAnnotation(GlobalConfig.DbConfig dbConfig, List<EntityFieldInfo> fieldList,
                                                         Field field, EntityInfo entityInfo, Class<?> clazz) {
@@ -472,13 +327,13 @@ public class EntityInfoHelper {
             }
 
             // 复制字段
-            if (ArrayUtils.isNotEmpty(indexField.copyTo())){
+            if (ArrayUtils.isNotEmpty(indexField.copyTo())) {
                 List<String> collect;
-                if (dbConfig.isMapUnderscoreToCamelCase()){
+                if (dbConfig.isMapUnderscoreToCamelCase()) {
                     collect = Arrays.stream(indexField.copyTo())
                             .map(StringUtils::camelToUnderline)
                             .collect(Collectors.toList());
-                }else {
+                } else {
                     collect = Arrays.stream(indexField.copyTo())
                             .collect(Collectors.toList());
                 }
@@ -501,10 +356,10 @@ public class EntityInfoHelper {
             fieldList.add(entityFieldInfo);
 
             // 嵌套类处理
-            if (DefaultNestedClass.class != indexField.nestedClass()) {
+            if (DefaultNestedOrObjectClass.class != indexField.nestedOrObjectClass()) {
                 // 嵌套类
-                entityInfo.getPathClassMap().putIfAbsent(field.getName(), indexField.nestedClass());
-                processNested(indexField.nestedClass(), dbConfig, entityInfo);
+                entityInfo.getPathClassMap().putIfAbsent(field.getName(), indexField.nestedOrObjectClass());
+                processNestedOrObject(indexField.nestedOrObjectClass(), dbConfig, entityInfo);
             }
 
         } else {
@@ -519,10 +374,10 @@ public class EntityInfoHelper {
      * @param entityInfo       实体信息
      * @param field            字段
      * @param mappingColumnMap 实体字段与es字段映射关系
-     * @param nestedClass      嵌套类
+     * @param nestedOrObjectClass      嵌套类
      */
     private static void initHighLightAnnotation(GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo, Field field,
-                                                Map<String, String> mappingColumnMap, Class<?> nestedClass) {
+                                                Map<String, String> mappingColumnMap, Class<?> nestedOrObjectClass) {
         HighLight highLight = field.getAnnotation(HighLight.class);
         String mappingField = highLight.mappingField();
 
@@ -536,14 +391,14 @@ public class EntityInfoHelper {
         }
         if (!skip) {
             // 添加无需序列化字段至缓存
-            if (nestedClass == null) {
+            if (nestedOrObjectClass == null) {
                 entityInfo.getNotSerializeField().add(mappingField);
             } else {
                 // 嵌套类型
-                Set<String> nestedNotSerializeFieldSet = Optional.ofNullable(entityInfo.getNestedNotSerializeField().get(nestedClass))
+                Set<String> nestedNotSerializeFieldSet = Optional.ofNullable(entityInfo.getNestedOrObjectNotSerializeField().get(nestedOrObjectClass))
                         .orElse(new HashSet<>());
                 nestedNotSerializeFieldSet.add(mappingField);
-                entityInfo.getNestedNotSerializeField().put(nestedClass, nestedNotSerializeFieldSet);
+                entityInfo.getNestedOrObjectNotSerializeField().put(nestedOrObjectClass, nestedNotSerializeFieldSet);
             }
         }
 
@@ -553,12 +408,12 @@ public class EntityInfoHelper {
         if (dbConfig.isMapUnderscoreToCamelCase()) {
             realHighLightField = StringUtils.camelToUnderline(realHighLightField);
         }
-        addHighlightParam(entityInfo, nestedClass, highLight, realHighLightField, mappingField);
+        addHighlightParam(entityInfo, nestedOrObjectClass, highLight, realHighLightField, mappingField);
 
         MultiIndexField multiIndexField = field.getAnnotation(MultiIndexField.class);
         if (multiIndexField != null) {
             for (InnerIndexField innerIndexField : multiIndexField.otherIndexFields()) {
-                addHighlightParam(entityInfo, nestedClass, highLight,
+                addHighlightParam(entityInfo, nestedOrObjectClass, highLight,
                         realHighLightField + STR_SIGN + innerIndexField.suffix(), mappingField);
             }
         }
@@ -568,20 +423,20 @@ public class EntityInfoHelper {
      * 添加高亮参数
      *
      * @param entityInfo         实体信息
-     * @param nestedClass        嵌套类
+     * @param nestedOrObjectClass        嵌套类
      * @param highLight          高亮注解
      * @param realHighLightField 实际高亮字段
      * @param mappingField       映射字段
      */
-    private static void addHighlightParam(EntityInfo entityInfo, Class<?> nestedClass, HighLight highLight,
+    private static void addHighlightParam(EntityInfo entityInfo, Class<?> nestedOrObjectClass, HighLight highLight,
                                           String realHighLightField, String mappingField) {
-        if (nestedClass == null) {
+        if (nestedOrObjectClass == null) {
             entityInfo.getHighlightFieldMap().putIfAbsent(realHighLightField, mappingField);
         } else {
-            Map<String, String> nestedHighlightFieldMap = Optional.ofNullable(entityInfo.getNestedHighlightFieldMap().get(nestedClass))
+            Map<String, String> nestedHighlightFieldMap = Optional.ofNullable(entityInfo.getNestedOrObjectHighlightFieldMap().get(nestedOrObjectClass))
                     .orElse(new HashMap<>());
             nestedHighlightFieldMap.putIfAbsent(realHighLightField, mappingField);
-            entityInfo.getNestedHighlightFieldMap().put(nestedClass, nestedHighlightFieldMap);
+            entityInfo.getNestedOrObjectHighlightFieldMap().put(nestedOrObjectClass, nestedHighlightFieldMap);
         }
 
         // 置入高亮查询参数缓存
@@ -595,26 +450,26 @@ public class EntityInfoHelper {
         if (MINUS_ONE != highLight.numberOfFragments() && highLight.numberOfFragments() > ZERO) {
             highlightParam.setNumberOfFragments(highLight.numberOfFragments());
         }
-        if (nestedClass == null) {
+        if (nestedOrObjectClass == null) {
             entityInfo.getHighlightParams().add(highlightParam);
         } else {
-            List<HighLightParam> nestedHighlightParams = Optional.ofNullable(entityInfo.getNestedHighLightParamsMap().get(nestedClass))
+            List<HighLightParam> nestedHighlightParams = Optional.ofNullable(entityInfo.getNestedOrObjectHighLightParamsMap().get(nestedOrObjectClass))
                     .orElse(new ArrayList<>());
             nestedHighlightParams.add(highlightParam);
-            entityInfo.getNestedHighLightParamsMap().put(nestedClass, nestedHighlightParams);
+            entityInfo.getNestedOrObjectHighLightParamsMap().put(nestedOrObjectClass, nestedHighlightParams);
         }
     }
 
     /**
      * 处理嵌套类中的字段配置
      *
-     * @param nestedClass 嵌套类
+     * @param nestedOrObjectClass 嵌套类
      * @param dbConfig    全局配置
      * @param entityInfo  实体信息
      */
-    private static void processNested(Class<?> nestedClass, GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo) {
+    private static void processNestedOrObject(Class<?> nestedOrObjectClass, GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo) {
         // 将字段映射置入map 对其子节点也执行同样的操作
-        List<Field> allFields = getAllFields(nestedClass);
+        List<Field> allFields = getAllFields(nestedOrObjectClass);
         Map<String, String> mappingColumnMap = new HashMap<>(allFields.size());
         Map<String, String> columnMappingMap = new HashMap<>(allFields.size());
         Map<String, String> fieldTypeMap = new HashMap<>();
@@ -627,7 +482,7 @@ public class EntityInfoHelper {
 
             // 初始化封装嵌套类中的HighLight注解信息
             if (field.isAnnotationPresent(HighLight.class)) {
-                initHighLightAnnotation(dbConfig, entityInfo, field, mappingColumnMap, nestedClass);
+                initHighLightAnnotation(dbConfig, entityInfo, field, mappingColumnMap, nestedOrObjectClass);
             }
 
             // 处理TableField注解
@@ -636,7 +491,7 @@ public class EntityInfoHelper {
                     .orElse(field.getAnnotation(IndexField.class));
             if (Objects.isNull(indexField)) {
                 // 跳过无关字段
-                Set<String> notSerializeFields = Optional.ofNullable(entityInfo.getNestedNotSerializeField().get(nestedClass)).orElse(Collections.emptySet());
+                Set<String> notSerializeFields = Optional.ofNullable(entityInfo.getNestedOrObjectNotSerializeField().get(nestedOrObjectClass)).orElse(Collections.emptySet());
                 if (notSerializeFields.contains(field.getName())) {
                     return;
                 }
@@ -649,15 +504,15 @@ public class EntityInfoHelper {
                 entityFieldInfo.setColumnType(field.getType().getSimpleName());
 
                 // 日期类型,如果没加注解, 设置默认的日期format
-                initClassDateFormatMap(fieldType, field.getName(), entityInfo, nestedClass, DEFAULT_DATE_TIME_FORMAT);
+                initClassDateFormatMap(fieldType, field.getName(), entityInfo, nestedOrObjectClass, DEFAULT_DATE_TIME_FORMAT);
 
                 entityFieldInfoList.add(entityFieldInfo);
             } else {
                 if (indexField.exist()) {
                     // 子嵌套,递归处理
-                    if (DefaultNestedClass.class != indexField.nestedClass()) {
-                        entityInfo.getPathClassMap().putIfAbsent(field.getName(), indexField.nestedClass());
-                        processNested(indexField.nestedClass(), dbConfig, entityInfo);
+                    if (DefaultNestedOrObjectClass.class != indexField.nestedOrObjectClass()) {
+                        entityInfo.getPathClassMap().putIfAbsent(field.getName(), indexField.nestedOrObjectClass());
+                        processNestedOrObject(indexField.nestedOrObjectClass(), dbConfig, entityInfo);
                     }
 
                     // 字段名称
@@ -683,7 +538,7 @@ public class EntityInfoHelper {
 
                     // 日期格式化信息初始化
                     String format = StringUtils.isBlank(indexField.dateFormat()) ? DEFAULT_DATE_TIME_FORMAT : indexField.dateFormat();
-                    initClassDateFormatMap(indexField.fieldType(), field.getName(), entityInfo, nestedClass, format);
+                    initClassDateFormatMap(indexField.fieldType(), field.getName(), entityInfo, nestedOrObjectClass, format);
 
                     // 缩放因子
                     if (MINUS_ONE != indexField.scalingFactor()) {
@@ -712,11 +567,11 @@ public class EntityInfoHelper {
 
 
         });
-        entityInfo.getNestedNotSerializeField().putIfAbsent(nestedClass, notSerializedFields);
-        entityInfo.getNestedClassColumnMappingMap().putIfAbsent(nestedClass, columnMappingMap);
-        entityInfo.getNestedClassMappingColumnMap().putIfAbsent(nestedClass, mappingColumnMap);
-        entityInfo.getNestedClassFieldTypeMap().putIfAbsent(nestedClass, fieldTypeMap);
-        entityInfo.getNestedFieldListMap().put(nestedClass, entityFieldInfoList);
+        entityInfo.getNestedOrObjectNotSerializeField().putIfAbsent(nestedOrObjectClass, notSerializedFields);
+        entityInfo.getNestedOrObjectClassColumnMappingMap().putIfAbsent(nestedOrObjectClass, columnMappingMap);
+        entityInfo.getNestedOrObjectClassMappingColumnMap().putIfAbsent(nestedOrObjectClass, mappingColumnMap);
+        entityInfo.getNestedOrObjectClassFieldTypeMap().putIfAbsent(nestedOrObjectClass, fieldTypeMap);
+        entityInfo.getNestedOrObjectFieldListMap().put(nestedOrObjectClass, entityFieldInfoList);
     }
 
     /**
@@ -923,24 +778,19 @@ public class EntityInfoHelper {
     @SneakyThrows
     private static void initSettings(Class<?> clazz, EntityInfo entityInfo) {
         Settings settings = clazz.getAnnotation(Settings.class);
-        Optional.ofNullable(settings).ifPresent(i -> {
-            entityInfo.getSettingsMap().put(REPLICAS_FIELD, i.replicasNum());
-            entityInfo.getSettingsMap().put(SHARDS_FIELD, i.shardsNum());
-            entityInfo.getSettingsMap().put(MAX_RESULT_WINDOW_FIELD, i.maxResultWindow());
-            if (StringUtils.isNotBlank(i.refreshInterval())) {
-                entityInfo.getSettingsMap().put(REFRESH_INTERVAL_FIELD, i.refreshInterval());
-            }
-        });
-        Class<? extends DefaultSettingsProvider> provider = settings == null ? DefaultSettingsProvider.class : settings.settingsProvider();
-        Object instance = provider.getConstructor(new Class[]{}).newInstance(new Object[]{});
-        Method method = provider.getDeclaredMethod(GET_SETTINGS_METHOD);
-        Object invoke = method.invoke(instance);
-        if (invoke instanceof Map) {
-            Map<String, Object> settingsMap = (Map<String, Object>) invoke;
-            if (CollectionUtils.isNotEmpty(settingsMap)) {
-                settingsMap.forEach((k, v) -> entityInfo.getSettingsMap().putIfAbsent(k, v));
-            }
+        if (settings == null) {
+            return;
         }
+        IndexSettings.Builder builder = entityInfo.getIndexSettings();
+        builder.numberOfReplicas(settings.replicasNum() + "");
+        builder.numberOfShards(settings.shardsNum() + "");
+        builder.maxResultWindow((int)settings.maxResultWindow());
+        if (StringUtils.isNotBlank(settings.refreshInterval())) {
+            builder.refreshInterval(a -> a.time(settings.refreshInterval()));
+        }
+
+        ISettingsProvider provider = settings.settingsProvider().getDeclaredConstructor().newInstance();
+        provider.settings(builder);
     }
 
     /**

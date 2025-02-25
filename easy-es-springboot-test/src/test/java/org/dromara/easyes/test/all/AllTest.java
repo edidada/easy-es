@@ -1,6 +1,9 @@
 package org.dromara.easyes.test.all;
 
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.GeoLocation;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
@@ -17,8 +20,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.HttpAsyncResponseConsumerFactory;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.geo.GeoDistance;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
+import org.elasticsearch.common.geo.GeoShapeRelation;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.geometry.Circle;
 import org.elasticsearch.geometry.Point;
@@ -168,7 +170,7 @@ public class AllTest {
     @Order(4)
     public void testUpdateBySetSearchSourceBuilder() {
         LambdaEsUpdateWrapper<Document> wrapper = new LambdaEsUpdateWrapper<>();
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.termQuery(FieldUtils.val(Document::getTitle) + KEYWORD_SUFFIX, "测试文档2"));
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
 
@@ -535,7 +537,7 @@ public class AllTest {
     @Order(6)
     public void testSetSearchSourceBuilder() {
         // 测试混合查询的另一种方式
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchQuery(FieldUtils.val(Document::getCreator), "老汉"));
         Optional.ofNullable(EntityInfoHelper.getEntityInfo(Document.class))
                 .flatMap(i -> Optional.ofNullable(i.getMaxResultWindow()))
@@ -632,7 +634,7 @@ public class AllTest {
         Assertions.assertEquals(10, saPageInfo.getList().size());
 
         //获取下一页
-        List<Object> nextSearchAfter = saPageInfo.getNextSearchAfter();
+        List<FieldValue> nextSearchAfter = saPageInfo.getNextSearchAfter();
         SAPageInfo<Document> next = documentMapper.searchAfterPage(lambdaEsQueryWrapper, nextSearchAfter, 10);
         Assertions.assertEquals(10, next.getList().size());
     }
@@ -703,7 +705,7 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceAsc() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoPoint centerPoint = new GeoPoint(41.0, 116.0);
+        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceAsc(Document::getLocation, centerPoint);
@@ -716,7 +718,7 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceDesc() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoPoint centerPoint = new GeoPoint(41.0, 116.0);
+        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceDesc(Document::getLocation, centerPoint);
@@ -729,8 +731,8 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceMulti() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoPoint centerPoint = new GeoPoint(41.0, 116.0);
-        GeoPoint centerPoint1 = new GeoPoint(42.0, 118.0);
+        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
+        GeoLocation centerPoint1 = new GeoLocation(42.0, 118.0);
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceDesc(Document::getLocation, centerPoint)
@@ -759,7 +761,7 @@ public class AllTest {
                 fieldSort(FieldUtils.getRealField(
                         FieldUtils.val(Document::getStarNum),
                         EntityInfoHelper.getEntityInfo(Document.class).getMappingColumnMap()));
-        fieldSortBuilder.order(SortOrder.DESC);
+        fieldSortBuilder.order(SortOrder.Desc);
         wrapper.sort(fieldSortBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals("22", documents.get(0).getEsId());
@@ -854,8 +856,8 @@ public class AllTest {
     @Order(6)
     public void testGeoBoundingBox() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoPoint leftTop = new GeoPoint(41.187328D, 115.498353D);
-        GeoPoint bottomRight = new GeoPoint(39.084509D, 117.610461D);
+        GeoLocation leftTop = new GeoLocation(41.187328D, 115.498353D);
+        GeoLocation bottomRight = new GeoLocation(39.084509D, 117.610461D);
         wrapper.geoBoundingBox(Document::getLocation, leftTop, bottomRight);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(4, documents.size());
@@ -866,12 +868,12 @@ public class AllTest {
     @Order(6)
     public void testGeoDistance() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoPoint geoPoint = new GeoPoint(41.0, 116.0);
+        GeoLocation geoPoint = new GeoLocation(41.0, 116.0);
         wrapper.geoDistance(Document::getLocation, 168.8, DistanceUnit.KILOMETERS, geoPoint);
         GeoDistanceSortBuilder geoDistanceSortBuilder = SortBuilders.geoDistanceSort(FieldUtils.val(Document::getLocation), geoPoint)
                 .unit(DistanceUnit.KILOMETERS)
                 .geoDistance(GeoDistance.ARC)
-                .order(SortOrder.DESC);
+                .order(SortOrder.Desc);
 
         wrapper.sort(geoDistanceSortBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
@@ -882,10 +884,10 @@ public class AllTest {
     @Order(6)
     public void testGeoPolygon() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        List<GeoPoint> geoPoints = new ArrayList<>();
-        GeoPoint geoPoint = new GeoPoint(40.178012, 116.577188);
-        GeoPoint geoPoint1 = new GeoPoint(40.169329, 116.586315);
-        GeoPoint geoPoint2 = new GeoPoint(40.178288, 116.591813);
+        List<GeoLocation> geoPoints = new ArrayList<>();
+        GeoLocation geoPoint = new GeoLocation(40.178012, 116.577188);
+        GeoLocation geoPoint1 = new GeoLocation(40.169329, 116.586315);
+        GeoLocation geoPoint2 = new GeoLocation(40.178288, 116.591813);
         geoPoints.add(geoPoint);
         geoPoints.add(geoPoint1);
         geoPoints.add(geoPoint2);
@@ -899,7 +901,7 @@ public class AllTest {
     public void testGeoShape() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         Circle circle = new Circle(13, 14, 100);
-        wrapper.geoShape(Document::getGeoLocation, circle, ShapeRelation.DISJOINT);
+        wrapper.geoShape(Document::getGeoLocation, circle, GeoShapeRelation.DISJOINT);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(22, documents.size());
     }
@@ -928,7 +930,7 @@ public class AllTest {
         String scriptCode = "cosineSimilarity(params.vector, 'vector') + 1.0";
         QueryBuilder queryBuilder = QueryBuilders.scriptScoreQuery(QueryBuilders.matchAllQuery(), new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, scriptCode, params));
 
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(queryBuilder);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
@@ -990,7 +992,7 @@ public class AllTest {
         // SQL写法
         // where business_type = 1 and (state = 9 or (state = 8 and bidding_sign = 1)) or (business_type = 2 and state in (2,3))
 
-        // RestHighLevelClient写法
+        // ElasticsearchClient写法
         List<Integer> values = Arrays.asList(2, 3);
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         boolQueryBuilder.must(QueryBuilders.termQuery("business_type", 1));

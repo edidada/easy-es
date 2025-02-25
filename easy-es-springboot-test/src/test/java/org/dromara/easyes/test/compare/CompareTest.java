@@ -1,5 +1,6 @@
 package org.dromara.easyes.test.compare;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
@@ -7,7 +8,6 @@ import org.dromara.easyes.test.mapper.DocumentMapper;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
@@ -33,12 +33,12 @@ public class CompareTest {
     @Resource
     private DocumentMapper documentMapper;
     @Autowired
-    private RestHighLevelClient restHighLevelClient;
+    private ElasticsearchClient restHighLevelClient;
 
     @Test
     public void testCompare() {
         // 需求:查询出文档标题为 "中国功夫"且作者为"老汉"的所有文档
-        // 传统方式, 直接用RestHighLevelClient进行查询 需要11行代码,还不包含解析代码
+        // 传统方式, 直接用ElasticsearchClient进行查询 需要11行代码,还不包含解析代码
         String indexName = "document";
         SearchRequest searchRequest = new SearchRequest(indexName);
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
@@ -46,7 +46,7 @@ public class CompareTest {
         TermsQueryBuilder creatorTerm = QueryBuilders.termsQuery("creator", "老汉");
         boolQueryBuilder.must(titleTerm);
         boolQueryBuilder.must(creatorTerm);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(boolQueryBuilder);
         searchRequest.source(searchSourceBuilder);
         try {

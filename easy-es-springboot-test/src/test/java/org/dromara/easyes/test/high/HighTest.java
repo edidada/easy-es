@@ -1,6 +1,8 @@
 package org.dromara.easyes.test.high;
 
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import com.alibaba.fastjson.JSON;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
 import org.dromara.easyes.core.biz.SAPageInfo;
@@ -9,7 +11,6 @@ import org.dromara.easyes.core.kernel.EsWrappers;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import com.alibaba.fastjson.JSON;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
@@ -138,7 +139,7 @@ public class HighTest {
         //第一页
         System.out.println(saPageInfo);
         //获取下一页
-        List<Object> nextSearchAfter = saPageInfo.getNextSearchAfter();
+        List<FieldValue> nextSearchAfter = saPageInfo.getNextSearchAfter();
         SAPageInfo<Document> documentSAPageInfo = documentMapper.searchAfterPage(lambdaEsQueryWrapper, nextSearchAfter, 10);
         System.out.println(documentSAPageInfo);
     }
@@ -147,7 +148,7 @@ public class HighTest {
     public void testSortByScore() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "技术");
-        wrapper.sortByScore(SortOrder.ASC);
+        wrapper.sortByScore(SortOrder.Asc);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }

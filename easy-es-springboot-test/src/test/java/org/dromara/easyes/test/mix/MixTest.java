@@ -1,6 +1,7 @@
 package org.dromara.easyes.test.mix;
 
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
@@ -67,8 +68,8 @@ public class MixTest {
      */
     @Test
     public void testMix1() {
-        // RestHighLevelClient原生语法
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        // ElasticsearchClient原生语法
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchQuery("content", "推*").minimumShouldMatch("80%"));
 
         // 仅利用EE查询并解析数据功能
@@ -89,9 +90,9 @@ public class MixTest {
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
 
-        // RestHighLevelClient原生语法
+        // ElasticsearchClient原生语法
         Script script = new Script("doc['star_num'].value");
-        ScriptSortBuilder scriptSortBuilder = SortBuilders.scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER).order(SortOrder.DESC);
+        ScriptSortBuilder scriptSortBuilder = SortBuilders.scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER).order(SortOrder.Desc);
 
         // 利用EE查询并解析数据
         wrapper.sort(scriptSortBuilder);
@@ -108,7 +109,7 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchSourceBuilder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
 
         // 追加或者设置一些SearchSourceBuilder支持但EE暂不支持的参数 不建议追加query参数,因为如果追加query参数会直接覆盖上面EE已经帮你生成好的query,以最后set的query为准
         searchSourceBuilder.timeout(TimeValue.timeValueSeconds(3L));
@@ -127,15 +128,15 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchSourceBuilder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
 
-        // RestHighLevelClient原生语法
+        // ElasticsearchClient原生语法
         AggregationBuilder aggregation = AggregationBuilders.terms("titleAgg")
                 .field("title");
         searchSourceBuilder.aggregation(aggregation);
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
         SearchResponse searchResponse = documentMapper.search(wrapper);
-        // tip: 聚合后的信息是动态的,框架无法解析,需要用户根据聚合器类型自行从桶中解析,参考RestHighLevelClient官方Aggregation解析文档
+        // tip: 聚合后的信息是动态的,框架无法解析,需要用户根据聚合器类型自行从桶中解析,参考ElasticsearchClient官方Aggregation解析文档
     }
 
 
@@ -148,7 +149,7 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchSourceBuilder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
 
         // 用户又想在上面的基础上,再追加一些个性化的查询参数进去 但实际上此时执行查询时,查询条件仅仅是最后设置的title=隔壁老王,前面的老汉推*会被覆盖
         searchSourceBuilder.query(QueryBuilders.matchQuery("title", "隔壁老王"));
@@ -169,8 +170,8 @@ public class MixTest {
                 .match(Document::getContent, "推*");
 
         // SearchSourceBuilder的构造是自己new出来的,不是通过mapper.getSearchSourceBuilder(wrapper)构造 相当于脱裤子放P,那么上面的查询条件老汉推*自然不会生效
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.minScore(10.5f);
+        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.minScore(10.5);
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
