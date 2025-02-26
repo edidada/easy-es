@@ -22,7 +22,6 @@ import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.dromara.easyes.core.kernel.BaseEsMapperImpl;
 
 import java.io.IOException;
 import java.util.*;
@@ -148,7 +147,7 @@ public class IndexUtils {
 
         // 创建索引
         try {
-            BaseEsMapperImpl.printDSL(createIndexRequest, client);
+            PrintUtils.printDsl(createIndexRequest, client);
             CreateIndexResponse createIndexResponse = client.indices().create(createIndexRequest);
             return createIndexResponse.acknowledged();
         } catch (IOException e) {
@@ -167,7 +166,7 @@ public class IndexUtils {
         CreateIndexRequest request = CreateIndexRequest.of(x -> x.index(indexName));
         CreateIndexResponse createIndexResponse;
         try {
-            BaseEsMapperImpl.printDSL(request, client);
+            PrintUtils.printDsl(request, client);
             createIndexResponse = client.indices().create(request);
         } catch (IOException e) {
             LogUtils.info("===> distribute lock index has created");
@@ -198,7 +197,7 @@ public class IndexUtils {
     public static GetIndexResponse getIndex(ElasticsearchClient client, String indexName) {
         GetIndexRequest request = GetIndexRequest.of(x -> x.index(indexName));
         try {
-            BaseEsMapperImpl.printDSL(request, client);
+            PrintUtils.printDsl(request, client);
             return client.indices().get(request);
         } catch (IOException e) {
             throw ExceptionUtils.eee("getIndex exception indexName: %s", e, indexName);
@@ -227,7 +226,7 @@ public class IndexUtils {
         Action action = Action.of(x -> x.add(y -> y.aliases(Arrays.asList(aliases)).index(indexName)));
         UpdateAliasesRequest request = UpdateAliasesRequest.of(x -> x.actions(action));
         try {
-            BaseEsMapperImpl.printDSL(request, client);
+            PrintUtils.printDsl(request, client);
             UpdateAliasesResponse response = client.indices().updateAliases(request);
             return response.acknowledged();
         } catch (IOException e) {
@@ -261,7 +260,7 @@ public class IndexUtils {
             return a;
         });
         try {
-            BaseEsMapperImpl.printDSL(request, client);
+            PrintUtils.printDsl(request, client);
             ReindexResponse response = client.reindex(request);
             List<BulkIndexByScrollFailure> failures = response.failures();
             return CollectionUtils.isEmpty(failures);

@@ -1,7 +1,10 @@
 package org.dromara.easyes.core.kernel;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.AcknowledgedResponse;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.Refresh;
+import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
@@ -9,7 +12,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
-import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 import co.elastic.clients.elasticsearch.core.search.NestedIdentity;
@@ -21,9 +23,6 @@ import co.elastic.clients.elasticsearch.indices.RefreshResponse;
 import co.elastic.clients.elasticsearch.sql.QueryResponse;
 import co.elastic.clients.elasticsearch.sql.query.SqlFormat;
 import co.elastic.clients.json.JsonData;
-import co.elastic.clients.json.JsonpSerializable;
-import co.elastic.clients.json.JsonpUtils;
-import co.elastic.clients.transport.Endpoint;
 import co.elastic.clients.transport.TransportOptions;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.alibaba.fastjson.JSON;
@@ -38,7 +37,6 @@ import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.enums.OrderTypeEnum;
 import org.dromara.easyes.common.join.BaseJoin;
-import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
@@ -46,6 +44,7 @@ import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.IndexUtils;
 import org.dromara.easyes.core.toolkit.PageHelper;
+import org.dromara.easyes.core.toolkit.PrintUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 
@@ -53,8 +52,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -199,56 +196,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return getSearchResponse(wrapper, null, false);
     }
 
-    /**
-     * 根据全局配置决定是否控制台打印DSL语句
-     *
-     * @param request es请求参数
-     * @param client  es客户端
-     */
-    public static void printDSL(RequestBase request, ElasticsearchClient client) {
-        if (request == null) {
-            return;
-        }
-
-        String method = "";
-        String requestUrl = "";
-        String fullUrl = "";
-        String dsl = "";
-        try {
-            @SuppressWarnings("unchecked")
-            Endpoint<RequestBase, ?, ?> endpoint = (Endpoint<RequestBase, ?, ?>) request.getClass()
-                    .getDeclaredField("_ENDPOINT").get(null);
-            method = endpoint.method(request);
-            requestUrl = endpoint.requestUrl(request);
-
-
-            Map<String, String> params = endpoint.queryParameters(request);
-            StringBuilder fullUrlSb = new StringBuilder(requestUrl);
-            String delim = "?";
-            for (Map.Entry<String, String> param : params.entrySet()) {
-                fullUrlSb.append(delim);
-                delim = "&";
-                fullUrlSb.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
-            }
-            fullUrl = fullUrlSb.toString();
-
-            if (request instanceof JsonpSerializable) {
-                dsl = JsonpUtils.toJsonString(request, client._transport().jsonpMapper());
-            }
-        } catch (Exception e) {
-            // No endpoint, ignore
-        }
-
-        GlobalConfig globalConfig = GlobalConfigCache.getGlobalConfig();
-        if (globalConfig.isPrintDsl()) {
-            String prefix = globalConfig.isIKunMode() ? I_KUN_PREFIX : DSL_PREFIX;
-            LogUtils.info(prefix +
-                          "\n" + method + " " + fullUrl +
-                          "\n" + dsl
-            );
-        }
-    }
-
     @Override
     public ScrollResponse<T> scroll(ScrollRequest searchScrollRequest, TransportOptions requestOptions) throws IOException {
         ScrollResponse<T> response = client.withTransportOptions(requestOptions).scroll(searchScrollRequest, entityClass);
@@ -329,7 +276,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public SearchResponse<T> search(SearchRequest searchRequest, TransportOptions requestOptions) throws IOException {
-        printDSL(searchRequest, client);
+        PrintUtils.printDsl(searchRequest, client);
         SearchResponse<T> response = client.withTransportOptions(requestOptions).search(searchRequest, entityClass);
         printResponseErrors(response);
         return response;
@@ -486,7 +433,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             );
             CountResponse rsp;
             try {
-                printDSL(req, client);
+                PrintUtils.printDsl(req, client);
                 rsp = client.withTransportOptions(getTransportOptions()).count(req);
             } catch (IOException e) {
                 throw ExceptionUtils.eee("selectCount exception", e);
@@ -756,7 +703,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .scrollSize(entityInfo == null ? null : entityInfo.getMaxResultWindow())
         );
 
-        printDSL(request, client);
+        PrintUtils.printDsl(request, client);
         try {
             DeleteByQueryResponse bulkResponse = client.deleteByQuery(request);
             // 单次删除通常不会超过21亿, 这里为了兼容老API设计,仍转为int 2.0版本将调整为long
@@ -804,7 +751,9 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         );
 
         // 执行批量请求并返回结果
-        return doBulkRequest(bulkRequest, getTransportOptions(), entityList);
+        PrintUtils.printDsl(bulkRequest, client);
+
+        return doBulkRequest(bulkRequest, Result.Created.jsonValue());
     }
 
     /**
@@ -821,7 +770,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         IndexRequest<T> indexRequest = buildIndexRequest(entity, routing, parentId, indexName)
                 .refresh(getRefreshPolicy()).build();
 
-        printDSL(indexRequest, client);
+        PrintUtils.printDsl(indexRequest, client);
         try {
             IndexResponse indexResponse = client.withTransportOptions(getTransportOptions()).index(indexRequest);
             if (Objects.equals(indexResponse.result(), Result.Created)) {
@@ -852,7 +801,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .refresh(getRefreshPolicy())
                 .build();
 
-        printDSL(request, client);
+        PrintUtils.printDsl(request, client);
         try {
             DeleteResponse deleteResponse = client.withTransportOptions(getTransportOptions()).delete(request);
             if (Objects.equals(deleteResponse.result(), Result.Deleted)) {
@@ -895,8 +844,8 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .operations(operations)
         );
 
-        printDSL(request, client);
-        return doBulkRequest(request, getTransportOptions());
+        PrintUtils.printDsl(request, client);
+        return doBulkRequest(request, Result.Deleted.jsonValue());
     }
 
     /**
@@ -915,7 +864,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .refresh(getRefreshPolicy())
                 .build();
 
-        printDSL(updateRequest, client);
+        PrintUtils.printDsl(updateRequest, client);
 
         // 执行更新
         try {
@@ -965,7 +914,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .refresh(getRefreshPolicy())
                 .operations(operations)
         );
-        return doBulkRequest(bulkRequest, getTransportOptions());
+        return doBulkRequest(bulkRequest, Result.Updated.jsonValue());
     }
 
     /**
@@ -1001,8 +950,8 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .operations(operations)
         );
 
-        printDSL(request, client);
-        return doBulkRequest(request, getTransportOptions());
+        PrintUtils.printDsl(request, client);
+        return doBulkRequest(request, Result.Updated.jsonValue());
     }
 
     /**
@@ -1100,7 +1049,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         if (needSearchAfter && searchRequest.sort().isEmpty()) {
             throw ExceptionUtils.eee("searchAfter必须要进行排序");
         }
-        printDSL(searchRequest, client);
+        PrintUtils.printDsl(searchRequest, client);
 
         try {
             // 执行查询
@@ -1146,7 +1095,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         SearchRequest searchRequest = builder.build();
-        printDSL(searchRequest, client);
+        PrintUtils.printDsl(searchRequest, client);
         try {
             // 查询数据明细
             SearchResponse<T> response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
@@ -1481,7 +1430,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      * @return searchHit数组
      */
     private List<Hit<T>> getSearchHits(SearchRequest searchRequest) {
-        printDSL(searchRequest, client);
+        PrintUtils.printDsl(searchRequest, client);
         SearchResponse<T> response;
         try {
             response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
@@ -1513,25 +1462,23 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     /**
      * 执行bulk请求,并返回成功个数
      *
-     * @param bulkRequest    批量请求参数
-     * @param requestOptions 类型
+     * @param bulkRequest 批量请求参数
      * @return 成功个数
      */
-    private Integer doBulkRequest(BulkRequest bulkRequest, TransportOptions requestOptions) {
-        int totalSuccess = 0;
+    private Integer doBulkRequest(BulkRequest bulkRequest, String successResult) {
         try {
-            BulkResponse bulkResponse = client.withTransportOptions(requestOptions).bulk(bulkRequest);
+            BulkResponse bulkResponse = client.withTransportOptions(getTransportOptions()).bulk(bulkRequest);
             if (bulkResponse.errors()) {
                 LogUtils.error(bulkResponse.toString());
             }
 
-            totalSuccess = (int) bulkResponse.items().stream()
-                    .filter(item -> Objects.equals(item.status(), 200))
+            return (int) bulkResponse.items().stream()
+                    .filter(item -> Objects.equals(item.result(), successResult))
                     .count();
         } catch (IOException e) {
             LogUtils.error("bulk request exception", JSON.toJSONString(e));
+            return 0;
         }
-        return totalSuccess;
     }
 
     /**
@@ -1545,7 +1492,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         SearchRequest searchRequest = Optional.ofNullable(wrapper.searchBuilder)
                 .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass)).build();
 
-        printDSL(searchRequest, client);
+        PrintUtils.printDsl(searchRequest, client);
         SearchResponse<T> response;
         try {
             response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
@@ -1652,36 +1599,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         } catch (IllegalAccessException e) {
             throw ExceptionUtils.eee("get id value exception", e);
         }
-    }
-
-    /**
-     * 执行bulk创建请求,并返回成功个数,封装id
-     *
-     * @param bulkRequest    批量请求参数
-     * @param requestOptions 类型
-     * @param entityList     实体列表
-     * @return 成功个数
-     */
-    private int doBulkRequest(BulkRequest bulkRequest, TransportOptions requestOptions, Collection<T> entityList) {
-        printDSL(bulkRequest, client);
-
-        int totalSuccess = 0;
-        try {
-            BulkResponse bulkResponse = client.withTransportOptions(requestOptions).bulk(bulkRequest);
-            if (bulkResponse.errors()) {
-                LogUtils.error(bulkResponse.toString());
-            }
-
-            for (BulkResponseItem item : bulkResponse.items()) {
-                if (Objects.equals(item.status(), 201)) {
-//                    setId(entityList.toArray()[totalSuccess], item.id());
-                    totalSuccess++;
-                }
-            }
-        } catch (IOException e) {
-            throw ExceptionUtils.eee("bulkRequest exception", e);
-        }
-        return totalSuccess;
     }
 
     /**
