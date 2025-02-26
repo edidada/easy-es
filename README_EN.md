@@ -77,7 +77,7 @@ String indexName = "document";
         TermsQueryBuilder creatorTerm = QueryBuilders.termsQuery("creator", "Guy");
         boolQueryBuilder.must(titleTerm);
         boolQueryBuilder.must(creatorTerm);
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.query(boolQueryBuilder);
         searchRequest.source(searchSourceBuilder);
         try {

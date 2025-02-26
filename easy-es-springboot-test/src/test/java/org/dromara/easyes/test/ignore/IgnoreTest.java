@@ -20,7 +20,7 @@ public class IgnoreTest {
 //
 //    @Test
 //    public void testSearch0() throws IOException {
-//        SearchRequest.Builder builder = new SearchSourceBuilder();
+//        SearchRequest.Builder builder = new SearchRequest.Builder();
 //        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 //
 ////        boolQueryBuilder.must(QueryBuilders.termQuery("overt", Boolean.TRUE));

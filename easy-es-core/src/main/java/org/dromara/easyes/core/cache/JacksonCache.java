@@ -25,14 +25,20 @@ import java.util.Map;
  */
 public class JacksonCache {
 
+    public static JsonInclude.Value NON_NULL = JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, null);
+    public static JsonInclude.Value NON_EMPTY = JsonInclude.Value.construct(JsonInclude.Include.NON_EMPTY, null);
+
     public static void init(Map<Class<?>, EntityInfo> entityInfoMap) {
         if (entityInfoMap.isEmpty()) {
             return;
         }
         entityInfoMap.forEach((clz,e) -> {
+
             // 当前类
             if (!JacksonCustomConfig.jacksonConfigMap.containsKey(clz)) {
                 JacksonCustomConfig config = init(clz, e.getMappingColumnMap(), e.getClassDateFormatMap().get(clz), e.getFieldList());
+                config.includeMap.put(e.getKeyProperty(), NON_NULL);
+                config.includeMap.put(getterMethod(clz, e.getKeyProperty()), NON_NULL);
                 JacksonCustomConfig.jacksonConfigMap.put(clz, config);
             }
 
@@ -95,14 +101,12 @@ public class JacksonCache {
             }
             switch (f.getFieldStrategy()) {
                 case NOT_NULL:
-                    JsonInclude.Value v = JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, null);
-                    config.includeMap.put(getterName, v);
-                    config.includeMap.put(f.getColumn(), v);
+                    config.includeMap.put(getterName, NON_NULL);
+                    config.includeMap.put(f.getColumn(), NON_NULL);
                     break;
                 case NOT_EMPTY:
-                    JsonInclude.Value j = JsonInclude.Value.construct(JsonInclude.Include.NON_EMPTY, null);
-                    config.includeMap.put(getterName, j);
-                    config.includeMap.put(f.getColumn(), j);
+                    config.includeMap.put(getterName, NON_EMPTY);
+                    config.includeMap.put(f.getColumn(), NON_EMPTY);
                     break;
                 default:
                     break;

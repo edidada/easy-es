@@ -15,6 +15,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface IndexId {
+
+    /**
+     * 自定义字段在es中的名称
+     *
+     * @return 字段在es中的名称
+     */
+    String value() default "";
+
     /**
      * 主键ID
      *

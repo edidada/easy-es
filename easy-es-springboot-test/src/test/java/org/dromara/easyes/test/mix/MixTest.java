@@ -13,7 +13,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -69,7 +68,7 @@ public class MixTest {
     @Test
     public void testMix1() {
         // ElasticsearchClient原生语法
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.query(QueryBuilders.matchQuery("content", "推*").minimumShouldMatch("80%"));
 
         // 仅利用EE查询并解析数据功能
@@ -170,7 +169,7 @@ public class MixTest {
                 .match(Document::getContent, "推*");
 
         // SearchSourceBuilder的构造是自己new出来的,不是通过mapper.getSearchSourceBuilder(wrapper)构造 相当于脱裤子放P,那么上面的查询条件老汉推*自然不会生效
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.minScore(10.5);
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);

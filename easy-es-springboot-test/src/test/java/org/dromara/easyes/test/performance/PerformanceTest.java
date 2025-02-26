@@ -17,7 +17,6 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.Disabled;
@@ -74,7 +73,7 @@ public class PerformanceTest {
     public void testSelectByElasticsearchClient() {
         // 构建查询条件
         StopWatch stopwatch = StopWatch.createStarted();
-        SearchRequest.Builder builder = new SearchSourceBuilder();
+        SearchRequest.Builder builder = new SearchRequest.Builder();
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         boolQueryBuilder.must(QueryBuilders.matchQuery("title", "茶叶"));
         boolQueryBuilder.must(QueryBuilders.matchQuery("content", "茶叶"));

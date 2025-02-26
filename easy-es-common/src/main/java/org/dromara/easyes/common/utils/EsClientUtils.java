@@ -119,7 +119,7 @@ public class EsClientUtils {
             return requestConfigBuilder;
         });
 
-        return new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper(JsonUtils.base())));
+        return new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper(JsonUtils.OM_DEFAULT)));
     }
 
     public ElasticsearchClient getClient(String clientId) {

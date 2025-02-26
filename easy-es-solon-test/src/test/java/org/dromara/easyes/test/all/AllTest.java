@@ -1,45 +1,34 @@
 package org.dromara.easyes.test.all;
 
-import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.GeoLocation;
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.LongTermsBucket;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.transport.rest_client.RestClientOptions;
 import org.dromara.easyes.common.constants.BaseEsConstants;
+import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
 import org.dromara.easyes.core.biz.SAPageInfo;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.core.conditions.update.LambdaEsUpdateWrapper;
 import org.dromara.easyes.core.kernel.EsWrappers;
+import org.dromara.easyes.core.kernel.WrapperProcessor;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.HttpAsyncResponseConsumerFactory;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.geo.GeoDistance;
-import org.elasticsearch.common.geo.GeoShapeRelation;
-import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.geometry.Circle;
 import org.elasticsearch.geometry.Point;
 import org.elasticsearch.geometry.Rectangle;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedLongTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.metrics.ParsedAvg;
-import org.elasticsearch.search.aggregations.metrics.ParsedMax;
-import org.elasticsearch.search.aggregations.metrics.ParsedMin;
-import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.*;
 import org.noear.solon.annotation.Inject;
 import org.noear.solon.test.SolonTest;
@@ -96,6 +85,7 @@ public class AllTest {
         document.setEnglish("Calcium Gluconate");
         document.setBigNum(new BigDecimal("66.66"));
         document.setVector(new double[]{0.39684247970581666, 0.768707156181666, 0.5145490765571666});
+//        System.out.println(JsonUtils.toJsonPrettyStr(document));
         int successCount = documentMapper.insert(document);
         Assertions.assertEquals(successCount, 1);
     }
@@ -116,7 +106,6 @@ public class AllTest {
             document.setGeoLocation(point.toString());
             document.setStarNum(i);
             document.setVector(new double[]{35.89684247970581666, 86.268707156181666, 133.1145490765571666});
-
             // 针对个别数据 造一些差异项 方便测试不同场景
             if (i == 2) {
                 document.setLocation("40.17836693398477,116.64002551005981");
@@ -168,8 +157,12 @@ public class AllTest {
     @Order(4)
     public void testUpdateBySetSearchSourceBuilder() {
         LambdaEsUpdateWrapper<Document> wrapper = new LambdaEsUpdateWrapper<>();
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.termQuery(FieldUtils.val(Document::getTitle) + KEYWORD_SUFFIX, "测试文档2"));
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
+        searchSourceBuilder.query(QueryBuilders.term()
+                .field(FieldUtils.val(Document::getTitle) + KEYWORD_SUFFIX)
+                .value("测试文档2")
+                .build()._toQuery()
+        );
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
 
         Document document = new Document();
@@ -231,9 +224,9 @@ public class AllTest {
 
     @Test
     @Order(6)
-    public void testDefaultMethod(){
+    public void testDefaultMethod() {
         List<Document> documents = documentMapper.testDefaultMethod();
-        Assertions.assertEquals(documents.size(),1);
+        Assertions.assertEquals(documents.size(), 1);
     }
 
     @Test
@@ -433,11 +426,10 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
                 .groupBy(Document::getStarNum);
-        SearchResponse response = documentMapper.search(wrapper);
-        ParsedLongTerms parsedLongTerms = response.getAggregations()
-                .get("starNumTerms");
-        Terms.Bucket bucket = parsedLongTerms.getBuckets().get(0);
-        Assertions.assertTrue(bucket.getKey().equals(1L) && bucket.getDocCount() == 2L);
+        SearchResponse<Document> response = documentMapper.search(wrapper);
+        Aggregate aggregate = response.aggregations().get("starNumTerms");
+        LongTermsBucket bucket = aggregate.lterms().buckets().array().get(0);
+        Assertions.assertTrue(bucket.key() == 1L && bucket.docCount() == 2L);
     }
 
     @Test
@@ -446,10 +438,9 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
                 .max(Document::getStarNum);
-        SearchResponse response = documentMapper.search(wrapper);
-        ParsedMax parsedMax = response.getAggregations()
-                .get("starNumMax");
-        Assertions.assertTrue(parsedMax.getValue() > 21);
+        SearchResponse<Document> response = documentMapper.search(wrapper);
+        Aggregate agg = response.aggregations().get("starNumMax");
+        Assertions.assertTrue(agg.valueCount().value() > 21);
     }
 
     @Test
@@ -458,10 +449,9 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
                 .min(Document::getStarNum);
-        SearchResponse response = documentMapper.search(wrapper);
-        ParsedMin parsedMin = response.getAggregations()
-                .get("starNumMin");
-        Assertions.assertTrue(parsedMin.getValue() > 0 && parsedMin.getValue() < 2);
+        SearchResponse<Document> response = documentMapper.search(wrapper);
+        double parsedMin = response.aggregations().get("starNumMin").valueCount().value();
+        Assertions.assertTrue(parsedMin > 0 && parsedMin < 2);
     }
 
     @Test
@@ -470,10 +460,9 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
                 .sum(Document::getStarNum);
-        SearchResponse response = documentMapper.search(wrapper);
-        ParsedSum parsedSum = response.getAggregations()
-                .get("starNumSum");
-        Assertions.assertTrue(parsedSum.getValue() >= 252);
+        SearchResponse<Document> response = documentMapper.search(wrapper);
+        double parsedSum = response.aggregations().get("starNumSum").valueCount().value();
+        Assertions.assertTrue(parsedSum >= 252);
     }
 
 
@@ -483,10 +472,9 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
                 .avg(Document::getStarNum);
-        SearchResponse response = documentMapper.search(wrapper);
-        ParsedAvg parsedAvg = response.getAggregations()
-                .get("starNumAvg");
-        Assertions.assertTrue(parsedAvg.getValue() > 11 && parsedAvg.getValue() < 12);
+        SearchResponse<Document> response = documentMapper.search(wrapper);
+        double parsedAvg = response.aggregations().get("starNumAvg").valueCount().value();
+        Assertions.assertTrue(parsedAvg > 11 && parsedAvg < 12);
     }
 
 
@@ -534,12 +522,15 @@ public class AllTest {
     @Test
     @Order(6)
     public void testSetSearchSourceBuilder() {
+        EntityInfo e = EntityInfoHelper.getEntityInfo(Document.class);
         // 测试混合查询的另一种方式
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchQuery(FieldUtils.val(Document::getCreator), "老汉"));
-        Optional.ofNullable(EntityInfoHelper.getEntityInfo(Document.class))
-                .flatMap(i -> Optional.ofNullable(i.getMaxResultWindow()))
-                .ifPresent(searchSourceBuilder::size);
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder()
+                .query(QueryBuilders.match()
+                        .field(FieldUtils.val(Document::getCreator))
+                        .query("老汉")
+                        .build()._toQuery()
+                )
+                .size(e.getMaxResultWindow().intValue());
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
@@ -703,7 +694,7 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceAsc() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
+        GeoLocation centerPoint = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(41.0).lon(116.0)));
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceAsc(Document::getLocation, centerPoint);
@@ -716,7 +707,7 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceDesc() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
+        GeoLocation centerPoint = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(41.0).lon(116.0)));
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceDesc(Document::getLocation, centerPoint);
@@ -729,8 +720,8 @@ public class AllTest {
     @Order(6)
     public void testOrderByDistanceMulti() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoLocation centerPoint = new GeoLocation(41.0, 116.0);
-        GeoLocation centerPoint1 = new GeoLocation(42.0, 118.0);
+        GeoLocation centerPoint = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(41.0).lon(116.0)));
+        GeoLocation centerPoint1 = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(42.0).lon(118.0)));
         wrapper.match(Document::getCreator, "老汉")
                 .geoDistance(Document::getLocation, 168.8, centerPoint)
                 .orderByDistanceDesc(Document::getLocation, centerPoint)
@@ -753,14 +744,17 @@ public class AllTest {
     @Test
     @Order(6)
     public void testSort() {
+        String realField = FieldUtils.getRealField(
+                FieldUtils.val(Document::getStarNum),
+                EntityInfoHelper.getEntityInfo(Document.class).getMappingColumnMap()
+        );
+
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getCreator, "老汉");
-        FieldSortBuilder fieldSortBuilder = SortBuilders.
-                fieldSort(FieldUtils.getRealField(
-                        FieldUtils.val(Document::getStarNum),
-                        EntityInfoHelper.getEntityInfo(Document.class).getMappingColumnMap()));
-        fieldSortBuilder.order(SortOrder.Desc);
-        wrapper.sort(fieldSortBuilder);
+        wrapper.sort(SortOptions.of(a -> a.field(b -> b
+                .field(realField)
+                .order(SortOrder.Desc)
+        )));
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals("22", documents.get(0).getEsId());
         Assertions.assertEquals("21", documents.get(1).getEsId());
@@ -781,7 +775,7 @@ public class AllTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.matchPhrase(Document::getContent, "测试");
         List<Document> documents = documentMapper.selectList(wrapper);
-        Assertions.assertTrue(documents.size() > 0);
+        Assertions.assertFalse(documents.isEmpty());
 
         LambdaEsQueryWrapper<Document> wrapper1 = new LambdaEsQueryWrapper<>();
         wrapper1.matchPhrase(Document::getContent, "内容测试");
@@ -845,7 +839,7 @@ public class AllTest {
     public void testHighLight() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "测试")
-                .match(Document::getCustomField,"字段");
+                .match(Document::getCustomField, "字段");
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertTrue(documents.get(0).getHighlightContent().contains("测试"));
     }
@@ -854,8 +848,8 @@ public class AllTest {
     @Order(6)
     public void testGeoBoundingBox() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoLocation leftTop = new GeoLocation(41.187328D, 115.498353D);
-        GeoLocation bottomRight = new GeoLocation(39.084509D, 117.610461D);
+        GeoLocation leftTop = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(41.187328D).lon(115.498353D)));
+        GeoLocation bottomRight = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(39.084509D).lon(117.610461D)));
         wrapper.geoBoundingBox(Document::getLocation, leftTop, bottomRight);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(4, documents.size());
@@ -866,14 +860,15 @@ public class AllTest {
     @Order(6)
     public void testGeoDistance() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        GeoLocation geoPoint = new GeoLocation(41.0, 116.0);
-        wrapper.geoDistance(Document::getLocation, 168.8, DistanceUnit.KILOMETERS, geoPoint);
-        GeoDistanceSortBuilder geoDistanceSortBuilder = SortBuilders.geoDistanceSort(FieldUtils.val(Document::getLocation), geoPoint)
-                .unit(DistanceUnit.KILOMETERS)
-                .geoDistance(GeoDistance.ARC)
-                .order(SortOrder.Desc);
-
-        wrapper.sort(geoDistanceSortBuilder);
+        GeoLocation geoPoint = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(41.0).lon(116.0)));
+        wrapper.geoDistance(Document::getLocation, 168.8, DistanceUnit.Kilometers, geoPoint);
+        wrapper.sort(SortOptions.of(a -> a.geoDistance(b -> b
+                .field(FieldUtils.val(Document::getLocation))
+                .location(geoPoint)
+                .unit(DistanceUnit.Kilometers)
+                .distanceType(GeoDistanceType.Arc)
+                .order(SortOrder.Desc)
+        )));
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(4, documents.size());
     }
@@ -883,9 +878,9 @@ public class AllTest {
     public void testGeoPolygon() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         List<GeoLocation> geoPoints = new ArrayList<>();
-        GeoLocation geoPoint = new GeoLocation(40.178012, 116.577188);
-        GeoLocation geoPoint1 = new GeoLocation(40.169329, 116.586315);
-        GeoLocation geoPoint2 = new GeoLocation(40.178288, 116.591813);
+        GeoLocation geoPoint = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(40.178012).lon(116.577188)));
+        GeoLocation geoPoint1 = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(40.169329).lon(116.586315)));
+        GeoLocation geoPoint2 = GeoLocation.of(a -> a.latlon(a1 -> a1.lat(40.178288).lon(116.591813)));
         geoPoints.add(geoPoint);
         geoPoints.add(geoPoint1);
         geoPoints.add(geoPoint2);
@@ -899,7 +894,7 @@ public class AllTest {
     public void testGeoShape() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         Circle circle = new Circle(13, 14, 100);
-        wrapper.geoShape(Document::getGeoLocation, circle, GeoShapeRelation.DISJOINT);
+        wrapper.geoShape(Document::getGeoLocation, circle, GeoShapeRelation.Disjoint);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(22, documents.size());
     }
@@ -923,13 +918,16 @@ public class AllTest {
     @Order(6)
     public void testVector() {
         // 向量查询, 查询条件构造
-        Map<String, Object> params = new HashMap<>();
-        params.put("vector", new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594});
-        String scriptCode = "cosineSimilarity(params.vector, 'vector') + 1.0";
-        QueryBuilder queryBuilder = QueryBuilders.scriptScoreQuery(QueryBuilders.matchAllQuery(), new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, scriptCode, params));
-
-        SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
+        Query query = Query.of(a -> a.scriptScore(b -> b
+                .query(QueryBuilders.matchAll().build()._toQuery())
+                .script(d -> d
+                        .lang(ScriptLanguage.Painless)
+                        .params("vector", JsonData.of(new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594}))
+                        .source("cosineSimilarity(params.vector, 'vector') + 1.0")
+                )
+        ));
+        SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
+        searchSourceBuilder.query(query);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.setSearchSourceBuilder(searchSourceBuilder);
 
@@ -941,11 +939,10 @@ public class AllTest {
     @Order(6)
     public void testSetRequestOptions() {
         // 可设置自定义请求参数,覆盖默认配置, 解决报错 entity content is too long [168583249] for the configured buffer limit [104857600]
-        RequestOptions.Builder options = RequestOptions.DEFAULT.toBuilder();
-        options.setHttpAsyncResponseConsumerFactory(
+        RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
+        builder.setHttpAsyncResponseConsumerFactory(
                 new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(4 * 104857600));
-        final RequestOptions requestOptions = options.build();
-        Boolean success = documentMapper.setRequestOptions(requestOptions);
+        Boolean success = documentMapper.setRequestOptions(new RestClientOptions(builder.build(), true));
         Assertions.assertTrue(success);
     }
 
@@ -991,12 +988,20 @@ public class AllTest {
         // where business_type = 1 and (state = 9 or (state = 8 and bidding_sign = 1)) or (business_type = 2 and state in (2,3))
 
         // ElasticsearchClient写法
-        List<Integer> values = Arrays.asList(2, 3);
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        boolQueryBuilder.must(QueryBuilders.termQuery("business_type", 1));
-        boolQueryBuilder.must(QueryBuilders.boolQuery().must(QueryBuilders.termQuery("state", 9))
-                .should(QueryBuilders.boolQuery().must(QueryBuilders.termQuery("state", 8)).must(QueryBuilders.termQuery("bidding_sign", 1))));
-        boolQueryBuilder.should(QueryBuilders.boolQuery().must(QueryBuilders.termQuery("business_type", 2)).must(QueryBuilders.termsQuery("state", values)));
+        List<FieldValue> values = Arrays.asList(WrapperProcessor.fieldValue(2), WrapperProcessor.fieldValue(3));
+        BoolQuery.Builder boolQueryBuilder = QueryBuilders.bool()
+                .must(a -> a.term(b -> b.field("business_type").value(1)))
+                .must(a -> a.bool(b -> b
+                        .must(c -> c.term(d -> d.field("state").value(9)))
+                        .should(c -> c.bool(d -> d
+                                .must(f -> f.term(e -> e.field("state").value(8)))
+                                .must(f -> f.term(e -> e.field("bidding_sign").value(1)))
+                        ))
+                ))
+                .should(a -> a.bool(c -> c
+                        .must(d -> d.term(e -> e.field("business_type").value(2)))
+                        .must(d -> d.terms(e -> e.field("state").terms(f -> f.value(values))))
+                ));
 
         System.out.println(boolQueryBuilder);
         System.out.println("--------------------");

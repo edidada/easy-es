@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.dromara.easyes.common.constants.BaseEsConstants.*;
+import static org.dromara.easyes.common.constants.BaseEsConstants.KEYWORD_SUFFIX;
 
 /**
  * 核心 处理字段名称工具类
@@ -36,12 +36,7 @@ public class FieldUtils {
      * @return 泛型
      */
     public static <R> String getFieldName(R func) {
-        String fieldName = getFieldNameNotConvertId(func);
-        if (DEFAULT_ID_NAME.equals(fieldName)) {
-            // id统一转为_id
-            fieldName = DEFAULT_ES_ID_NAME;
-        }
-        return fieldName;
+        return getFieldNameNotConvertId(func);
     }
 
     /**
@@ -172,7 +167,7 @@ public class FieldUtils {
     public static String getRealField(String field, Map<String, String> mappingColumnMap) {
         String customField = mappingColumnMap.get(field);
         if (Objects.nonNull(customField)) {
-            return DEFAULT_ID_NAME.equals(customField) ? DEFAULT_ES_ID_NAME : customField;
+            return customField;
         } else {
             GlobalConfig.DbConfig dbConfig = GlobalConfigCache.getGlobalConfig().getDbConfig();
             if (dbConfig.isMapUnderscoreToCamelCase()) {

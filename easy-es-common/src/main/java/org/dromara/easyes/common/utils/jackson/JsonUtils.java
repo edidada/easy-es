@@ -26,10 +26,8 @@ public class JsonUtils {
 
     /**
      * 默认jackson配置
-     * 不打印类信息
-     * 时间序列化为字符串
      */
-    public static final ObjectMapper OM_DEFAULT = base();
+    public static ObjectMapper OM_DEFAULT = base();
     private static final DefaultPrettyPrinter DEFAULT_PRETTY_PRINTER = new DefaultPrettyPrinter();
 
     public static JsonMapper base() {

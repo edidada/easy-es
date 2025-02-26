@@ -37,6 +37,7 @@ import org.dromara.easyes.annotation.rely.RefreshPolicy;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.enums.OrderTypeEnum;
+import org.dromara.easyes.common.join.BaseJoin;
 import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
@@ -198,12 +199,54 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return getSearchResponse(wrapper, null, false);
     }
 
-    @Override
-    public SearchResponse<T> search(SearchRequest searchRequest, TransportOptions requestOptions) throws IOException {
-        printDSL(searchRequest);
-        SearchResponse<T> response = client.withTransportOptions(requestOptions).search(searchRequest, entityClass);
-        printResponseErrors(response);
-        return response;
+    /**
+     * 根据全局配置决定是否控制台打印DSL语句
+     *
+     * @param request es请求参数
+     * @param client  es客户端
+     */
+    public static void printDSL(RequestBase request, ElasticsearchClient client) {
+        if (request == null) {
+            return;
+        }
+
+        String method = "";
+        String requestUrl = "";
+        String fullUrl = "";
+        String dsl = "";
+        try {
+            @SuppressWarnings("unchecked")
+            Endpoint<RequestBase, ?, ?> endpoint = (Endpoint<RequestBase, ?, ?>) request.getClass()
+                    .getDeclaredField("_ENDPOINT").get(null);
+            method = endpoint.method(request);
+            requestUrl = endpoint.requestUrl(request);
+
+
+            Map<String, String> params = endpoint.queryParameters(request);
+            StringBuilder fullUrlSb = new StringBuilder(requestUrl);
+            String delim = "?";
+            for (Map.Entry<String, String> param : params.entrySet()) {
+                fullUrlSb.append(delim);
+                delim = "&";
+                fullUrlSb.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
+            }
+            fullUrl = fullUrlSb.toString();
+
+            if (request instanceof JsonpSerializable) {
+                dsl = JsonpUtils.toJsonString(request, client._transport().jsonpMapper());
+            }
+        } catch (Exception e) {
+            // No endpoint, ignore
+        }
+
+        GlobalConfig globalConfig = GlobalConfigCache.getGlobalConfig();
+        if (globalConfig.isPrintDsl()) {
+            String prefix = globalConfig.isIKunMode() ? I_KUN_PREFIX : DSL_PREFIX;
+            LogUtils.info(prefix +
+                          "\n" + method + " " + fullUrl +
+                          "\n" + dsl
+            );
+        }
     }
 
     @Override
@@ -285,32 +328,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Long selectCount(Wrapper<T> wrapper, boolean distinct) {
-        if (distinct) {
-            // 去重, 总数来源于桶, 只查id列,节省内存 拷贝是防止追加的只查id列影响到count后的其它查询
-            Wrapper<T> clone = wrapper.clone();
-            clone.include = new String[]{DEFAULT_ES_ID_NAME};
-            SearchResponse<T> response = getSearchResponse(clone);
-            return parseCount(response, Objects.nonNull(clone.distinctField));
-        } else {
-            // 不去重,直接count获取,效率更高
-            BoolQuery query = getBoolQuery(wrapper);
-
-            CountRequest req = CountRequest.of(a -> a
-                    .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
-                    .routing(wrapper.routing)
-                    .preference(wrapper.preference)
-                    .query(query._toQuery())
-            );
-            CountResponse rsp;
-            try {
-                printDSL(req);
-                rsp = client.withTransportOptions(getTransportOptions()).count(req);
-            } catch (IOException e) {
-                throw ExceptionUtils.eee("selectCount exception", e);
-            }
-            return rsp.count();
-        }
+    public SearchResponse<T> search(SearchRequest searchRequest, TransportOptions requestOptions) throws IOException {
+        printDSL(searchRequest, client);
+        SearchResponse<T> response = client.withTransportOptions(requestOptions).search(searchRequest, entityClass);
+        printResponseErrors(response);
+        return response;
     }
 
     /**
@@ -445,24 +467,31 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public Integer delete(Wrapper<T> wrapper) {
-        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
+    public Long selectCount(Wrapper<T> wrapper, boolean distinct) {
+        if (distinct) {
+            // 去重, 总数来源于桶, 只查id列,节省内存 拷贝是防止追加的只查id列影响到count后的其它查询
+            Wrapper<T> clone = wrapper.clone();
+            clone.include = new String[]{EntityInfoHelper.getEntityInfo(entityClass).getKeyProperty()};
+            SearchResponse<T> response = getSearchResponse(clone);
+            return parseCount(response, Objects.nonNull(clone.distinctField));
+        } else {
+            // 不去重,直接count获取,效率更高
+            BoolQuery query = getBoolQuery(wrapper);
 
-        DeleteByQueryRequest request = DeleteByQueryRequest.of(a -> a
-                .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
-                .query(getBoolQuery(wrapper)._toQuery())
-                .routing(wrapper.routing)
-                .refresh(Refresh.True.equals(getRefreshPolicy()))
-                .scrollSize(entityInfo == null ? null : entityInfo.getMaxResultWindow())
-        );
-
-        printDSL(request);
-        try {
-            DeleteByQueryResponse bulkResponse = client.deleteByQuery(request);
-            // 单次删除通常不会超过21亿, 这里为了兼容老API设计,仍转为int 2.0版本将调整为long
-            return bulkResponse.deleted() == null ? BaseEsConstants.ZERO : bulkResponse.deleted().intValue();
-        } catch (IOException e) {
-            throw ExceptionUtils.eee("delete error, dsl:%s", e);
+            CountRequest req = CountRequest.of(a -> a
+                    .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
+                    .routing(wrapper.routing)
+                    .preference(wrapper.preference)
+                    .query(query._toQuery())
+            );
+            CountResponse rsp;
+            try {
+                printDSL(req, client);
+                rsp = client.withTransportOptions(getTransportOptions()).count(req);
+            } catch (IOException e) {
+                throw ExceptionUtils.eee("selectCount exception", e);
+            }
+            return rsp.count();
         }
     }
 
@@ -715,35 +744,25 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
     }
 
-    /**
-     * 执行插入单条数据
-     *
-     * @param entity    插入对象
-     * @param routing   路由
-     * @param parentId  父id
-     * @param indexName 索引名
-     * @return 成功条数
-     */
-    private Integer doInsert(T entity, String routing, String parentId, String indexName) {
-        // 构建请求入参
-        IndexRequest.Builder<T> indexRequest = buildIndexRequest(entity, routing, parentId, indexName);
+    @Override
+    public Integer delete(Wrapper<T> wrapper) {
+        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
 
-        Optional.ofNullable(routing).ifPresent(indexRequest::routing);
-        indexRequest.refresh(getRefreshPolicy());
+        DeleteByQueryRequest request = DeleteByQueryRequest.of(a -> a
+                .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
+                .query(getBoolQuery(wrapper)._toQuery())
+                .routing(wrapper.routing)
+                .refresh(Refresh.True.equals(getRefreshPolicy()))
+                .scrollSize(entityInfo == null ? null : entityInfo.getMaxResultWindow())
+        );
 
+        printDSL(request, client);
         try {
-            IndexResponse indexResponse = client.withTransportOptions(getTransportOptions()).index(indexRequest.build());
-            if (Objects.equals(indexResponse.result(), Result.Created)) {
-                setId(entity, indexResponse.id());
-                return BaseEsConstants.ONE;
-            } else if (Objects.equals(indexResponse.result(), Result.Updated)) {
-                // 该id已存在,数据被更新的情况
-                return BaseEsConstants.ZERO;
-            } else {
-                throw ExceptionUtils.eee("insert failed, result:%s entity:%s", indexResponse.result(), entity);
-            }
+            DeleteByQueryResponse bulkResponse = client.deleteByQuery(request);
+            // 单次删除通常不会超过21亿, 这里为了兼容老API设计,仍转为int 2.0版本将调整为long
+            return bulkResponse.deleted() == null ? BaseEsConstants.ZERO : bulkResponse.deleted().intValue();
         } catch (IOException e) {
-            throw ExceptionUtils.eee("insert entity:%s exception", e, entity.toString());
+            throw ExceptionUtils.eee("delete error, dsl:%s", e);
         }
     }
 
@@ -788,6 +807,36 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return doBulkRequest(bulkRequest, getTransportOptions(), entityList);
     }
 
+    /**
+     * 执行插入单条数据
+     *
+     * @param entity    插入对象
+     * @param routing   路由
+     * @param parentId  父id
+     * @param indexName 索引名
+     * @return 成功条数
+     */
+    private Integer doInsert(T entity, String routing, String parentId, String indexName) {
+        // 构建请求入参
+        IndexRequest<T> indexRequest = buildIndexRequest(entity, routing, parentId, indexName)
+                .refresh(getRefreshPolicy()).build();
+
+        printDSL(indexRequest, client);
+        try {
+            IndexResponse indexResponse = client.withTransportOptions(getTransportOptions()).index(indexRequest);
+            if (Objects.equals(indexResponse.result(), Result.Created)) {
+                setId(entity, indexResponse.id());
+                return BaseEsConstants.ONE;
+            } else if (Objects.equals(indexResponse.result(), Result.Updated)) {
+                // 该id已存在,数据被更新的情况
+                return BaseEsConstants.ZERO;
+            } else {
+                throw ExceptionUtils.eee("insert failed, result:%s entity:%s", indexResponse.result(), entity);
+            }
+        } catch (IOException e) {
+            throw ExceptionUtils.eee("insert entity:%s exception", e, entity.toString());
+        }
+    }
 
     /**
      * 执行根据id删除指定数据
@@ -803,7 +852,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .refresh(getRefreshPolicy())
                 .build();
 
-        printDSL(request);
+        printDSL(request, client);
         try {
             DeleteResponse deleteResponse = client.withTransportOptions(getTransportOptions()).delete(request);
             if (Objects.equals(deleteResponse.result(), Result.Deleted)) {
@@ -814,7 +863,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
         return BaseEsConstants.ZERO;
     }
-
 
     /**
      * 执行根据id批量删除
@@ -847,7 +895,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .operations(operations)
         );
 
-        printDSL(request);
+        printDSL(request, client);
         return doBulkRequest(request, getTransportOptions());
     }
 
@@ -867,7 +915,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .refresh(getRefreshPolicy())
                 .build();
 
-        printDSL(updateRequest);
+        printDSL(updateRequest, client);
 
         // 执行更新
         try {
@@ -880,43 +928,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         return BaseEsConstants.ZERO;
-    }
-
-    /**
-     * 执行根据id批量更新
-     *
-     * @param entityList 更新数据列表
-     * @param routing    路由
-     * @param indexName  索引名
-     * @return 总成功条数
-     */
-    private Integer doUpdateBatchByIds(Collection<T> entityList, String routing, String indexName) {
-        // 封装批量请求参数
-        List<BulkOperation> operations = new ArrayList<>();
-        entityList.forEach(e -> {
-            String idValue = getIdValue(e);
-            UpdateRequest<T, T> updateRequest = buildUpdateRequest(e, idValue, indexName).build();
-            BulkOperation operation = BulkOperation.of(a ->
-                    a.update(b -> b
-                            .id(updateRequest.id())
-                            .ifPrimaryTerm(updateRequest.ifPrimaryTerm())
-                            .ifSeqNo(updateRequest.ifSeqNo())
-                            .index(updateRequest.index())
-                            .requireAlias(updateRequest.requireAlias())
-                            .retryOnConflict(updateRequest.retryOnConflict())
-                            .routing(updateRequest.routing())
-                    ));
-            operations.add(operation);
-        });
-
-        BulkRequest request = BulkRequest.of(a -> a
-                .routing(routing)
-                .refresh(getRefreshPolicy())
-                .operations(operations)
-        );
-
-        printDSL(request);
-        return doBulkRequest(request, getTransportOptions());
     }
 
     /**
@@ -957,6 +968,42 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return doBulkRequest(bulkRequest, getTransportOptions());
     }
 
+    /**
+     * 执行根据id批量更新
+     *
+     * @param entityList 更新数据列表
+     * @param routing    路由
+     * @param indexName  索引名
+     * @return 总成功条数
+     */
+    private Integer doUpdateBatchByIds(Collection<T> entityList, String routing, String indexName) {
+        // 封装批量请求参数
+        List<BulkOperation> operations = new ArrayList<>();
+        entityList.forEach(e -> {
+            String idValue = getIdValue(e);
+            UpdateRequest<T, T> updateRequest = buildUpdateRequest(e, idValue, indexName).build();
+            BulkOperation operation = BulkOperation.of(a ->
+                    a.update(b -> b
+                            .id(updateRequest.id())
+                            .ifPrimaryTerm(updateRequest.ifPrimaryTerm())
+                            .ifSeqNo(updateRequest.ifSeqNo())
+                            .index(updateRequest.index())
+                            .requireAlias(updateRequest.requireAlias())
+                            .retryOnConflict(updateRequest.retryOnConflict())
+                            .routing(updateRequest.routing())
+                    ));
+            operations.add(operation);
+        });
+
+        BulkRequest request = BulkRequest.of(a -> a
+                .routing(routing)
+                .refresh(getRefreshPolicy())
+                .operations(operations)
+        );
+
+        printDSL(request, client);
+        return doBulkRequest(request, getTransportOptions());
+    }
 
     /**
      * 执行根据id批量查询
@@ -974,8 +1021,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .routing(routing)
                 .query(QueryBuilders.ids().values(ids).build()._toQuery())
                 .size(idList.size())
-                .build()
-                ;
+                .build();
 
         // 请求es获取数据
         List<Hit<T>> searchHits = getSearchHits(searchRequest);
@@ -1003,8 +1049,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .index(indexName)
                 .routing(routing)
                 .query(QueryBuilders.ids().values(List.of(id.toString())).build()._toQuery())
-                .build()
-                ;
+                .build();
         // 请求es获取数据
         List<Hit<T>> searchHits = getSearchHits(searchRequest);
         if (CollectionUtils.isEmpty(searchHits)) {
@@ -1015,6 +1060,22 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         return parseOne(searchHits.getFirst());
     }
 
+
+    /**
+     * 生成DelRequest请求参数
+     *
+     * @param id        id
+     * @param indexName 索引名
+     * @return DelRequest
+     */
+    private DeleteRequest.Builder generateDelRequest(Serializable id, String indexName) {
+        if (Objects.isNull(id) || StringUtils.isEmpty(id.toString())) {
+            throw ExceptionUtils.eee("id must not be null or empty");
+        }
+        return new DeleteRequest.Builder()
+                .id(id.toString())
+                .index(indexName);
+    }
 
     /**
      * 获取es查询结果返回体
@@ -1039,7 +1100,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         if (needSearchAfter && searchRequest.sort().isEmpty()) {
             throw ExceptionUtils.eee("searchAfter必须要进行排序");
         }
-        printDSL(searchRequest);
+        printDSL(searchRequest, client);
 
         try {
             // 执行查询
@@ -1049,23 +1110,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         } catch (Exception e) {
             throw ExceptionUtils.eee("search exception", e);
         }
-    }
-
-
-    /**
-     * 生成DelRequest请求参数
-     *
-     * @param id        id
-     * @param indexName 索引名
-     * @return DelRequest
-     */
-    private DeleteRequest.Builder generateDelRequest(Serializable id, String indexName) {
-        if (Objects.isNull(id) || StringUtils.isEmpty(id.toString())) {
-            throw ExceptionUtils.eee("id must not be null or empty");
-        }
-        return new DeleteRequest.Builder()
-                .id(id.toString())
-                .index(indexName);
     }
 
     /**
@@ -1086,11 +1130,15 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
             builder.query(wrapper.searchBuilder.build().query());
         } else {
             EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-            int size = entityInfo == null ? GlobalConfigCache.getGlobalConfig().getDbConfig().getBatchUpdateThreshold()
-                    : entityInfo.getMaxResultWindow().intValue();
+            if (entityInfo == null) {
+                throw ExceptionUtils.eee("entityClass must not be null or empty");
+            }
+            Integer batchUpdateThreshold = GlobalConfigCache.getGlobalConfig().getDbConfig().getBatchUpdateThreshold();
+            int maxResultWindow = entityInfo.getMaxResultWindow().intValue();
+            int size = batchUpdateThreshold > maxResultWindow ? maxResultWindow : batchUpdateThreshold;
             builder
                     // 只查id列,节省内存
-                    .source(a -> a.filter(b -> b.includes(DEFAULT_ES_ID_NAME)))
+                    .source(a -> a.filter(b -> b.includes(entityInfo.getKeyProperty())))
                     .trackTotalHits(a -> a.enabled(true))
                     .query(WrapperProcessor.initBoolQueryBuilder(wrapper.paramQueue, entityClass).build()._toQuery())
                     .size(size)
@@ -1098,7 +1146,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         SearchRequest searchRequest = builder.build();
-        printDSL(searchRequest);
+        printDSL(searchRequest, client);
         try {
             // 查询数据明细
             SearchResponse<T> response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
@@ -1110,32 +1158,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         } catch (IOException e) {
             throw ExceptionUtils.eee("selectIdList exception", e);
         }
-    }
-
-    /**
-     * 构建创建数据请求参数
-     *
-     * @param entity    实体
-     * @param routing   路由
-     * @param parentId  父id
-     * @param indexName 索引名
-     * @return es请求参数
-     */
-    private IndexRequest.Builder<T> buildIndexRequest(T entity, String routing, String parentId, String indexName) {
-        IndexRequest.Builder<T> indexRequest = new IndexRequest.Builder<T>()
-                .index(indexName)
-                .document(entity);
-
-        // id预处理,除下述情况,其它情况使用es默认的id
-        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-
-        if (IdType.UUID.equals(entityInfo.getIdType())) {
-            indexRequest.id(UUID.randomUUID().toString());
-        } else if (IdType.CUSTOMIZE.equals(entityInfo.getIdType())) {
-            indexRequest.id(getIdValue(entity));
-        }
-
-        return indexRequest;
     }
 
     /**
@@ -1418,41 +1440,53 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     /**
+     * 构建创建数据请求参数
+     *
+     * @param entity    实体
+     * @param routing   路由
+     * @param parentId  父id
+     * @param indexName 索引名
+     * @return es请求参数
+     */
+    private IndexRequest.Builder<T> buildIndexRequest(T entity, String routing, String parentId, String indexName) {
+        IndexRequest.Builder<T> indexRequest = new IndexRequest.Builder<T>()
+                .routing(routing)
+                .index(indexName)
+                .document(entity);
+
+        // id预处理,除下述情况,其它情况使用es默认的id
+        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
+
+        if (IdType.UUID.equals(entityInfo.getIdType())) {
+            indexRequest.id(UUID.randomUUID().toString());
+        } else if (IdType.CUSTOMIZE.equals(entityInfo.getIdType())) {
+            indexRequest.id(getIdValue(entity));
+        }
+
+        // 针对父子类型-追加joinField信息
+        if (StringUtils.isNotBlank(entityInfo.getJoinAlias())) {
+            if (!(entity instanceof BaseJoin b)) {
+                throw ExceptionUtils.eee("实体类" + entityClass.getName() + "必须继承BaseJoin实现Join功能");
+            }
+            b.addJoinField(entityInfo.getJoinFieldName(), entityInfo.getJoinAlias(), entityInfo.isChild() ? parentId : null);
+        }
+
+        return indexRequest;
+    }
+
+    /**
      * 从es中请求获取searchHit数组
      *
      * @param searchRequest 请求参数
      * @return searchHit数组
      */
     private List<Hit<T>> getSearchHits(SearchRequest searchRequest) {
-        printDSL(searchRequest);
+        printDSL(searchRequest, client);
         SearchResponse<T> response;
         try {
             response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
         } catch (IOException e) {
             throw ExceptionUtils.eee("getSearchHitArray exception,searchRequest:%s", e, searchRequest.toString());
-        }
-        printResponseErrors(response);
-        return parseSearchHitArray(response);
-    }
-
-
-    /**
-     * 从es中请求获取searchHit数组
-     *
-     * @param wrapper 参数包装类
-     * @return searchHit数组
-     */
-    private List<Hit<T>> getSearchHits(Wrapper<T> wrapper) {
-        // 用户在wrapper中指定的混合查询条件优先级最高
-        SearchRequest searchRequest = Optional.ofNullable(wrapper.searchBuilder)
-                .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass)).build();
-
-        printDSL(searchRequest);
-        SearchResponse<T> response;
-        try {
-            response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
-        } catch (IOException e) {
-            throw ExceptionUtils.eee("getSearchHitArray IOException, searchRequest:%s", e, searchRequest.toString());
         }
         printResponseErrors(response);
         return parseSearchHitArray(response);
@@ -1501,31 +1535,25 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     /**
-     * 执行bulk创建请求,并返回成功个数,封装id
+     * 从es中请求获取searchHit数组
      *
-     * @param bulkRequest    批量请求参数
-     * @param requestOptions 类型
-     * @param entityList     实体列表
-     * @return 成功个数
+     * @param wrapper 参数包装类
+     * @return searchHit数组
      */
-    private int doBulkRequest(BulkRequest bulkRequest, TransportOptions requestOptions, Collection<T> entityList) {
-        int totalSuccess = 0;
-        try {
-            BulkResponse bulkResponse = client.withTransportOptions(requestOptions).bulk(bulkRequest);
-            if (bulkResponse.errors()) {
-                LogUtils.error(bulkResponse.toString());
-            }
+    private List<Hit<T>> getSearchHits(Wrapper<T> wrapper) {
+        // 用户在wrapper中指定的混合查询条件优先级最高
+        SearchRequest searchRequest = Optional.ofNullable(wrapper.searchBuilder)
+                .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass)).build();
 
-            for (BulkResponseItem item : bulkResponse.items()) {
-                if (Objects.equals(item.status(), 200)) {
-                    setId(entityList.toArray()[totalSuccess], item.id());
-                    totalSuccess++;
-                }
-            }
+        printDSL(searchRequest, client);
+        SearchResponse<T> response;
+        try {
+            response = client.withTransportOptions(getTransportOptions()).search(searchRequest, entityClass);
         } catch (IOException e) {
-            throw ExceptionUtils.eee("bulkRequest exception", e);
+            throw ExceptionUtils.eee("getSearchHitArray IOException, searchRequest:%s", e, searchRequest.toString());
         }
-        return totalSuccess;
+        printResponseErrors(response);
+        return parseSearchHitArray(response);
     }
 
     /**
@@ -1627,54 +1655,33 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     /**
-     * 根据全局配置决定是否控制台打印DSL语句
+     * 执行bulk创建请求,并返回成功个数,封装id
      *
-     * @param request es请求参数
+     * @param bulkRequest    批量请求参数
+     * @param requestOptions 类型
+     * @param entityList     实体列表
+     * @return 成功个数
      */
-    private void printDSL(RequestBase request) {
-        if (request == null) {
-            return;
-        }
+    private int doBulkRequest(BulkRequest bulkRequest, TransportOptions requestOptions, Collection<T> entityList) {
+        printDSL(bulkRequest, client);
 
-        String method = "";
-        String requestUrl = "";
-        String fullUrl = "";
-        String dsl = "";
+        int totalSuccess = 0;
         try {
-            @SuppressWarnings("unchecked")
-            Endpoint<RequestBase, ?, ?> endpoint = (Endpoint<RequestBase, ?, ?>) this.getClass()
-                    .getDeclaredField("_ENDPOINT").get(null);
-            method = endpoint.method(request);
-            requestUrl = endpoint.requestUrl(request);
-
-
-            Map<String, String> params = endpoint.queryParameters(request);
-            StringBuilder fullUrlSb = new StringBuilder(requestUrl);
-            String delim = "?";
-            for (Map.Entry<String, String> param : params.entrySet()) {
-                fullUrlSb.append(delim);
-                delim = "&";
-                fullUrlSb.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
+            BulkResponse bulkResponse = client.withTransportOptions(requestOptions).bulk(bulkRequest);
+            if (bulkResponse.errors()) {
+                LogUtils.error(bulkResponse.toString());
             }
-            fullUrl = fullUrlSb.toString();
 
-            if (this instanceof JsonpSerializable) {
-                dsl = JsonpUtils.toString((JsonpSerializable) this, new StringBuilder()).toString();
+            for (BulkResponseItem item : bulkResponse.items()) {
+                if (Objects.equals(item.status(), 201)) {
+//                    setId(entityList.toArray()[totalSuccess], item.id());
+                    totalSuccess++;
+                }
             }
-        } catch (Exception e) {
-            // No endpoint, ignore
+        } catch (IOException e) {
+            throw ExceptionUtils.eee("bulkRequest exception", e);
         }
-
-        GlobalConfig globalConfig = GlobalConfigCache.getGlobalConfig();
-        if (globalConfig.isPrintDsl()) {
-            String prefix = globalConfig.isIKunMode() ? I_KUN_PREFIX : DSL_PREFIX;
-            LogUtils.info(prefix +
-                          "\nmethod: " + method +
-                          "\nrequestUrl: " + requestUrl +
-                          "\nfullUrl: " + fullUrl +
-                          "\nDSL：" + dsl
-            );
-        }
+        return totalSuccess;
     }
 
     /**

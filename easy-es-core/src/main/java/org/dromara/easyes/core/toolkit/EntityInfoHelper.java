@@ -370,11 +370,11 @@ public class EntityInfoHelper {
     /**
      * HighLight注解初始化
      *
-     * @param dbConfig         索引配置
-     * @param entityInfo       实体信息
-     * @param field            字段
-     * @param mappingColumnMap 实体字段与es字段映射关系
-     * @param nestedOrObjectClass      嵌套类
+     * @param dbConfig            索引配置
+     * @param entityInfo          实体信息
+     * @param field               字段
+     * @param mappingColumnMap    实体字段与es字段映射关系
+     * @param nestedOrObjectClass 嵌套类
      */
     private static void initHighLightAnnotation(GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo, Field field,
                                                 Map<String, String> mappingColumnMap, Class<?> nestedOrObjectClass) {
@@ -422,11 +422,11 @@ public class EntityInfoHelper {
     /**
      * 添加高亮参数
      *
-     * @param entityInfo         实体信息
-     * @param nestedOrObjectClass        嵌套类
-     * @param highLight          高亮注解
-     * @param realHighLightField 实际高亮字段
-     * @param mappingField       映射字段
+     * @param entityInfo          实体信息
+     * @param nestedOrObjectClass 嵌套类
+     * @param highLight           高亮注解
+     * @param realHighLightField  实际高亮字段
+     * @param mappingField        映射字段
      */
     private static void addHighlightParam(EntityInfo entityInfo, Class<?> nestedOrObjectClass, HighLight highLight,
                                           String realHighLightField, String mappingField) {
@@ -464,8 +464,8 @@ public class EntityInfoHelper {
      * 处理嵌套类中的字段配置
      *
      * @param nestedOrObjectClass 嵌套类
-     * @param dbConfig    全局配置
-     * @param entityInfo  实体信息
+     * @param dbConfig            全局配置
+     * @param entityInfo          实体信息
      */
     private static void processNestedOrObject(Class<?> nestedOrObjectClass, GlobalConfig.DbConfig dbConfig, EntityInfo entityInfo) {
         // 将字段映射置入map 对其子节点也执行同样的操作
@@ -661,9 +661,11 @@ public class EntityInfoHelper {
                     .setIdClass(field.getType())
                     .setKeyProperty(field.getName());
 
-            entityInfo.getNotSerializeField().add(DEFAULT_ID_NAME);
             entityInfo.getNotSerializeField().add(field.getName());
-            entityInfo.getMappingColumnMap().putIfAbsent(field.getName(), DEFAULT_ID_NAME);
+            String mappingColumn = !StringUtils.isBlank(tableId.value().trim()) ? tableId.value():
+                    getMappingColumn(dbConfig, field);
+            entityInfo.getMappingColumnMap().putIfAbsent(field.getName(), mappingColumn);
+            entityInfo.getColumnMappingMap().putIfAbsent(mappingColumn, field.getName());
             return true;
         }
         return false;
@@ -688,9 +690,10 @@ public class EntityInfoHelper {
                     .setKeyField(field)
                     .setIdClass(field.getType())
                     .setClazz(field.getDeclaringClass());
-            entityInfo.getNotSerializeField().add(DEFAULT_ID_NAME);
-            entityInfo.getNotSerializeField().add(field.getName());
-            entityInfo.getMappingColumnMap().putIfAbsent(field.getName(), DEFAULT_ID_NAME);
+            entityInfo.getNotSerializeField().add(column);
+            String mappingColumn = getMappingColumn(dbConfig, field);
+            entityInfo.getMappingColumnMap().putIfAbsent(column, mappingColumn);
+            entityInfo.getColumnMappingMap().putIfAbsent(mappingColumn, column);
             return true;
         }
         return false;
@@ -781,10 +784,10 @@ public class EntityInfoHelper {
         if (settings == null) {
             return;
         }
-        IndexSettings.Builder builder = entityInfo.getIndexSettings();
-        builder.numberOfReplicas(settings.replicasNum() + "");
-        builder.numberOfShards(settings.shardsNum() + "");
-        builder.maxResultWindow((int)settings.maxResultWindow());
+        IndexSettings.Builder builder = entityInfo.getIndexSettings()
+                .numberOfReplicas(settings.replicasNum() + "")
+                .numberOfShards(settings.shardsNum() + "")
+                .maxResultWindow((int) settings.maxResultWindow());
         if (StringUtils.isNotBlank(settings.refreshInterval())) {
             builder.refreshInterval(a -> a.time(settings.refreshInterval()));
         }

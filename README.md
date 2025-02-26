@@ -90,7 +90,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
     TermsQueryBuilder creatorTerm = QueryBuilders.termsQuery("creator", "码保国");
     boolQueryBuilder.must(titleTerm);
     boolQueryBuilder.must(creatorTerm);
-    SearchRequest.Builder searchSourceBuilder = new SearchSourceBuilder();
+    SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
     searchSourceBuilder.query(boolQueryBuilder);
     searchRequest.source(searchSourceBuilder);
     try {
