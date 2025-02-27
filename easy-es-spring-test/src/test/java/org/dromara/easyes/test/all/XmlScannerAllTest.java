@@ -739,7 +739,7 @@ public class XmlScannerAllTest {
     @Order(60)
     public void testSort() {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(Document.class);
-        String realField = FieldUtils.getRealField(
+        String realField = FieldUtils.getRealFieldAndSuffix(
                 FieldUtils.val(Document::getStarNum),
                 entityInfo.getMappingColumnMap(),
                 entityInfo);

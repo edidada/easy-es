@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.*;
+import org.dromara.easyes.common.join.BaseJoin;
 import org.dromara.easyes.test.settings.MySettingsProvider;
 
 import java.math.BigDecimal;
@@ -27,7 +28,7 @@ import java.util.List;
 @Settings(shardsNum = 3, replicasNum = 2, settingsProvider = MySettingsProvider.class)
 @IndexName(value = "easyes_document", keepGlobalPrefix = true, refreshPolicy = RefreshPolicy.IMMEDIATE)
 @Join(nodes = {@Node(parentClass = Document.class, childClasses = {Author.class, Comment.class}), @Node(parentClass = Author.class, childClasses = Contact.class)})
-public class Document {
+public class Document extends BaseJoin {
     /**
      * es中的唯一id,字段名随便起,我这里演示用esId,你也可以用id(推荐),bizId等.
      * 如果你想自定义es中的id为你提供的id,比如MySQL中的id,请将注解中的type指定为customize或直接在全局配置文件中指定,如此id便支持任意数据类型)

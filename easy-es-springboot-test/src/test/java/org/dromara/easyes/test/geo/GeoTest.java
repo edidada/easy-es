@@ -1,8 +1,6 @@
 package org.dromara.easyes.test.geo;
 
-import co.elastic.clients.elasticsearch._types.DistanceUnit;
-import co.elastic.clients.elasticsearch._types.GeoLocation;
-import co.elastic.clients.elasticsearch._types.GeoShapeRelation;
+import co.elastic.clients.elasticsearch._types.*;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.core.toolkit.GeoUtils;
 import org.dromara.easyes.test.TestEasyEsApplication;
@@ -108,29 +106,30 @@ public class GeoTest {
     public void testOrderByDistance() {
         // 1.数据准备与入库,经纬度数据来源于腾讯地图
 
+        String centerPoint = "28.194124244622135, 113.01327520919799";
+        GeoLocation center = GeoUtils.create(centerPoint);
+
         // 长沙站
         Document centerDoc = new Document();
         centerDoc.setEsId("1");
         centerDoc.setTitle("长沙站");
         centerDoc.setContent("长沙站臭豆腐店");
-        GeoLocation center = GeoUtils.create(28.194124244622135, 113.01327520919799);
-        centerDoc.setLocation(center.toString());
+        LatLonGeoLocation geoPoint0 = center.latlon();
+        centerDoc.setLocation("28.194124244622135, 113.01327520919799");
 
         // 长沙火车站
         Document document1 = new Document();
         document1.setEsId("2");
         document1.setTitle("长沙火车站");
         document1.setContent("长沙火车站臭豆腐店");
-        GeoLocation geoPoint1 = GeoUtils.create(28.193708185086585, 113.01100069595336);
-        document1.setLocation(geoPoint1.toString());
+        document1.setLocation("28.193708185086585, 113.01100069595336");
 
         // 长沙站南广场
         Document document2 = new Document();
         document2.setEsId("3");
         document2.setTitle("长沙站南广场");
         document2.setContent("长沙站南广场臭豆腐店");
-        GeoLocation geoPoint2 = GeoUtils.create(28.192195227668382, 113.01173025680541);
-        document2.setLocation(geoPoint2.toString());
+        document2.setLocation("28.192195227668382, 113.01173025680541");
 
 
         // 长沙市中医院(东院区)
@@ -138,40 +137,35 @@ public class GeoTest {
         document3.setEsId("4");
         document3.setTitle("长沙市中医院");
         document3.setContent("长沙市中医院臭豆腐店");
-        GeoLocation geoPoint3 = GeoUtils.create(28.193367771534916, 113.00911242080687);
-        document3.setLocation(geoPoint3.toString());
+        document3.setLocation("28.193367771534916, 113.00911242080687");
 
         // 阿波罗商业广场
         Document document4 = new Document();
         document4.setEsId("5");
         document4.setTitle("阿波罗商业广场");
         document4.setContent("阿波罗商业广场臭豆腐店");
-        GeoLocation geoPoint4 = GeoUtils.create(28.196582745180983, 113.00962740493773);
-        document4.setLocation(geoPoint4.toString());
+        document4.setLocation("28.196582745180983, 113.00962740493773");
 
         // 朝阳一村
         Document document5 = new Document();
         document5.setEsId("6");
         document5.setTitle("朝阳一村");
         document5.setContent("朝阳一村臭豆腐店");
-        GeoLocation geoPoint5 = GeoUtils.create(28.188980122051586, 113.01177317214965);
-        document5.setLocation(geoPoint5.toString());
+        document5.setLocation("28.188980122051586, 113.01177317214965");
 
         // 铭威大厦
         Document document6 = new Document();
         document6.setEsId("7");
         document6.setTitle("铭威大厦");
         document6.setContent("铭威大厦臭豆腐店");
-        GeoLocation geoPoint6 = GeoUtils.create(28.1905309497745, 113.01825338912963);
-        document6.setLocation(geoPoint6.toString());
+        document6.setLocation("28.1905309497745, 113.01825338912963");
 
         // 袁家岭
         Document document7 = new Document();
         document7.setEsId("8");
         document7.setTitle("袁家岭");
         document7.setContent("袁家岭豆腐店");
-        GeoLocation geoPoint7 = GeoUtils.create(28.19450247915946, 113.00070101333617);
-        document7.setLocation(geoPoint7.toString());
+        document7.setLocation("28.19450247915946, 113.00070101333617");
 
         List<Document> documents = Arrays.asList(centerDoc, document1, document2, document3, document4, document5, document6, document7);
         int count = documentMapper.insertBatch(documents);

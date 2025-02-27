@@ -474,7 +474,6 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
         return typedThis;
     }
 
-
     @Override
     public final Children groupBy(boolean condition, boolean enablePipeline, String... columns) {
         if (ArrayUtils.isEmpty(columns)) {

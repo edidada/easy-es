@@ -22,7 +22,7 @@
 
     <properties>
         <junit.version>5.4.0</junit.version>
-        <spring-boot.version>2.7.0</spring-boot.version>
+        <spring-boot.version>2.7.17</spring-boot.version>
         <solon.version>3.0.5</solon.version>
         <commons-lang3>3.9</commons-lang3>
     </properties>

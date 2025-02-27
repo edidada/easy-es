@@ -155,7 +155,7 @@ public class HighTest {
     @Test
     public void testOrderByParams() {
         // 此处假设此参数由前端通过xxQuery类传入,排序根据标题降序,根据内容升序
-        String jsonParam = "[{\"order\":\"title\",\"sort\":\"DESC\"},{\"order\":\"creator\",\"sort\":\"ASC\"}]";
+        String jsonParam = "[{\"order\":\"title.keyword\",\"sort\":\"DESC\"},{\"order\":\"creator.keyword\",\"sort\":\"ASC\"}]";
         List<OrderByParam> orderByParams = JsonUtils.toList(jsonParam, OrderByParam.class);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "技术")

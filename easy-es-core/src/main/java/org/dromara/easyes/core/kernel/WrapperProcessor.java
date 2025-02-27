@@ -135,7 +135,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case PREFIX:
-                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
+                realField = getRealFieldAndSuffix(param.getColumn(), mappingColumnMap, fieldTypeMap, entityInfo);
                 query = Query.of(q -> q.prefix(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
@@ -284,7 +284,9 @@ public class WrapperProcessor {
                 String[] split = param.getColumn().split(SIGN);
                 String path = split[split.length - 1];
                 query = Query.of(b -> b.bool(x -> getBool(children, x, entityInfo, path)));
-                NestedQuery.Builder nestedQueryBuilder = QueryBuilders.nested().path(realField).query(query).scoreMode((ChildScoreMode) param.getVal());
+                NestedQuery.Builder nestedQueryBuilder = QueryBuilders.nested()
+                        .path(realField).query(query)
+                        .scoreMode((ChildScoreMode) param.getVal());
                 // 设置嵌套类型高亮查询参数
                 setNestedHighlight(path, param.getColumn(), nestedQueryBuilder, entityInfo);
                 // 设置bool查询参数
@@ -608,7 +610,7 @@ public class WrapperProcessor {
             wrapper.baseSortParams.forEach(baseSortParam -> {
                 // 获取es中的实际字段 有可能已经被用户自定义或者驼峰转成下划线
                 String realField = Objects.isNull(baseSortParam.getSortField()) ?
-                        null : getRealField(baseSortParam.getSortField(), mappingColumnMap, entityInfo);
+                        null : getRealFieldAndSuffix(baseSortParam.getSortField(), mappingColumnMap, entityInfo);
                 SortOptions sortBuilder = getSortBuilder(realField, baseSortParam);
                 Optional.ofNullable(sortBuilder).ifPresent(searchBuilder::sort);
             });
@@ -669,7 +671,7 @@ public class WrapperProcessor {
         // 设置折叠(去重)字段
         Optional.ofNullable(wrapper.distinctField)
                 .ifPresent(distinctField -> {
-                    String realField = getRealField(distinctField, mappingColumnMap, entityInfo);
+                    String realField = getRealFieldAndSuffix(distinctField, mappingColumnMap, entityInfo);
                     searchSourceBuilder.collapse(x -> x.field(realField));
                     searchSourceBuilder.aggregations(REPEAT_NUM_KEY, x -> x.cardinality(y -> y.field(realField)));
                 });
@@ -685,7 +687,7 @@ public class WrapperProcessor {
         Aggregation.Builder.ContainerBuilder root = null;
         Aggregation.Builder.ContainerBuilder cursor = null;
         for (AggregationParam aggParam : aggregationParamList) {
-            String realField = getRealField(aggParam.getField(), mappingColumnMap, entityInfo);
+            String realField = getRealFieldAndSuffix(aggParam.getField(), mappingColumnMap, entityInfo);
             Aggregation.Builder.ContainerBuilder builder = getRealAggregationBuilder(
                     aggParam.getAggregationType(), realField, wrapper.size, wrapper.bucketOrders);
             // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题

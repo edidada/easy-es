@@ -194,6 +194,24 @@ public class FieldUtils {
     }
 
     /**
+     * 获取实际字段名
+     *
+     * @param field            原字段名
+     * @param mappingColumnMap 字段映射关系map
+     * @param entityInfo       索引信息
+     * @return 实际字段名
+     */
+    public static String getRealFieldAndSuffix(String field, Map<String, String> mappingColumnMap, EntityInfo entityInfo) {
+        GlobalConfig.DbConfig dbConfig = GlobalConfigCache.getGlobalConfig().getDbConfig();
+        String realField = getRealField(field, mappingColumnMap, entityInfo);
+        String fieldType = entityInfo.getFieldTypeMap().get(field);
+        boolean addSuffix = dbConfig.isSmartAddKeywordSuffix()
+                            && FieldType.KEYWORD_TEXT.getType().equals(fieldType)
+                            && !DEFAULT_ES_ID_NAME.equals(realField);
+        return addSuffix ? realField + KEYWORD_SUFFIX : realField;
+    }
+
+    /**
      * 获取实际字段名 并且根据配置智能追加.keyword后缀
      *
      * @param field            字段
@@ -211,7 +229,9 @@ public class FieldUtils {
         GlobalConfig.DbConfig dbConfig = GlobalConfigCache.getGlobalConfig().getDbConfig();
         String realField = getRealField(field, mappingColumnMap, entityInfo);
         String fieldType = fieldTypeMap.get(field);
-        boolean addSuffix = dbConfig.isSmartAddKeywordSuffix() && FieldType.KEYWORD_TEXT.getType().equals(fieldType) && !DEFAULT_ES_ID_NAME.equals(realField);
+        boolean addSuffix = dbConfig.isSmartAddKeywordSuffix()
+                            && FieldType.KEYWORD_TEXT.getType().equals(fieldType)
+                            && !DEFAULT_ES_ID_NAME.equals(realField);
         if (addSuffix) {
             return realField + KEYWORD_SUFFIX;
         }
