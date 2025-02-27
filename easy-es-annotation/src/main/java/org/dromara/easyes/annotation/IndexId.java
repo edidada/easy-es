@@ -29,4 +29,9 @@ public @interface IndexId {
      * @return 默认为未设置
      */
     IdType type() default IdType.NONE;
+
+    /**
+     * 是否将主键写入到source中
+     */
+    boolean writeToSource() default false;
 }

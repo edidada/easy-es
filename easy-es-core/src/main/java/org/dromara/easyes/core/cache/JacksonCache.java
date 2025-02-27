@@ -13,6 +13,7 @@ import org.dromara.easyes.core.toolkit.FieldUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -36,9 +37,7 @@ public class JacksonCache {
 
             // 当前类
             if (!JacksonCustomConfig.jacksonConfigMap.containsKey(clz)) {
-                JacksonCustomConfig config = init(clz, e.getMappingColumnMap(), e.getClassDateFormatMap().get(clz), e.getFieldList());
-                config.includeMap.put(e.getKeyProperty(), NON_NULL);
-                config.includeMap.put(getterMethod(clz, e.getKeyProperty()), NON_NULL);
+                JacksonCustomConfig config = init(clz, e.isId2Source(), e.getKeyProperty(), e.getMappingColumnMap(), e.getClassDateFormatMap().get(clz), e.getFieldList());
                 JacksonCustomConfig.jacksonConfigMap.put(clz, config);
             }
 
@@ -47,7 +46,7 @@ public class JacksonCache {
                 if (JacksonCustomConfig.jacksonConfigMap.containsKey(clz)) {
                     return;
                 }
-                JacksonCustomConfig c = init(nestedClz, nestedMappingColumnMap,
+                JacksonCustomConfig c = init(nestedClz, null, null, nestedMappingColumnMap,
                         e.getClassDateFormatMap().get(nestedClz),
                         e.getNestedOrObjectFieldListMap().get(nestedClz)
                 );
@@ -58,6 +57,8 @@ public class JacksonCache {
 
     private static JacksonCustomConfig init(
             Class<?> clz,
+            Boolean id2Source,
+            String idJavaFieldName,
             Map<String, String> mappingColumnMap,
             Map<String, String> formatMap,
             List<EntityFieldInfo> fieldList
@@ -69,7 +70,11 @@ public class JacksonCache {
             config.allJsonField = JsonIncludeProperties.Value.from(new JsonIncludeProperties() {
                 @Override
                 public String[] value() {
-                    return config.javaJsonFieldNameMap.values().toArray(new String[0]);
+                    Collection<String> values = config.javaJsonFieldNameMap.values();
+                    if (id2Source != null && !id2Source) {
+                        values.remove(idJavaFieldName);
+                    }
+                    return values.toArray(new String[0]);
                 }
 
                 @Override
@@ -112,6 +117,10 @@ public class JacksonCache {
                     break;
             }
         });
+        if (id2Source != null && id2Source) {
+            config.includeMap.put(idJavaFieldName, NON_NULL);
+            config.includeMap.put(getterMethod(clz, idJavaFieldName), NON_NULL);
+        }
         return config;
     }
 

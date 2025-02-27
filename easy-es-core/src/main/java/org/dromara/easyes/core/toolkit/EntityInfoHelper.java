@@ -620,6 +620,7 @@ public class EntityInfoHelper {
             } else {
                 entityInfo.setIdType(tableId.type());
             }
+            entityInfo.setId2Source(tableId.writeToSource());
             // 字段
             field.setAccessible(Boolean.TRUE);
             entityInfo.setClazz(field.getDeclaringClass())
@@ -660,6 +661,7 @@ public class EntityInfoHelper {
             String mappingColumn = getMappingColumn(dbConfig, field);
             entityInfo.getMappingColumnMap().putIfAbsent(column, mappingColumn);
             entityInfo.getColumnMappingMap().putIfAbsent(mappingColumn, column);
+            entityInfo.setId2Source(dbConfig.isId2Source());
             return true;
         }
         return false;

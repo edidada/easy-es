@@ -40,6 +40,10 @@ public class EntityInfo {
      */
     private Class<?> idClass;
     /**
+     * id列是否需要写入到source
+     */
+    private boolean id2Source;
+    /**
      * 索引名称(原索引名)
      */
     private String indexName;
