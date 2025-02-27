@@ -72,7 +72,7 @@ public interface Index<Children, R> extends Serializable {
     /**
      * 设置mapping信息
      *
-     * @param column 列
+     * @param column    列
      * @param fieldType es中的类型
      * @param boost     权重
      * @return wrapper

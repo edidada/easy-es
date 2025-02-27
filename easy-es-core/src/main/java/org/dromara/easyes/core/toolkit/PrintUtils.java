@@ -57,6 +57,17 @@ public class PrintUtils {
             // No endpoint, ignore
         }
 
+        printDsl(method, fullUrl, dsl);
+    }
+
+    /**
+     * 打印dsl
+     *
+     * @param method  请求方法
+     * @param fullUrl 请求路径
+     * @param dsl     dsl
+     */
+    public static void printDsl(String method, String fullUrl, String dsl) {
         GlobalConfig globalConfig = GlobalConfigCache.getGlobalConfig();
         if (globalConfig.isPrintDsl()) {
             String prefix = globalConfig.isIKunMode() ? I_KUN_PREFIX : DSL_PREFIX;
@@ -64,6 +75,19 @@ public class PrintUtils {
                           "\n" + method + " " + fullUrl +
                           "\n" + dsl
             );
+        }
+    }
+
+    /**
+     * 打印dsl
+     *
+     * @param sql sql
+     */
+    public static void printSql(String sql) {
+        GlobalConfig globalConfig = GlobalConfigCache.getGlobalConfig();
+        if (globalConfig.isPrintDsl()) {
+            String prefix = globalConfig.isIKunMode() ? I_KUN_PREFIX : DSL_PREFIX;
+            LogUtils.info(prefix + "\n" + sql);
         }
     }
 
@@ -131,7 +155,7 @@ public class PrintUtils {
         while (values.hasNext()) {
             Object item = values.next();
             if (item == null) {
-              // skip
+                // skip
             } else if (item instanceof NdJsonpSerializable nd && item != value) { // do not recurse on the item itself
                 collectNdJsonLines(body, nd, mapper);
             } else {

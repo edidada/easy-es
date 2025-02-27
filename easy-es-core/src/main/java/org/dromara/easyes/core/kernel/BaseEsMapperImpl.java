@@ -150,6 +150,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     public Integer refresh(String... indexNames) {
         RefreshRequest request = RefreshRequest.of(x -> x.index(Arrays.asList(indexNames)));
         try {
+            PrintUtils.printDsl(request, client);
             RefreshResponse refresh = client.indices().refresh(request);
             if (refresh.shards() != null) {
                 return refresh.shards().successful().intValue();
@@ -164,6 +165,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     @Override
     @SneakyThrows
     public String executeSQL(String sql) {
+        PrintUtils.printSql(sql);
         QueryResponse response = client.sql().query(x -> x.query(sql).format(SqlFormat.Json));
         return JsonpUtils.toString(response, new StringBuilder()).toString();
     }
@@ -182,6 +184,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         Assert.notNull(endpoint, "endpoint must not null");
         Request request = new Request(method, endpoint);
         request.setJsonEntity(dsl);
+        PrintUtils.printDsl(method, endpoint, dsl);
         Response response = ((RestClientTransport) client._transport()).restClient().performRequest(request);
         return EntityUtils.toString(response.getEntity());
     }
@@ -194,6 +197,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public ScrollResponse<T> scroll(ScrollRequest searchScrollRequest, TransportOptions requestOptions) throws IOException {
+        PrintUtils.printDsl(searchScrollRequest, client);
         ScrollResponse<T> response = client.withTransportOptions(requestOptions).scroll(searchScrollRequest, entityClass);
         printResponseErrors(response);
         return response;
@@ -679,6 +683,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         );
 
         try {
+            PrintUtils.printDsl(putMappingRequest, client);
             AcknowledgedResponse acknowledgedResponse = client.withTransportOptions(getTransportOptions()).indices().putMapping(putMappingRequest);
             Assert.isTrue(acknowledgedResponse.acknowledged(), String.format("update index failed, index: %s", indexName));
         } catch (IOException e) {

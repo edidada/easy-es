@@ -455,7 +455,7 @@ public class IndexUtils {
 
             if (FieldType.BYTE.getType().equals(indexParam.getFieldType())) {
                 ByteNumberProperty property = ByteNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -465,7 +465,7 @@ public class IndexUtils {
             }
             if (FieldType.SHORT.getType().equals(indexParam.getFieldType())) {
                 ShortNumberProperty property = ShortNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -475,7 +475,7 @@ public class IndexUtils {
             }
             if (FieldType.INTEGER.getType().equals(indexParam.getFieldType())) {
                 IntegerNumberProperty property = IntegerNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -485,7 +485,7 @@ public class IndexUtils {
             }
             if (FieldType.LONG.getType().equals(indexParam.getFieldType())) {
                 LongNumberProperty property = LongNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -495,7 +495,7 @@ public class IndexUtils {
             }
             if (FieldType.FLOAT.getType().equals(indexParam.getFieldType())) {
                 FloatNumberProperty property = FloatNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -505,7 +505,7 @@ public class IndexUtils {
             }
             if (FieldType.DOUBLE.getType().equals(indexParam.getFieldType())) {
                 DoubleNumberProperty property = DoubleNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -515,7 +515,7 @@ public class IndexUtils {
             }
             if (FieldType.HALF_FLOAT.getType().equals(indexParam.getFieldType())) {
                 HalfFloatNumberProperty property = HalfFloatNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -527,7 +527,7 @@ public class IndexUtils {
                 Double scalingFactor = Optional.ofNullable(indexParam.getScalingFactor())
                         .map(NumericUtils::formatNumberWithOneDecimal).orElse(DEFAULT_SCALING_FACTOR);
                 ScaledFloatNumberProperty property = ScaledFloatNumberProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     a.scalingFactor(scalingFactor);
@@ -538,7 +538,7 @@ public class IndexUtils {
             }
             if (FieldType.BOOLEAN.getType().equals(indexParam.getFieldType())) {
                 BooleanProperty property = BooleanProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -548,7 +548,7 @@ public class IndexUtils {
             }
             if (FieldType.DATE.getType().equals(indexParam.getFieldType())) {
                 DateProperty property = DateProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     a.format(indexParam.getDateFormat());
@@ -568,7 +568,7 @@ public class IndexUtils {
             }
             if (FieldType.KEYWORD.getType().equals(indexParam.getFieldType())) {
                 KeywordProperty property = KeywordProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     a.normalizer(indexParam.isIgnoreCase() ? LOWERCASE_NORMALIZER : null);
@@ -580,7 +580,8 @@ public class IndexUtils {
             if (FieldType.TEXT.getType().equals(indexParam.getFieldType())) {
                 int ignoreAbove = Optional.ofNullable(indexParam.getIgnoreAbove()).orElse(DEFAULT_IGNORE_ABOVE);
                 TextProperty property = TextProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     Optional.ofNullable(indexParam.getAnalyzer()).map(String::toLowerCase).ifPresent(a::analyzer);
@@ -594,7 +595,7 @@ public class IndexUtils {
             if (FieldType.KEYWORD_TEXT.getType().equals(indexParam.getFieldType())) {
                 int ignoreAbove = Optional.ofNullable(indexParam.getIgnoreAbove()).orElse(DEFAULT_IGNORE_ABOVE);
                 TextProperty property = TextProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     a.fields(FieldType.KEYWORD.getType(), c -> c
@@ -675,7 +676,7 @@ public class IndexUtils {
             }
             if (FieldType.IP.getType().equals(indexParam.getFieldType())) {
                 IpProperty property = IpProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -696,7 +697,7 @@ public class IndexUtils {
             }
             if (FieldType.TOKEN.getType().equals(indexParam.getFieldType())) {
                 TokenCountProperty property = TokenCountProperty.of(a -> {
-                    Optional.ofNullable(indexParam.getBoost()).ifPresent(a::boost);
+                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
