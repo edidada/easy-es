@@ -26,7 +26,6 @@ import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.JsonpUtils;
 import co.elastic.clients.transport.TransportOptions;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
-import com.alibaba.fastjson.JSON;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.http.util.EntityUtils;
@@ -37,6 +36,7 @@ import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.common.enums.OrderTypeEnum;
 import org.dromara.easyes.common.join.BaseJoin;
 import org.dromara.easyes.common.utils.*;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.BaseCache;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
@@ -1342,7 +1342,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 invokeMethod.invoke(entity, distance);
             } catch (Throwable e) {
                 // 遇到异常只提示, 不阻断流程 distance未设置不影核心业务
-                LogUtils.formatError("set distance error, entity:%s,sortValues:%s,distanceField:%s,e:%s", entity, JSON.toJSONString(sortValues), distanceFields, e);
+                LogUtils.formatError("set distance error, entity:%s,sortValues:%s,distanceField:%s,e:%s", entity, JsonUtils.toJsonStr(sortValues), distanceFields, e);
             }
         }
     }
@@ -1472,7 +1472,8 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                     .filter(item -> Objects.equals(item.result(), successResult))
                     .count();
         } catch (IOException e) {
-            LogUtils.error("bulk request exception", JSON.toJSONString(e));
+            e.printStackTrace();
+            LogUtils.error("bulk request exception");
             return 0;
         }
     }

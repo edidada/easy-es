@@ -1,8 +1,6 @@
 package org.dromara.easyes.core.toolkit;
 
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
-import com.alibaba.fastjson.serializer.SerializeFilter;
-import com.alibaba.fastjson.serializer.ValueFilter;
 import lombok.SneakyThrows;
 import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.*;
@@ -193,38 +191,6 @@ public class EntityInfoHelper {
 
         // 字段列表
         entityInfo.setFieldList(fieldList);
-    }
-
-    /**
-     * 获取fastjson 值过滤器 针对日期等需要格式化及转换字段处理
-     *
-     * @param entityInfo 实体信息缓存
-     * @param clazz      对应类
-     * @return 过滤器
-     */
-    private static List<SerializeFilter> getValueFilter(EntityInfo entityInfo, Class<?> clazz) {
-        // 日期字段序列化过滤器
-        List<SerializeFilter> serializeFilters = new ArrayList<>();
-        Map<String, String> dateFormatMap = entityInfo.getClassDateFormatMap().get(clazz);
-        if (CollectionUtils.isEmpty(dateFormatMap)) {
-            return serializeFilters;
-        }
-
-        Map<Class<?>, Map<String, String>> nestedClassColumnMappingMap = entityInfo.getNestedOrObjectClassColumnMappingMap();
-        SerializeFilter serializeFilter = (ValueFilter) (object, name, value) -> {
-            Map<String, String> nestedColumnMappingMap = nestedClassColumnMappingMap.get(object.getClass());
-            if (nestedColumnMappingMap != null) {
-                Map<String, String> nestedDateFormatMap = entityInfo.getClassDateFormatMap().get(object.getClass());
-                if (CollectionUtils.isEmpty(nestedDateFormatMap)) {
-                    return value;
-                }
-                return formatDate(name, value, nestedColumnMappingMap, nestedDateFormatMap);
-            } else {
-                return formatDate(name, value, entityInfo.getColumnMappingMap(), dateFormatMap);
-            }
-        };
-        serializeFilters.add(serializeFilter);
-        return serializeFilters;
     }
 
     /**

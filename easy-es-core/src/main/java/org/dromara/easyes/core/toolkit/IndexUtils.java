@@ -10,7 +10,7 @@ import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.elasticsearch.indices.*;
 import co.elastic.clients.elasticsearch.indices.update_aliases.Action;
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.dromara.easyes.annotation.rely.Analyzer;
@@ -1147,12 +1147,12 @@ public class IndexUtils {
      * @param client           ElasticsearchClient
      */
     public static void saveReleaseIndex(String releaseIndexName, ElasticsearchClient client) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put(ACTIVE_INDEX_KEY, releaseIndexName);
-        jsonObject.put(GMT_MODIFIED, System.currentTimeMillis());
+        Map<String, Object> map = new HashMap<>();
+        map.put(ACTIVE_INDEX_KEY, releaseIndexName);
+        map.put(GMT_MODIFIED, System.currentTimeMillis());
         IndexRequest<?> indexRequest = IndexRequest.of(x -> x
                 .index(LOCK_INDEX)
-                .document(jsonObject)
+                .document(map)
         );
         try {
             client.index(indexRequest);
@@ -1176,9 +1176,9 @@ public class IndexUtils {
                 .sort(b -> b.field(c -> c.field(GMT_MODIFIED).order(SortOrder.Desc)))
                 .size(ONE)
         );
-        SearchResponse<JSONObject> response = null;
+        SearchResponse<Map<String, String>> response = null;
         try {
-            response = client.search(searchRequest, JSONObject.class);
+            response = client.search(searchRequest, new TypeReference<Map<String, Object>>(){}.getType());
         } catch (Throwable e) {
             LogUtils.warn("Active failed, The machine that acquired lock is migrating, will try again later");
         }
@@ -1188,19 +1188,17 @@ public class IndexUtils {
         Optional.ofNullable(response).ifPresent(r -> r.hits().hits().forEach(searchHit -> Optional.ofNullable(searchHit.source())
                 .flatMap(hit -> Optional.ofNullable(hit.get(ACTIVE_INDEX_KEY)))
                 .ifPresent(indexName -> {
-                    if (indexName instanceof String releaseIndexName) {
-                        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-                        entityInfo.setIndexName(releaseIndexName);
+                    EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
+                    entityInfo.setIndexName(indexName);
 
-                        // 父子类型,须将所有子孙文档的索引也激活为最新索引
-                        entityInfo.getRelationClassMap().forEach((k, v) -> {
-                            Optional.ofNullable(EntityInfoHelper.getEntityInfo(k)).ifPresent(i -> i.setIndexName(releaseIndexName));
-                            if (CollectionUtils.isNotEmpty(v)) {
-                                v.forEach(node -> Optional.ofNullable(EntityInfoHelper.getEntityInfo(node)).ifPresent(i -> i.setIndexName(releaseIndexName)));
-                            }
-                        });
-                        activated.set(Boolean.TRUE);
-                    }
+                    // 父子类型,须将所有子孙文档的索引也激活为最新索引
+                    entityInfo.getRelationClassMap().forEach((k, v) -> {
+                        Optional.ofNullable(EntityInfoHelper.getEntityInfo(k)).ifPresent(i -> i.setIndexName(indexName));
+                        if (CollectionUtils.isNotEmpty(v)) {
+                            v.forEach(node -> Optional.ofNullable(EntityInfoHelper.getEntityInfo(node)).ifPresent(i -> i.setIndexName(indexName)));
+                        }
+                    });
+                    activated.set(Boolean.TRUE);
                 })));
 
         // 达到最大重试次数仍未成功,则终止流程,避免浪费资源
