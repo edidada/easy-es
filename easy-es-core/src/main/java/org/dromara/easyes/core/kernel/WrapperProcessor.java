@@ -453,7 +453,7 @@ public class WrapperProcessor {
         // 设置查询起止参数
         Optional.ofNullable(wrapper.from).ifPresent(builder::from);
         MyOptional.ofNullable(wrapper.size).ifPresent(builder::size,
-                entityInfo.getMaxResultWindow() != null ? entityInfo.getMaxResultWindow().intValue() : DEFAULT_SIZE);
+                entityInfo.getMaxResultWindow() != null ? entityInfo.getMaxResultWindow() : DEFAULT_SIZE);
 
         // 根据全局配置决定是否开启全部查询
         if (GlobalConfigCache.getGlobalConfig().getDbConfig().isEnableTrackTotalHits()) {
@@ -490,6 +490,25 @@ public class WrapperProcessor {
 
         // 指定了个空字符串之类的,需要给兜底
         return Arrays.stream(indexNames)
+                .map(indexName -> getIndexName(entityClass, indexName))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取兜底索引名称数组
+     *
+     * @param indexNames 原始索引名称数组
+     * @return 目标索引名称数组
+     */
+    public static <T> List<String> getIndexName(Class<T> entityClass, Collection<String> indexNames) {
+        // 碰到傻狍子用户锤子索引都没指定, 给个兜底
+        if (CollectionUtils.isEmpty(indexNames)) {
+            return Collections.singletonList(EntityInfoHelper.getEntityInfo(entityClass).getIndexName());
+        }
+
+        // 指定了个空字符串之类的,需要给兜底
+        return indexNames.stream()
                 .map(indexName -> getIndexName(entityClass, indexName))
                 .distinct()
                 .collect(Collectors.toList());

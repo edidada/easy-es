@@ -784,10 +784,15 @@ public class EntityInfoHelper {
         if (settings == null) {
             return;
         }
+        entityInfo.setMaxResultWindow(settings.maxResultWindow());
+        entityInfo.setReplicasNum(settings.replicasNum());
+        entityInfo.setShardsNum(settings.shardsNum());
+
         IndexSettings.Builder builder = entityInfo.getIndexSettings()
                 .numberOfReplicas(settings.replicasNum() + "")
                 .numberOfShards(settings.shardsNum() + "")
-                .maxResultWindow((int) settings.maxResultWindow());
+                .maxResultWindow(settings.maxResultWindow());
+
         if (StringUtils.isNotBlank(settings.refreshInterval())) {
             builder.refreshInterval(a -> a.time(settings.refreshInterval()));
         }

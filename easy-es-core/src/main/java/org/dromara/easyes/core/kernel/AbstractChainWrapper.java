@@ -742,14 +742,8 @@ public abstract class AbstractChainWrapper<T, R, Children extends AbstractChainW
     }
 
     @Override
-    public Children maxResultWindow(Long maxResultWindow) {
-        getWrapper().maxResultWindow(maxResultWindow);
-        return typedThis;
-    }
-
-    @Override
-    public Children settings(Integer shards, Integer replicas) {
-        getWrapper().settings(shards, replicas);
+    public Children settings(Integer shards, Integer replicas, Integer maxResultWindow) {
+        getWrapper().settings(shards, replicas, maxResultWindow);
         return typedThis;
     }
 

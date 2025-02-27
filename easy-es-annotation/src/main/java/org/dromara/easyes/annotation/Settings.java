@@ -36,7 +36,7 @@ public @interface Settings {
      *
      * @return 默认1w条
      */
-    long maxResultWindow() default DEFAULT_MAX_RESULT_WINDOW;
+    int maxResultWindow() default DEFAULT_MAX_RESULT_WINDOW;
 
     /**
      * 索引的刷新间隔 es默认值为1s ms：表示毫秒 s：表示秒 m：表示分钟

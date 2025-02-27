@@ -22,21 +22,13 @@ public interface Index<Children, R> extends Serializable {
     Children indexName(String... indexNames);
 
     /**
-     * 设置最大返回数
-     *
-     * @param maxResultWindow 最大返回数
-     * @return wrapper
-     */
-    Children maxResultWindow(Long maxResultWindow);
-
-    /**
      * 设置索引的分片数和副本数
      *
      * @param shards   分片数
      * @param replicas 副本数
      * @return wrapper
      */
-    Children settings(Integer shards, Integer replicas);
+    Children settings(Integer shards, Integer replicas, Integer maxResultWindow);
 
     /**
      * 用户手动指定的settings

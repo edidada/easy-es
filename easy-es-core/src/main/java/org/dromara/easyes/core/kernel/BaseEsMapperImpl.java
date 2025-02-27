@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
-import static org.dromara.easyes.core.kernel.WrapperProcessor.getIndexName;
 
 /**
  * 核心 所有支持方法接口实现类
@@ -121,13 +120,13 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public Boolean createIndex(Wrapper<T> wrapper) {
-        Arrays.stream(wrapper.indexNames).forEach(indexName -> doCreateIndex(wrapper, indexName));
+        wrapper.indexNames.forEach(indexName -> doCreateIndex(wrapper, indexName));
         return Boolean.TRUE;
     }
 
     @Override
     public Boolean updateIndex(Wrapper<T> wrapper) {
-        Arrays.stream(wrapper.indexNames).forEach(indexName -> doUpdateIndex(wrapper, indexName));
+        wrapper.indexNames.forEach(indexName -> doUpdateIndex(wrapper, indexName));
         return Boolean.TRUE;
     }
 
@@ -560,7 +559,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 在每条指定索引上执行查询
         List<T> result = new ArrayList<>();
-        WrapperProcessor.getIndexName(entityClass, indexNames).stream()
+        WrapperProcessor.getIndexName(entityClass, indexNames)
                 .forEach(indexName -> result.addAll(doSelectBatchIds(idList, routing, indexName)));
         return result;
     }
@@ -626,11 +625,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 设置索引名
         createIndexParam.setIndexName(indexName);
-
-        // 设置分片个副本信息
-        Optional.ofNullable(wrapper.shardsNum).ifPresent(createIndexParam::setShardsNum);
-        Optional.ofNullable(wrapper.replicasNum).ifPresent(createIndexParam::setReplicasNum);
-        Optional.ofNullable(wrapper.maxResultWindow).ifPresent(createIndexParam::setMaxResultWindow);
 
         // 设置用户自定义的settings
         Optional.ofNullable(wrapper.settings).ifPresent(createIndexParam::setSettings);
@@ -701,7 +695,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .query(getBoolQuery(wrapper)._toQuery())
                 .routing(wrapper.routing)
                 .refresh(Refresh.True.equals(getRefreshPolicy()))
-                .scrollSize(entityInfo == null ? null : entityInfo.getMaxResultWindow())
+                .scrollSize(entityInfo == null ? null : entityInfo.getMaxResultWindow().longValue())
         );
 
         PrintUtils.printDsl(request, client);
@@ -963,7 +957,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         // 构造查询参数
         List<String> ids = idList.stream().map(Object::toString).collect(Collectors.toList());
         SearchRequest searchRequest = new SearchRequest.Builder()
-                .index(getIndexName(entityClass, indexName))
+                .index(WrapperProcessor.getIndexName(entityClass, indexName))
                 .routing(routing)
                 .query(QueryBuilders.ids().values(ids).build()._toQuery())
                 .size(idList.size())
@@ -1084,7 +1078,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 throw ExceptionUtils.eee("entityClass must not be null or empty");
             }
             Integer batchUpdateThreshold = GlobalConfigCache.getGlobalConfig().getDbConfig().getBatchUpdateThreshold();
-            int maxResultWindow = entityInfo.getMaxResultWindow().intValue();
+            int maxResultWindow = entityInfo.getMaxResultWindow();
             int size = batchUpdateThreshold > maxResultWindow ? maxResultWindow : batchUpdateThreshold;
             builder
                     // 只查id列,节省内存
@@ -1236,7 +1230,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                                 NestedIdentity tmpNestedIdentity = nestedIdentity;
                                 List<String> pathList = new ArrayList<>();
                                 while (tmpNestedIdentity != null) {
-                                    Optional.ofNullable(tmpNestedIdentity.field()).ifPresent(field -> pathList.add(field.toString()));
+                                    Optional.ofNullable(tmpNestedIdentity.field()).ifPresent(pathList::add);
                                     tmpNestedIdentity = tmpNestedIdentity.nested();
                                 }
                                 String highLightField = k1.replace(String.join(STR_SIGN, pathList) + STR_SIGN, EMPTY_STR);

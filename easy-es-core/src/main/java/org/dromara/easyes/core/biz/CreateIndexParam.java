@@ -27,18 +27,6 @@ public class CreateIndexParam {
      */
     private String aliasName;
     /**
-     * 分片数
-     */
-    private Integer shardsNum;
-    /**
-     * 副本数
-     */
-    private Integer replicasNum;
-    /**
-     * 最大返回数
-     */
-    private Long maxResultWindow;
-    /**
      * 索引字段及类型分词器等信息
      */
     private List<EsIndexParam> esIndexParamList;

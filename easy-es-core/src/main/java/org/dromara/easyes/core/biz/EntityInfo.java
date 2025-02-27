@@ -194,7 +194,7 @@ public class EntityInfo {
     /**
      * 最大返回数
      */
-    private Long maxResultWindow = DEFAULT_MAX_RESULT_WINDOW;
+    private Integer maxResultWindow = DEFAULT_MAX_RESULT_WINDOW;
     /**
      * 嵌套类/object类的字段信息列表
      */

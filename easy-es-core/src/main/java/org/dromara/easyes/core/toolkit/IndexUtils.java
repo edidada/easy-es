@@ -114,24 +114,29 @@ public class IndexUtils {
      */
     public static boolean createIndex(ElasticsearchClient client, EntityInfo entityInfo, CreateIndexParam indexParam) {
         CreateIndexRequest createIndexRequest = CreateIndexRequest.of(x -> {
-            // 设置settings信息
+            // ======================== 索引信息 =========================
             x.index(indexParam.getIndexName());
+
+            // ======================== settings ========================
+
+            // 用户未指定的settings信息
             if (Objects.isNull(indexParam.getSettings())) {
+                IndexSettings.Builder settings = indexParam.getIndexSettings();
                 // 只要有其中一个字段加了忽略大小写,则在索引中创建此自定义配置,否则无需创建,不浪费资源
                 boolean ignoreCase = indexParam.getEsIndexParamList() != null && indexParam.getEsIndexParamList().stream()
                         .anyMatch(EsIndexParam::isIgnoreCase);
                 if (ignoreCase) {
-                    IndexSettings settings = indexParam.getIndexSettings()
-                            // 忽略大小写配置
-                            .analysis(b -> b.normalizer(LOWERCASE_NORMALIZER, c -> c.custom(d -> d.filter(LOWERCASE))))
-                            .build();
-                    x.settings(settings);
+                    // 忽略大小写配置
+                    settings.analysis(b -> b.normalizer(LOWERCASE_NORMALIZER, c -> c.custom(d -> d.filter(LOWERCASE))));
                 }
+                x.settings(settings.build());
             } else {
                 // 用户自定义settings
                 x.settings(indexParam.getSettings().build());
             }
-            // mapping信息
+
+            // ======================== mapping ========================
+
             if (Objects.isNull(indexParam.getMapping())) {
                 // 用户未指定mapping 根据注解自动推断
                 TypeMapping.Builder mapping = initMapping(entityInfo, indexParam.getEsIndexParamList());
@@ -244,7 +249,7 @@ public class IndexUtils {
      * @param maxResultWindow  最大返回数
      * @return 是否操作成功
      */
-    public static boolean reindex(ElasticsearchClient client, String oldIndexName, String releaseIndexName, Long maxResultWindow) {
+    public static boolean reindex(ElasticsearchClient client, String oldIndexName, String releaseIndexName, Integer maxResultWindow) {
         int reindexTimeOutHours = GlobalConfigCache.getGlobalConfig().getReindexTimeOutHours();
         ReindexRequest request = ReindexRequest.of(a -> {
             a
@@ -255,7 +260,7 @@ public class IndexUtils {
                     .timeout(x -> x.time(reindexTimeOutHours + "h"));
             // batchSize须小于等于maxResultWindow,否则es报错
             if (DEFAULT_MAX_RESULT_WINDOW > maxResultWindow) {
-                a.size(maxResultWindow);
+                a.size(maxResultWindow.longValue());
             }
             return a;
         });
@@ -984,10 +989,7 @@ public class IndexUtils {
         CreateIndexParam createIndexParam = new CreateIndexParam();
         createIndexParam.setEsIndexParamList(esIndexParamList);
         createIndexParam.setAliasName(entityInfo.getAliasName());
-        createIndexParam.setShardsNum(entityInfo.getShardsNum());
-        createIndexParam.setReplicasNum(entityInfo.getReplicasNum());
         createIndexParam.setIndexName(entityInfo.getIndexName());
-        createIndexParam.setMaxResultWindow(entityInfo.getMaxResultWindow());
 
         // 如果有设置新索引名称,则用新索引名覆盖原索引名进行创建
         Optional.ofNullable(entityInfo.getReleaseIndexName()).ifPresent(createIndexParam::setIndexName);

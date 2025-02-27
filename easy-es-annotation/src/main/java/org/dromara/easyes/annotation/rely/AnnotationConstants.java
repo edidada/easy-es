@@ -29,7 +29,7 @@ public interface AnnotationConstants {
     /**
      * 默认最大返回数
      */
-    long DEFAULT_MAX_RESULT_WINDOW = 10000L;
+    int DEFAULT_MAX_RESULT_WINDOW = 10000;
     /**
      * 默认索引别名
      */

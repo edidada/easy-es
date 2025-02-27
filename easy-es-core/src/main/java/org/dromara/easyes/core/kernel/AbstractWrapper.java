@@ -568,7 +568,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
             if (ArrayUtils.isEmpty(indexNames)) {
                 throw ExceptionUtils.eee("indexNames can not be empty");
             }
-            this.indexNames = indexNames;
+            this.indexNames.addAll(Arrays.asList(indexNames));
         }
         return typedThis;
     }
@@ -667,23 +667,21 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
         if (ArrayUtils.isEmpty(indexNames)) {
             throw new RuntimeException("indexNames can not be empty");
         }
-        this.indexNames = indexNames;
+        this.indexNames.addAll(Arrays.asList(indexNames));
         return typedThis;
     }
 
     @Override
-    public Children maxResultWindow(Long maxResultWindow) {
-        Optional.ofNullable(maxResultWindow).ifPresent(max -> this.maxResultWindow = maxResultWindow);
-        return typedThis;
-    }
-
-    @Override
-    public Children settings(Integer shards, Integer replicas) {
+    public Children settings(Integer shards, Integer replicas, Integer maxResultWindow) {
+        this.settings = this.settings == null ? new IndexSettings.Builder() : this.settings;
         if (Objects.nonNull(shards)) {
-            this.shardsNum = shards;
+            this.settings.numberOfShards(shards + "");
         }
         if (Objects.nonNull(replicas)) {
-            this.replicasNum = replicas;
+            this.settings.numberOfReplicas(replicas + "");
+        }
+        if (Objects.nonNull(maxResultWindow)) {
+            this.settings.maxResultWindow(maxResultWindow);
         }
         return typedThis;
     }
@@ -708,7 +706,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
 
     @Override
     public Children createAlias(String aliasName) {
-        if (ArrayUtils.isEmpty(indexNames)) {
+        if (CollectionUtils.isEmpty(indexNames)) {
             throw new RuntimeException("indexNames can not be empty");
         }
         if (StringUtils.isEmpty(aliasName)) {

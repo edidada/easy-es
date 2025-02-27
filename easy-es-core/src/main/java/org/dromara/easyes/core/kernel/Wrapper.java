@@ -8,8 +8,10 @@ import co.elastic.clients.util.NamedValue;
 import lombok.SneakyThrows;
 import org.dromara.easyes.core.biz.*;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Lambda表达式的祖宗类 存放孙子们所需的公用字段及参数
@@ -60,7 +62,7 @@ public abstract class Wrapper<T> implements Cloneable {
     /**
      * 当前操作作用的索引名数组
      */
-    protected String[] indexNames;
+    protected Set<String> indexNames = new HashSet<>();
     /**
      * 路由
      */
@@ -78,10 +80,6 @@ public abstract class Wrapper<T> implements Cloneable {
      * 聚合查询参数列表
      */
     protected List<AggregationParam> aggregationParamList;
-    /**
-     * 最大返回数
-     */
-    protected Long maxResultWindow;
 
     /**
      * 排序参数列表
@@ -97,14 +95,6 @@ public abstract class Wrapper<T> implements Cloneable {
      * 别名
      */
     protected String aliasName;
-    /**
-     * 分片数
-     */
-    protected Integer shardsNum;
-    /**
-     * 副本数
-     */
-    protected Integer replicasNum;
     /**
      * 用户手动指定的索引mapping信息,优先级最高
      */

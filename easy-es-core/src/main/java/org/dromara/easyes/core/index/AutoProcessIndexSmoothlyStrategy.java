@@ -114,7 +114,7 @@ public class AutoProcessIndexSmoothlyStrategy implements AutoProcessIndexStrateg
         }
     }
 
-    private boolean doDataMigration(String oldIndexName, String releaseIndexName, Long maxResultWindow, ElasticsearchClient client) {
+    private boolean doDataMigration(String oldIndexName, String releaseIndexName, Integer maxResultWindow, ElasticsearchClient client) {
         return IndexUtils.reindex(client, oldIndexName, releaseIndexName, maxResultWindow);
     }
 
