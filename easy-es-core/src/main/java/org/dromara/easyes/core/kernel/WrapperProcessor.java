@@ -94,7 +94,7 @@ public class WrapperProcessor {
                 // 渣男行为,*完就不认人了,因为拼接类型在AbstractWrapper中已处理过了 直接跳过
                 break;
             case MIX:
-                setBool(bool, param.getQueryBuilder().build(), param.getPrevQueryType());
+                setBool(bool, param.getQuery(), param.getPrevQueryType());
                 break;
             case TERM:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);

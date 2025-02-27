@@ -1,9 +1,9 @@
 easy-es:
   #  enable: true
-  address: 10.18.2.45:9200
+  address: 192.168.1.16:30156
   #  schema: http
-  #  username: elastic
-  #  password: WG7WVmuNMtM4GwNYkyWH
+  username: elastic
+  password: mg123456
   keep-alive-millis: 18000
   global-config:
     i-kun-mode: true
@@ -11,7 +11,7 @@ easy-es:
     async-process-index-blocking: true
     print-dsl: true
     db-config:
-      map-underscore-to-camel-case: true
+      map-underscore-to-camel-case: false
       id-type: customize
       field-strategy: not_empty
       refresh-policy: immediate

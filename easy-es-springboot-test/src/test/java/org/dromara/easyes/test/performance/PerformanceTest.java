@@ -1,24 +1,14 @@
 package org.dromara.easyes.test.performance;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.alibaba.fastjson.JSON;
+import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,10 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.DEFAULT_SIZE;
 
@@ -73,36 +61,37 @@ public class PerformanceTest {
     public void testSelectByElasticsearchClient() {
         // 构建查询条件
         StopWatch stopwatch = StopWatch.createStarted();
-        SearchRequest.Builder builder = new SearchRequest.Builder();
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        boolQueryBuilder.must(QueryBuilders.matchQuery("title", "茶叶"));
-        boolQueryBuilder.must(QueryBuilders.matchQuery("content", "茶叶"));
-        builder.query(boolQueryBuilder);
-        HighlightBuilder highlightBuilder = new HighlightBuilder();
-        highlightBuilder.field("title");
-        highlightBuilder.preTags("<em>");
-        highlightBuilder.postTags("</em>");
-        builder.highlighter(highlightBuilder);
-        builder.size(DEFAULT_SIZE);
-        SearchRequest request = new SearchRequest("kiplatform_library").source(builder);
-        SearchResponse search = null;
-        try {
-            search = client.search(request, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        List<Document> documents = Arrays.stream(search.getHits().getHits())
-                .map(hit -> JSON.parseObject(hit.getSourceAsString(), Document.class))
-                .collect(Collectors.toList());
+        SearchRequest.Builder builder = new SearchRequest.Builder()
+                .index("kiplatform_library")
+                .query(a -> a.bool(b -> b
+                        .must(c -> c.match(d -> d.field("title").field("茶叶")))
+                        .must(c -> c.match(d -> d.field("content").field("茶叶"))
+                        )
+                ))
+                .highlight(a -> a
+                        .fields("title", b -> b.preTags("<em>").postTags("</em>"))
+                )
+                .size(DEFAULT_SIZE);
 
-        SearchRequest countRequest = new SearchRequest("kiplatform_library");
-        SearchResponse countResponse = null;
+        SearchResponse<Document> search = null;
         try {
-            countResponse = client.search(countRequest, RequestOptions.DEFAULT);
+            search = client.search(builder.build(), Document.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Long count = countResponse.getHits().getTotalHits().value;
+
+        List<Document> documents = search.hits().hits().stream()
+                .map(Hit::source)
+                .toList();
+
+        SearchRequest countRequest = SearchRequest.of(a -> a.index("kiplatform_library"));
+        SearchResponse<Document> countResponse = null;
+        try {
+            countResponse = client.search(countRequest, Document.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Long count = countResponse.hits().total().value();
         stopwatch.stop();
         log.info("本次查询从:{}条数据中共命中:{}条数据,耗时总计:{}毫秒", count, documents.size(), stopwatch.getTime(TimeUnit.MILLISECONDS));
         // 本次查询从:5135条数据中共命中:15条数据,耗时总计:428毫秒 多次测试 均值维持430毫秒左右
@@ -129,18 +118,16 @@ public class PerformanceTest {
     @Test
     public void testInsertByElasticsearchClient() {
         StopWatch stopWatch = StopWatch.createStarted();
-        BulkRequest bulkRequest = new BulkRequest();
+        BulkRequest.Builder bulkRequest = new BulkRequest.Builder();
         int total = 100;
         for (int i = 0; i < total; i++) {
             Document document = new Document();
             document.setTitle("测试新增性能" + i);
             document.setContent("测试新增性能内容" + i);
-            IndexRequest indexRequest = new IndexRequest("document");
-            indexRequest.source(JSON.toJSON(document), XContentType.JSON);
-            bulkRequest.add(indexRequest);
+            bulkRequest.operations(a -> a.index(b -> b.index("document").document(document)));
         }
         try {
-            client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            client.bulk(bulkRequest.build());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -169,10 +156,12 @@ public class PerformanceTest {
         Document document = new Document();
         document.setTitle("哈哈哈");
         document.setContent("嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿嘿");
-        UpdateRequest updateRequest = new UpdateRequest("document", "RWF0SH8B0E2Rzy0qcFBz");
-        updateRequest.doc(JSON.toJSONString(document), XContentType.JSON);
+        UpdateRequest<Document, Document> updateRequest = new UpdateRequest.Builder<Document, Document>()
+                .index("document")
+                .doc(document)
+                .build();
         try {
-            client.update(updateRequest, RequestOptions.DEFAULT);
+            client.update(updateRequest, Document.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -194,9 +183,12 @@ public class PerformanceTest {
     @Test
     public void testDeleteByElasticsearchClient() {
         StopWatch stopWatch = StopWatch.createStarted();
-        DeleteRequest deleteRequest = new DeleteRequest("document", "RWF0SH8B0E2Rzy0qcFBz");
+        DeleteRequest deleteRequest = new DeleteRequest.Builder()
+                .index("document")
+                .id("TWF0SH8B0E2Rzy0qcFBz")
+                .build();
         try {
-            client.delete(deleteRequest, RequestOptions.DEFAULT);
+            client.delete(deleteRequest);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,12 +1,13 @@
 package org.dromara.easyes.test.geo;
 
+import co.elastic.clients.elasticsearch._types.DistanceUnit;
 import co.elastic.clients.elasticsearch._types.GeoLocation;
+import co.elastic.clients.elasticsearch._types.GeoShapeRelation;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
+import org.dromara.easyes.core.toolkit.GeoUtils;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.common.geo.GeoShapeRelation;
-import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.geometry.Circle;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -34,9 +35,9 @@ public class GeoTest {
         // 查询位于下面左上点和右下点坐标构成的长方形内的所有点
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         // 左上点坐标
-        GeoLocation leftTop = new GeoLocation(41.187328D, 115.498353D);
+        GeoLocation leftTop = GeoUtils.create(41.187328D, 115.498353D);
         // 右下点坐标
-        GeoLocation bottomRight = new GeoLocation(39.084509D, 117.610461D);
+        GeoLocation bottomRight = GeoUtils.create(39.084509D, 117.610461D);
         wrapper.geoBoundingBox(Document::getLocation, leftTop, bottomRight);
         // 查不在此长方形内的所有点
 //         wrapper.notInGeoBoundingBox(Document::getLocation, leftTop, bottomRight);
@@ -48,9 +49,9 @@ public class GeoTest {
     public void testGeoDistance() {
         // 查询以纬度为41.0,经度为115.0为圆心,半径168.8公里内的所有点
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.geoDistance(Document::getLocation, 168.8, DistanceUnit.KILOMETERS, new GeoLocation(41.0, 116.0));
+        wrapper.geoDistance(Document::getLocation, 168.8, DistanceUnit.Kilometers, GeoUtils.create(41.0, 116.0));
         // 上面语法也可以写成下面这几种形式,效果是一样的,兼容不同用户习惯而已:
-//        wrapper.geoDistance(Document::getLocation,"1.5km",new GeoLocation(41.0,115.0));
+//        wrapper.geoDistance(Document::getLocation,"1.5km",GeoUtils.create(41.0,115.0));
 //        wrapper.geoDistance(Document::getLocation, "1.5km", "41.0,115.0");
 
         List<Document> documents = documentMapper.selectList(wrapper);
@@ -62,9 +63,9 @@ public class GeoTest {
         // 查询以给定点列表构成的不规则图形内的所有点,点数至少为3个
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         List<GeoLocation> geoPoints = new ArrayList<>();
-        GeoLocation geoPoint = new GeoLocation(40.178012, 116.577188);
-        GeoLocation geoPoint1 = new GeoLocation(40.169329, 116.586315);
-        GeoLocation geoPoint2 = new GeoLocation(40.178288, 116.591813);
+        GeoLocation geoPoint = GeoUtils.create(40.178012, 116.577188);
+        GeoLocation geoPoint1 = GeoUtils.create(40.169329, 116.586315);
+        GeoLocation geoPoint2 = GeoUtils.create(40.178288, 116.591813);
         geoPoints.add(geoPoint);
         geoPoints.add(geoPoint1);
         geoPoints.add(geoPoint2);
@@ -98,7 +99,7 @@ public class GeoTest {
         // 这里以圆形为例演示,其中x,y为圆心坐标,r为半径. 其它图形请读者自行演示,篇幅原因不一一演示了
         Circle circle = new Circle(13, 14, 100);
         // shapeRelation支持多种,如果不传则默认为within
-        wrapper.geoShape(Document::getGeoLocation, circle, GeoShapeRelation.INTERSECTS);
+        wrapper.geoShape(Document::getGeoLocation, circle, GeoShapeRelation.Intersects);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -112,7 +113,7 @@ public class GeoTest {
         centerDoc.setEsId("1");
         centerDoc.setTitle("长沙站");
         centerDoc.setContent("长沙站臭豆腐店");
-        GeoLocation center = new GeoLocation(28.194124244622135, 113.01327520919799);
+        GeoLocation center = GeoUtils.create(28.194124244622135, 113.01327520919799);
         centerDoc.setLocation(center.toString());
 
         // 长沙火车站
@@ -120,7 +121,7 @@ public class GeoTest {
         document1.setEsId("2");
         document1.setTitle("长沙火车站");
         document1.setContent("长沙火车站臭豆腐店");
-        GeoLocation geoPoint1 = new GeoLocation(28.193708185086585, 113.01100069595336);
+        GeoLocation geoPoint1 = GeoUtils.create(28.193708185086585, 113.01100069595336);
         document1.setLocation(geoPoint1.toString());
 
         // 长沙站南广场
@@ -128,7 +129,7 @@ public class GeoTest {
         document2.setEsId("3");
         document2.setTitle("长沙站南广场");
         document2.setContent("长沙站南广场臭豆腐店");
-        GeoLocation geoPoint2 = new GeoLocation(28.192195227668382, 113.01173025680541);
+        GeoLocation geoPoint2 = GeoUtils.create(28.192195227668382, 113.01173025680541);
         document2.setLocation(geoPoint2.toString());
 
 
@@ -137,7 +138,7 @@ public class GeoTest {
         document3.setEsId("4");
         document3.setTitle("长沙市中医院");
         document3.setContent("长沙市中医院臭豆腐店");
-        GeoLocation geoPoint3 = new GeoLocation(28.193367771534916, 113.00911242080687);
+        GeoLocation geoPoint3 = GeoUtils.create(28.193367771534916, 113.00911242080687);
         document3.setLocation(geoPoint3.toString());
 
         // 阿波罗商业广场
@@ -145,7 +146,7 @@ public class GeoTest {
         document4.setEsId("5");
         document4.setTitle("阿波罗商业广场");
         document4.setContent("阿波罗商业广场臭豆腐店");
-        GeoLocation geoPoint4 = new GeoLocation(28.196582745180983, 113.00962740493773);
+        GeoLocation geoPoint4 = GeoUtils.create(28.196582745180983, 113.00962740493773);
         document4.setLocation(geoPoint4.toString());
 
         // 朝阳一村
@@ -153,7 +154,7 @@ public class GeoTest {
         document5.setEsId("6");
         document5.setTitle("朝阳一村");
         document5.setContent("朝阳一村臭豆腐店");
-        GeoLocation geoPoint5 = new GeoLocation(28.188980122051586, 113.01177317214965);
+        GeoLocation geoPoint5 = GeoUtils.create(28.188980122051586, 113.01177317214965);
         document5.setLocation(geoPoint5.toString());
 
         // 铭威大厦
@@ -161,7 +162,7 @@ public class GeoTest {
         document6.setEsId("7");
         document6.setTitle("铭威大厦");
         document6.setContent("铭威大厦臭豆腐店");
-        GeoLocation geoPoint6 = new GeoLocation(28.1905309497745, 113.01825338912963);
+        GeoLocation geoPoint6 = GeoUtils.create(28.1905309497745, 113.01825338912963);
         document6.setLocation(geoPoint6.toString());
 
         // 袁家岭
@@ -169,7 +170,7 @@ public class GeoTest {
         document7.setEsId("8");
         document7.setTitle("袁家岭");
         document7.setContent("袁家岭豆腐店");
-        GeoLocation geoPoint7 = new GeoLocation(28.19450247915946, 113.00070101333617);
+        GeoLocation geoPoint7 = GeoUtils.create(28.19450247915946, 113.00070101333617);
         document7.setLocation(geoPoint7.toString());
 
         List<Document> documents = Arrays.asList(centerDoc, document1, document2, document3, document4, document5, document6, document7);

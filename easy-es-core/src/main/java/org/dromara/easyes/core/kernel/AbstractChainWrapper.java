@@ -663,8 +663,8 @@ public abstract class AbstractChainWrapper<T, R, Children extends AbstractChainW
     }
 
     @Override
-    public Children mix(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query.Builder queryBuilder) {
-        getWrapper().mix(condition, queryBuilder);
+    public Children mix(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query query) {
+        getWrapper().mix(condition, query);
         return typedThis;
     }
 

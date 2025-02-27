@@ -68,5 +68,5 @@ public class Param extends Tree {
     /**
      * 混合查询 原生查询条件
      */
-    private Query.Builder queryBuilder;
+    private Query query;
 }

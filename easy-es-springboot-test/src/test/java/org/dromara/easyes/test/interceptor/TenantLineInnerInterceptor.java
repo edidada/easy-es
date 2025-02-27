@@ -1,12 +1,12 @@
 package org.dromara.easyes.test.interceptor;
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.dromara.easyes.annotation.Intercepts;
 import org.dromara.easyes.annotation.Signature;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.Invocation;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.springframework.stereotype.Component;
 

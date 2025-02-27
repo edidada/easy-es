@@ -601,8 +601,8 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children mix(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query.Builder queryBuilder) {
-        return addParam(condition, queryBuilder);
+    public Children mix(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query query) {
+        return addParam(condition, query);
     }
 
     @Override
@@ -823,14 +823,14 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     /**
      * 追加查询参数
      *
-     * @param condition    执行条件
-     * @param queryBuilder 原生查询参数
+     * @param condition 执行条件
+     * @param query     原生查询参数
      * @return wrapper
      */
-    private Children addParam(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query.Builder queryBuilder) {
+    private Children addParam(boolean condition, co.elastic.clients.elasticsearch._types.query_dsl.Query query) {
         if (condition) {
             Param param = new Param();
-            param.setQueryBuilder(queryBuilder);
+            param.setQuery(query);
             addBaseParam(param, MIX, null, null, null);
         }
         return typedThis;

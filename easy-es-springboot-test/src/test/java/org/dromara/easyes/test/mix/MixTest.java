@@ -1,21 +1,16 @@
 package org.dromara.easyes.test.mix;
 
-
+import co.elastic.clients.elasticsearch._types.ScriptSortType;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.sort.ScriptSortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -56,8 +51,12 @@ public class MixTest {
         // 查询标题为老汉，内容匹配 推*，且最小匹配度不低于80%的数据
         // 当前我们提供的开箱即用match并不支持设置最小匹配度,此时就可以自己去构造一个matchQueryBuilder来实现
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        QueryBuilder queryBuilder = QueryBuilders.matchQuery("content", "推*").minimumShouldMatch("80%");
-        wrapper.eq(Document::getTitle, "老汉").mix(queryBuilder);
+        wrapper.eq(Document::getTitle, "老汉")
+                .mix(Query.of(a -> a.match(b -> b
+                        .field("content")
+                        .query("推*")
+                        .minimumShouldMatch("80%"))
+                ));
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -69,7 +68,11 @@ public class MixTest {
     public void testMix1() {
         // ElasticsearchClient原生语法
         SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
-        searchSourceBuilder.query(QueryBuilders.matchQuery("content", "推*").minimumShouldMatch("80%"));
+        searchSourceBuilder.query(Query.of(a -> a.match(b -> b
+                .field("content")
+                .query("推*")
+                .minimumShouldMatch("80%"))
+        ));
 
         // 仅利用EE查询并解析数据功能
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
@@ -90,11 +93,12 @@ public class MixTest {
                 .match(Document::getContent, "推*");
 
         // ElasticsearchClient原生语法
-        Script script = new Script("doc['star_num'].value");
-        ScriptSortBuilder scriptSortBuilder = SortBuilders.scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER).order(SortOrder.Desc);
-
         // 利用EE查询并解析数据
-        wrapper.sort(scriptSortBuilder);
+        wrapper.sort(SortOptions.of(a -> a.script(b -> b
+                .type(ScriptSortType.Number)
+                .order(SortOrder.Desc)
+                .script(c -> c.source("doc['star_num'].value"))
+        )));
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -111,7 +115,7 @@ public class MixTest {
         SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // 追加或者设置一些SearchSourceBuilder支持但EE暂不支持的参数 不建议追加query参数,因为如果追加query参数会直接覆盖上面EE已经帮你生成好的query,以最后set的query为准
-        searchSourceBuilder.timeout(TimeValue.timeValueSeconds(3L));
+        searchSourceBuilder.timeout("3s");
         wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
@@ -130,11 +134,9 @@ public class MixTest {
         SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // ElasticsearchClient原生语法
-        AggregationBuilder aggregation = AggregationBuilders.terms("titleAgg")
-                .field("title");
-        searchSourceBuilder.aggregation(aggregation);
+        searchSourceBuilder.aggregations("titleAgg", a -> a.terms(b -> b.field("title")));
         wrapper.setSearchBuilder(searchSourceBuilder);
-        SearchResponse searchResponse = documentMapper.search(wrapper);
+        SearchResponse<Document> searchResponse = documentMapper.search(wrapper);
         // tip: 聚合后的信息是动态的,框架无法解析,需要用户根据聚合器类型自行从桶中解析,参考ElasticsearchClient官方Aggregation解析文档
     }
 
@@ -151,7 +153,7 @@ public class MixTest {
         SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // 用户又想在上面的基础上,再追加一些个性化的查询参数进去 但实际上此时执行查询时,查询条件仅仅是最后设置的title=隔壁老王,前面的老汉推*会被覆盖
-        searchSourceBuilder.query(QueryBuilders.matchQuery("title", "隔壁老王"));
+        searchSourceBuilder.query(QueryBuilders.match().field("title").query("隔壁老王").build()._toQuery());
         wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);

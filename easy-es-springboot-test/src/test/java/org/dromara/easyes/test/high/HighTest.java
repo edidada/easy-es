@@ -1,8 +1,11 @@
 package org.dromara.easyes.test.high;
 
-
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import com.alibaba.fastjson.JSON;
+import co.elastic.clients.elasticsearch._types.ScriptSortType;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
 import org.dromara.easyes.core.biz.SAPageInfo;
@@ -11,10 +14,6 @@ import org.dromara.easyes.core.kernel.EsWrappers;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.search.sort.ScriptSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -157,7 +156,7 @@ public class HighTest {
     public void testOrderByParams() {
         // 此处假设此参数由前端通过xxQuery类传入,排序根据标题降序,根据内容升序
         String jsonParam = "[{\"order\":\"title\",\"sort\":\"DESC\"},{\"order\":\"creator\",\"sort\":\"ASC\"}]";
-        List<OrderByParam> orderByParams = JSON.parseArray(jsonParam, OrderByParam.class);
+        List<OrderByParam> orderByParams = JsonUtils.toList(jsonParam, OrderByParam.class);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "技术")
                 .orderBy(orderByParams);
@@ -170,9 +169,10 @@ public class HighTest {
         // 测试复杂排序,SortBuilder的子类非常多,这里仅演示一种, 比如有用户提出需要随机获取数据 0.9.7+
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, "技术");
-        Script script = new Script("Math.random()");
-        ScriptSortBuilder scriptSortBuilder = new ScriptSortBuilder(script, ScriptSortBuilder.ScriptSortType.NUMBER);
-        wrapper.sort(scriptSortBuilder);
+        wrapper.sort(SortOptions.of(a -> a.script(b -> b
+                .type(ScriptSortType.Number)
+                .script(c -> c.source("Math.random()"))
+        )));
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
