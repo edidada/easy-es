@@ -1,6 +1,6 @@
 easy-es:
   #  enable: true
-  address: cdev.rancher.good20.com:30156
+  address: 192.168.1.16:30156
   #  schema: http
   username: elastic
   password: mg123456

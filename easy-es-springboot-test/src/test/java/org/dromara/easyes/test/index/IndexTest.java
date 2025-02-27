@@ -63,7 +63,7 @@ public class IndexTest {
         wrapper.mapping("wu-la", FieldType.TEXT, Analyzer.IK_MAX_WORD, Analyzer.IK_MAX_WORD);
 
         // 设置分片及副本信息,可缺省
-        wrapper.settings(3, 2);
+        wrapper.settings(3, 2, 100);
 
         // 设置别名信息,可缺省
         String aliasName = "daily";
@@ -119,7 +119,7 @@ public class IndexTest {
         // 演示通过自定义map创建索引,最为灵活,若我提供的创建索引API不能满足时可用此方法
         LambdaEsIndexWrapper<Document> wrapper = new LambdaEsIndexWrapper<>();
         wrapper.indexName(Document.class.getSimpleName().toLowerCase());
-        wrapper.settings(3, 2);
+        wrapper.settings(3, 2, 100);
         Map<String, Object> map = new HashMap<>();
         Map<String, Object> prop = new HashMap<>();
         Map<String, String> field = new HashMap<>();
