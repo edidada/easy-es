@@ -2,6 +2,7 @@ package org.dromara.easyes.test.entity;
 
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.dromara.easyes.annotation.*;
 import org.dromara.easyes.annotation.rely.*;
@@ -23,6 +24,7 @@ import java.util.List;
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
+@EqualsAndHashCode(callSuper = false)
 @Data
 @Accessors(chain = true)
 @Settings(shardsNum = 3, replicasNum = 2, settingsProvider = MySettingsProvider.class)

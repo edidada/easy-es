@@ -759,7 +759,7 @@ public class AllTest {
         FieldSortBuilder fieldSortBuilder = SortBuilders.
                 fieldSort(FieldUtils.getRealField(
                         FieldUtils.val(Document::getStarNum),
-                        EntityInfoHelper.getEntityInfo(Document.class).getMappingColumnMap()));
+                        EntityInfoHelper.getEntityInfo(Document.class).getMappingColumnMap(), entityInfo.getKeyProperty()));
         fieldSortBuilder.order(SortOrder.Desc);
         wrapper.sort(fieldSortBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);

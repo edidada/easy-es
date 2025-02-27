@@ -97,31 +97,31 @@ public class WrapperProcessor {
                 setBool(bool, param.getQueryBuilder().build(), param.getPrevQueryType());
                 break;
             case TERM:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.term(p ->
                         p.field(realField).value(fieldValue(param.getVal())).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.match(p ->
                         p.field(realField).query(fieldValue(param.getVal())).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH_PHRASE:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.matchPhrase(p ->
                         p.field(realField).query((String) param.getVal()).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case MATCH_PHRASE_PREFIX:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.matchPhrasePrefix(p ->
                         p.field(realField).query((String) param.getVal()).boost(param.getBoost()).maxExpansions((int) param.getExt1())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case MULTI_MATCH:
-                List<String> realFields = getRealFields(param.getColumns(), mappingColumnMap);
+                List<String> realFields = getRealFields(param.getColumns(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.multiMatch(p -> p.query((String) param.getVal()).fields(realFields)
                         .operator((Operator) param.getExt1()).minimumShouldMatch(param.getExt2() + PERCENT_SIGN)));
                 setBool(bool, query, param.getPrevQueryType());
@@ -135,12 +135,12 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case PREFIX:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.prefix(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GT:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).gt(JsonData.of(param.getVal())).boost(param.getBoost());
@@ -152,7 +152,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GE:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).gte(JsonData.of(param.getVal())).boost(param.getBoost());
@@ -164,7 +164,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case LT:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).lt(JsonData.of(param.getVal())).boost(param.getBoost());
@@ -176,7 +176,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case LE:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).lte(JsonData.of(param.getVal())).boost(param.getBoost());
@@ -188,7 +188,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case BETWEEN:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).gte(JsonData.of(param.getExt1())).lte(JsonData.of(param.getExt2())).boost(param.getBoost());
@@ -200,24 +200,24 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case WILDCARD:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.wildcard(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case TERMS:
-                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 List<FieldValue> fieldValueList = ((Collection<?>) param.getVal()).stream()
                         .map(WrapperProcessor::fieldValue).collect(Collectors.toList());
                 query = Query.of(q -> q.terms(p -> p.field(realField).terms(t -> t.value(fieldValueList))));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case EXISTS:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.exists(p -> p.field(realField).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_BOUNDING_BOX:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.geoBoundingBox(p -> p.field(realField)
                         .boundingBox(x -> x.tlbr(y -> y
                                 .topLeft((GeoLocation) param.getExt1())
@@ -227,7 +227,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_DISTANCE:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.geoDistance(p -> {
                     String unit = param.getExt1() == null ? DistanceUnit.Kilometers.jsonValue() : ((DistanceUnit) param.getExt1()).jsonValue();
                     Double distance = (Double) param.getVal();
@@ -242,19 +242,19 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_POLYGON:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.geoPolygon(p -> p.field(realField).polygon(x ->
                         x.points((List<GeoLocation>) param.getVal()))));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_SHAPE_ID:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.geoShape(p -> p.field(realField).shape(x ->
                         x.indexedShape(y -> y.id((String) param.getVal())))));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_SHAPE:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = QueryBuilders.geoShape()
                         .field(realField)
                         .shape(x -> x
@@ -267,7 +267,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case PARENT_ID:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.parentId(p -> p.type(realField).id((String) param.getVal())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
@@ -280,7 +280,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case NESTED:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 String[] split = param.getColumn().split(SIGN);
                 String path = split[split.length - 1];
                 query = Query.of(b -> b.bool(x -> getBool(children, x, entityInfo, path)));
@@ -293,7 +293,7 @@ public class WrapperProcessor {
             case HAS_PARENT:
                 // 如果用户没指定type框架可根据entityInfo上下文自行推断出其父type
                 String column = Optional.ofNullable(param.getColumn()).orElse(entityInfo.getParentJoinAlias());
-                realField = getRealField(column, mappingColumnMap);
+                realField = getRealField(column, mappingColumnMap, entityInfo);
                 query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, param.getColumn())));
                 HasParentQuery.Builder hasParentQueryBuilder = new HasParentQuery.Builder()
                         .ignoreUnmapped(false)
@@ -303,7 +303,7 @@ public class WrapperProcessor {
                 setBool(bool, Query.of(x -> x.hasParent(hasParentQueryBuilder.build())), param.getPrevQueryType());
                 break;
             case HAS_CHILD:
-                realField = getRealField(param.getColumn(), mappingColumnMap);
+                realField = getRealField(param.getColumn(), mappingColumnMap, entityInfo);
                 query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, param.getColumn())));
                 HasChildQuery.Builder hasChildQueryBuilder = new HasChildQuery.Builder()
                         .minChildren(1)
@@ -436,10 +436,10 @@ public class WrapperProcessor {
         setHighLight(entityInfo.getHighlightParams(), builder);
 
         // 设置用户指定的各种排序规则
-        setSort(wrapper, mappingColumnMap, builder);
+        setSort(wrapper, mappingColumnMap, entityInfo, builder);
 
         // 设置查询或不查询字段
-        setFetchSource(wrapper, mappingColumnMap, builder);
+        setFetchSource(wrapper, mappingColumnMap, entityInfo, builder);
 
         // 设置排除_score 小于 min_score 中指定的最小值的文档
         Optional.ofNullable(wrapper.minScore).ifPresent(builder::minScore);
@@ -448,7 +448,7 @@ public class WrapperProcessor {
         Optional.ofNullable(wrapper.trackScores).ifPresent(builder::trackScores);
 
         // 设置聚合参数
-        setAggregations(wrapper, mappingColumnMap, builder);
+        setAggregations(wrapper, mappingColumnMap, entityInfo, builder);
 
         // 设置查询起止参数
         Optional.ofNullable(wrapper.from).ifPresent(builder::from);
@@ -535,36 +535,37 @@ public class WrapperProcessor {
     /**
      * 设置查询/不查询字段列表
      *
-     * @param wrapper             参数包装类
-     * @param mappingColumnMap    字段映射map
-     * @param searchSourceBuilder 查询参数建造者
+     * @param wrapper          参数包装类
+     * @param mappingColumnMap 字段映射map
+     * @param entityInfo       索引信息
+     * @param searchBuilder    查询参数建造者
      */
-    private static void setFetchSource(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchRequest.Builder searchSourceBuilder) {
+    private static void setFetchSource(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, EntityInfo entityInfo, SearchRequest.Builder searchBuilder) {
         if (ArrayUtils.isEmpty(wrapper.include) && ArrayUtils.isEmpty(wrapper.exclude)) {
             return;
         }
 
         // 获取实际字段
-        List<String> includes = FieldUtils.getRealFields(wrapper.include, mappingColumnMap);
-        List<String> excludes = FieldUtils.getRealFields(wrapper.exclude, mappingColumnMap);
-        searchSourceBuilder.source(x -> x.filter(y -> y.includes(includes).excludes(excludes)));
+        List<String> includes = FieldUtils.getRealFields(wrapper.include, mappingColumnMap, entityInfo);
+        List<String> excludes = FieldUtils.getRealFields(wrapper.exclude, mappingColumnMap, entityInfo);
+        searchBuilder.source(x -> x.filter(y -> y.includes(includes).excludes(excludes)));
     }
 
 
     /**
      * 设置高亮参数
      *
-     * @param highLightParams     高亮参数列表
-     * @param searchSourceBuilder 查询参数建造者
+     * @param highLightParams 高亮参数列表
+     * @param searchBuilder   查询参数建造者
      */
-    private static void setHighLight(List<HighLightParam> highLightParams, SearchRequest.Builder searchSourceBuilder) {
+    private static void setHighLight(List<HighLightParam> highLightParams, SearchRequest.Builder searchBuilder) {
         if (CollectionUtils.isEmpty(highLightParams)) {
             return;
         }
 
         // 初始化高亮参数
         Highlight.Builder highlightBuilder = initHighlightBuilder(highLightParams, null);
-        Optional.ofNullable(highlightBuilder).map(Highlight.Builder::build).ifPresent(searchSourceBuilder::highlight);
+        Optional.ofNullable(highlightBuilder).map(Highlight.Builder::build).ifPresent(searchBuilder::highlight);
     }
 
     private static Highlight.Builder initHighlightBuilder(List<HighLightParam> highLightParams, String path) {
@@ -596,19 +597,20 @@ public class WrapperProcessor {
     /**
      * 设置排序参数
      *
-     * @param wrapper             参数包装类
-     * @param mappingColumnMap    字段映射map
-     * @param searchSourceBuilder 查询参数建造者
+     * @param wrapper          参数包装类
+     * @param mappingColumnMap 字段映射map
+     * @param entityInfo       索引信息
+     * @param searchBuilder    查询参数建造者
      */
-    private static void setSort(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, SearchRequest.Builder searchSourceBuilder) {
+    private static void setSort(Wrapper<?> wrapper, Map<String, String> mappingColumnMap, EntityInfo entityInfo, SearchRequest.Builder searchBuilder) {
         // 批量设置排序字段
         if (CollectionUtils.isNotEmpty(wrapper.baseSortParams)) {
             wrapper.baseSortParams.forEach(baseSortParam -> {
                 // 获取es中的实际字段 有可能已经被用户自定义或者驼峰转成下划线
                 String realField = Objects.isNull(baseSortParam.getSortField()) ?
-                        null : getRealField(baseSortParam.getSortField(), mappingColumnMap);
+                        null : getRealField(baseSortParam.getSortField(), mappingColumnMap, entityInfo);
                 SortOptions sortBuilder = getSortBuilder(realField, baseSortParam);
-                Optional.ofNullable(sortBuilder).ifPresent(searchSourceBuilder::sort);
+                Optional.ofNullable(sortBuilder).ifPresent(searchBuilder::sort);
             });
         }
 
@@ -625,7 +627,7 @@ public class WrapperProcessor {
                 if (SortOrder.Desc.toString().equalsIgnoreCase(orderByParam.getSort())) {
                     fieldSortBuilder.order(SortOrder.Desc);
                 }
-                searchSourceBuilder.sort(x -> x.field(fieldSortBuilder.build()));
+                searchBuilder.sort(x -> x.field(fieldSortBuilder.build()));
             });
         }
     }
@@ -639,24 +641,18 @@ public class WrapperProcessor {
      * @return 排序器
      */
     private static SortOptions getSortBuilder(String realField, BaseSortParam baseSortParam) {
-        switch (baseSortParam.getOrderTypeEnum()) {
-            case FIELD:
-                return SortOptions.of(x -> x.field(y -> y.field(realField).order(baseSortParam.getSortOrder())));
-            case SCORE:
-                return SortOptions.of(x -> x.score(y -> y.order(baseSortParam.getSortOrder())));
-            case GEO:
-                return SortOptions.of(x -> x.geoDistance(y -> y
-                        .field(realField)
-                        .location(baseSortParam.getGeoPoints())
-                        .order(baseSortParam.getSortOrder())
-                        .distanceType(baseSortParam.getGeoDistanceType())
-                        .unit(baseSortParam.getUnit())
-                ));
-            case CUSTOMIZE:
-                return baseSortParam.getSortBuilder();
-            default:
-                return null;
-        }
+        return switch (baseSortParam.getOrderTypeEnum()) {
+            case FIELD -> SortOptions.of(x -> x.field(y -> y.field(realField).order(baseSortParam.getSortOrder())));
+            case SCORE -> SortOptions.of(x -> x.score(y -> y.order(baseSortParam.getSortOrder())));
+            case GEO -> SortOptions.of(x -> x.geoDistance(y -> y
+                    .field(realField)
+                    .location(baseSortParam.getGeoPoints())
+                    .order(baseSortParam.getSortOrder())
+                    .distanceType(baseSortParam.getGeoDistanceType())
+                    .unit(baseSortParam.getUnit())
+            ));
+            case CUSTOMIZE -> baseSortParam.getSortBuilder();
+        };
     }
 
 
@@ -665,14 +661,15 @@ public class WrapperProcessor {
      *
      * @param wrapper             参数包装类
      * @param mappingColumnMap    字段映射map
+     * @param entityInfo          索引信息
      * @param searchSourceBuilder 查询参数建造者
      */
     private static void setAggregations(Wrapper<?> wrapper, Map<String, String> mappingColumnMap,
-                                        SearchRequest.Builder searchSourceBuilder) {
+                                        EntityInfo entityInfo, SearchRequest.Builder searchSourceBuilder) {
         // 设置折叠(去重)字段
         Optional.ofNullable(wrapper.distinctField)
                 .ifPresent(distinctField -> {
-                    String realField = getRealField(distinctField, mappingColumnMap);
+                    String realField = getRealField(distinctField, mappingColumnMap, entityInfo);
                     searchSourceBuilder.collapse(x -> x.field(realField));
                     searchSourceBuilder.aggregations(REPEAT_NUM_KEY, x -> x.cardinality(y -> y.field(realField)));
                 });
@@ -688,7 +685,7 @@ public class WrapperProcessor {
         Aggregation.Builder.ContainerBuilder root = null;
         Aggregation.Builder.ContainerBuilder cursor = null;
         for (AggregationParam aggParam : aggregationParamList) {
-            String realField = getRealField(aggParam.getField(), mappingColumnMap);
+            String realField = getRealField(aggParam.getField(), mappingColumnMap, entityInfo);
             Aggregation.Builder.ContainerBuilder builder = getRealAggregationBuilder(
                     aggParam.getAggregationType(), realField, wrapper.size, wrapper.bucketOrders);
             // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
