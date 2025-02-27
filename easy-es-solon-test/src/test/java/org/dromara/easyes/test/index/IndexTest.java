@@ -116,7 +116,7 @@ public class IndexTest {
         // 演示通过自定义map创建索引,最为灵活,若我提供的创建索引API不能满足时可用此方法
         LambdaEsIndexWrapper<Document> wrapper = new LambdaEsIndexWrapper<>();
         wrapper.indexName(Document.class.getSimpleName().toLowerCase());
-        wrapper.settings(3, 2, 10000);
+        wrapper.settings(1, 1, 10000);
         TypeMapping.Builder map = new TypeMapping.Builder();
         map.properties("this_is_field", a -> a.keyword(b -> b));
         wrapper.mapping(map);

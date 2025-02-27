@@ -154,6 +154,7 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
                 .map(EsDS::value).orElse(DEFAULT_DS);
         ElasticsearchClient client = esClientUtils.getClient(restHighLevelClientId);
 
+        // 初始化mapper
         BaseCache.initMapperCache(clazz, entityClass, client);
 
         // 创建代理

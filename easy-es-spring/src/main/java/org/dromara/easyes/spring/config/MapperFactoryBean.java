@@ -74,6 +74,8 @@ public class MapperFactoryBean<T> implements FactoryBean<T> {
                 .map(EsDS::value).orElse(DEFAULT_DS);
         ElasticsearchClient client = this.applicationContext.getBean(EsClientUtils.class)
                 .getClient(restHighLevelClientId);
+
+        // 初始化mapper
         BaseCache.initMapperCache(mapperInterface, entityClass, client);
 
         // 创建代理
