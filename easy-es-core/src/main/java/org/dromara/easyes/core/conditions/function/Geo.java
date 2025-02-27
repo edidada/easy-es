@@ -220,7 +220,7 @@ public interface Geo<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children geoDistance(R column, Double distance, GeoLocation centralGeoLocation) {
-        return geoDistance(true, column, distance, DistanceUnit.Meters, centralGeoLocation, DEFAULT_BOOST);
+        return geoDistance(true, column, distance, DistanceUnit.Kilometers, centralGeoLocation, DEFAULT_BOOST);
     }
 
     /**
@@ -315,7 +315,7 @@ public interface Geo<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children geoDistance(String column, Double distance, GeoLocation centralGeoLocation) {
-        return geoDistance(true, column, distance, DistanceUnit.Meters, centralGeoLocation, DEFAULT_BOOST);
+        return geoDistance(true, column, distance, DistanceUnit.Kilometers, centralGeoLocation, DEFAULT_BOOST);
     }
 
     /**

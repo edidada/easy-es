@@ -38,7 +38,7 @@ public class BaseSortParam {
     /**
      * 计算方式 ARC PLANE 默认PLANE
      */
-    private GeoDistanceType geoDistance;
+    private GeoDistanceType geoDistanceType;
     /**
      * 距离单位 默认为km
      */

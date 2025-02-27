@@ -229,10 +229,14 @@ public class WrapperProcessor {
             case GEO_DISTANCE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 query = Query.of(q -> q.geoDistance(p -> {
-                    p.field(realField).location((GeoLocation) param.getExt2()).boost(param.getBoost());
-                    String unit = param.getExt1() == null ? DistanceUnit.Meters.jsonValue() : ((DistanceUnit) param.getExt1()).jsonValue();
+                    String unit = param.getExt1() == null ? DistanceUnit.Kilometers.jsonValue() : ((DistanceUnit) param.getExt1()).jsonValue();
                     Double distance = (Double) param.getVal();
-                    p.distance(distance + unit);
+                    p.boost(param.getBoost())
+                            .field(realField)
+                            .location((GeoLocation) param.getExt2())
+                            .distance(distance + unit)
+                            .distanceType(GeoDistanceType.Arc)
+                            .validationMethod(GeoValidationMethod.Strict);
                     return p;
                 }));
                 setBool(bool, query, param.getPrevQueryType());
@@ -255,8 +259,8 @@ public class WrapperProcessor {
                         .field(realField)
                         .shape(x -> x
 //                                .shape(JsonData.of(WellKnownText.toWKT(val)))
-                                .shape(JsonData.of(GeoUtils.toMap((Geometry) param.getVal())))
-                                .relation((GeoShapeRelation) param.getExt1())
+                                        .shape(JsonData.of(GeoUtils.toMap((Geometry) param.getVal())))
+                                        .relation((GeoShapeRelation) param.getExt1())
                         )
                         .boost(param.getBoost())
                         .build()._toQuery();
@@ -279,7 +283,7 @@ public class WrapperProcessor {
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 String[] split = param.getColumn().split(SIGN);
                 String path = split[split.length - 1];
-                query = Query.of(b -> b.bool( x -> getBool(children, x, entityInfo, path)));
+                query = Query.of(b -> b.bool(x -> getBool(children, x, entityInfo, path)));
                 NestedQuery.Builder nestedQueryBuilder = QueryBuilders.nested().path(realField).query(query).scoreMode((ChildScoreMode) param.getVal());
                 // 设置嵌套类型高亮查询参数
                 setNestedHighlight(path, param.getColumn(), nestedQueryBuilder, entityInfo);
@@ -308,8 +312,7 @@ public class WrapperProcessor {
                         .type(realField)
                         .query(query)
                         .minChildren(1)
-                        .scoreMode((ChildScoreMode) param.getVal())
-                        ;
+                        .scoreMode((ChildScoreMode) param.getVal());
                 setBool(bool, Query.of(x -> x.hasChild(hasChildQueryBuilder.build())), param.getPrevQueryType());
                 break;
             default:
@@ -627,7 +630,7 @@ public class WrapperProcessor {
                         .field(realField)
                         .location(baseSortParam.getGeoPoints())
                         .order(baseSortParam.getSortOrder())
-                        .distanceType(baseSortParam.getGeoDistance())
+                        .distanceType(baseSortParam.getGeoDistanceType())
                         .unit(baseSortParam.getUnit())
                 ));
             case CUSTOMIZE:

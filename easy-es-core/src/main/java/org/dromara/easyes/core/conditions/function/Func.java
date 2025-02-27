@@ -217,7 +217,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceAsc(R column, double lat, double lon) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -237,13 +237,13 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper`
      */
-    default Children orderByDistanceAsc(R column, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceAsc(R column, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -251,13 +251,13 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceAsc(R column, DistanceUnit unit, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), unit, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceAsc(R column, DistanceUnit unit, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), unit, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -268,7 +268,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceAsc(R column, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, GeoDistanceType.Plane, geoPoints);
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, GeoDistanceType.Plane, geoPoints);
     }
 
     /**
@@ -287,12 +287,12 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceAsc(R column, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, geoDistance, geoPoints);
+    default Children orderByDistanceAsc(R column, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, geoDistanceType, geoPoints);
     }
 
     /**
@@ -300,12 +300,12 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceAsc(R column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), unit, geoDistance, geoPoints);
+    default Children orderByDistanceAsc(R column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceAsc(true, FieldUtils.getFieldName(column), unit, geoDistanceType, geoPoints);
     }
 
     /**
@@ -317,7 +317,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceAsc(String column, double lat, double lon) {
-        return orderByDistanceAsc(true, column, DistanceUnit.Meters, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
+        return orderByDistanceAsc(true, column, DistanceUnit.Kilometers, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -337,13 +337,13 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列名 字符串
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceAsc(String column, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceAsc(true, column, DistanceUnit.Meters, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceAsc(String column, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceAsc(true, column, DistanceUnit.Kilometers, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -351,13 +351,13 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列名 字符串
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceAsc(String column, DistanceUnit unit, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceAsc(true, column, unit, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceAsc(String column, DistanceUnit unit, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceAsc(true, column, unit, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -368,7 +368,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceAsc(String column, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, column, DistanceUnit.Meters, GeoDistanceType.Plane, geoPoints);
+        return orderByDistanceAsc(true, column, DistanceUnit.Kilometers, GeoDistanceType.Plane, geoPoints);
     }
 
     /**
@@ -387,12 +387,12 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列名 字符串
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceAsc(String column, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, column, DistanceUnit.Meters, geoDistance, geoPoints);
+    default Children orderByDistanceAsc(String column, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceAsc(true, column, DistanceUnit.Kilometers, geoDistanceType, geoPoints);
     }
 
     /**
@@ -400,12 +400,12 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列名 字符串
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式
+     * @param geoDistanceType 距离计算方式
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceAsc(String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceAsc(true, column, unit, geoDistance, geoPoints);
+    default Children orderByDistanceAsc(String column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceAsc(true, column, unit, geoDistanceType, geoPoints);
     }
 
     /**
@@ -414,11 +414,11 @@ public interface Func<Children, R> extends Serializable {
      * @param condition   执行条件
      * @param column      列名 字符串
      * @param unit        距离单位 重载方法默认为km
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    Children orderByDistanceAsc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints);
+    Children orderByDistanceAsc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints);
 
     /**
      * 地理位置坐标点由近及远排序
@@ -429,7 +429,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceDesc(R column, double lat, double lon) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -449,13 +449,13 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceDesc(R column, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceDesc(R column, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -463,13 +463,13 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列名
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceDesc(R column, DistanceUnit unit, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), unit, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceDesc(R column, DistanceUnit unit, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), unit, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -480,7 +480,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceDesc(R column, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, GeoDistanceType.Plane, geoPoints);
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, GeoDistanceType.Plane, geoPoints);
     }
 
     /**
@@ -499,12 +499,12 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceDesc(R column, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Meters, geoDistance, geoPoints);
+    default Children orderByDistanceDesc(R column, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), DistanceUnit.Kilometers, geoDistanceType, geoPoints);
     }
 
     /**
@@ -512,12 +512,12 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceDesc(R column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), unit, geoDistance, geoPoints);
+    default Children orderByDistanceDesc(R column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceDesc(true, FieldUtils.getFieldName(column), unit, geoDistanceType, geoPoints);
     }
 
     /**
@@ -529,7 +529,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceDesc(String column, double lat, double lon) {
-        return orderByDistanceDesc(true, column, DistanceUnit.Meters, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
+        return orderByDistanceDesc(true, column, DistanceUnit.Kilometers, GeoDistanceType.Plane, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -549,13 +549,13 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列名 字符串
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceDesc(String column, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceDesc(true, column, DistanceUnit.Meters, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceDesc(String column, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceDesc(true, column, DistanceUnit.Kilometers, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -563,13 +563,13 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列名 字符串
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param lat         纬度
      * @param lon         经度
      * @return wrapper
      */
-    default Children orderByDistanceDesc(String column, DistanceUnit unit, GeoDistanceType geoDistance, double lat, double lon) {
-        return orderByDistanceDesc(true, column, unit, geoDistance, GeoUtils.create(lat, lon));
+    default Children orderByDistanceDesc(String column, DistanceUnit unit, GeoDistanceType geoDistanceType, double lat, double lon) {
+        return orderByDistanceDesc(true, column, unit, geoDistanceType, GeoUtils.create(lat, lon));
     }
 
     /**
@@ -580,7 +580,7 @@ public interface Func<Children, R> extends Serializable {
      * @return wrapper
      */
     default Children orderByDistanceDesc(String column, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, column, DistanceUnit.Meters, GeoDistanceType.Plane, geoPoints);
+        return orderByDistanceDesc(true, column, DistanceUnit.Kilometers, GeoDistanceType.Plane, geoPoints);
     }
 
     /**
@@ -599,12 +599,12 @@ public interface Func<Children, R> extends Serializable {
      * 地理位置坐标点由近及远排序
      *
      * @param column      列名 字符串
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceDesc(String column, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, column, DistanceUnit.Meters, geoDistance, geoPoints);
+    default Children orderByDistanceDesc(String column, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceDesc(true, column, DistanceUnit.Kilometers, geoDistanceType, geoPoints);
     }
 
     /**
@@ -612,12 +612,12 @@ public interface Func<Children, R> extends Serializable {
      *
      * @param column      列名 字符串
      * @param unit        距离单位
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    default Children orderByDistanceDesc(String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints) {
-        return orderByDistanceDesc(true, column, unit, geoDistance, geoPoints);
+    default Children orderByDistanceDesc(String column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints) {
+        return orderByDistanceDesc(true, column, unit, geoDistanceType, geoPoints);
     }
 
     /**
@@ -626,11 +626,11 @@ public interface Func<Children, R> extends Serializable {
      * @param condition   条件
      * @param column      列名 字符串
      * @param unit        距离单位 重载方法默认为km
-     * @param geoDistance 距离计算方式,重载方法默认为GeoDistanceType.Plane
+     * @param geoDistanceType 距离计算方式,重载方法默认为GeoDistanceType.Plane
      * @param geoPoints   多边形坐标点数组
      * @return wrapper
      */
-    Children orderByDistanceDesc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistance, GeoLocation... geoPoints);
+    Children orderByDistanceDesc(boolean condition, String column, DistanceUnit unit, GeoDistanceType geoDistanceType, GeoLocation... geoPoints);
 
     /**
      * 字段 IN

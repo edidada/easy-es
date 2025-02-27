@@ -418,7 +418,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
                         .orderTypeEnum(OrderTypeEnum.GEO)
                         .geoPoints(Arrays.asList(geoPoints))
                         .unit(unit)
-                        .geoDistance(geoDistance)
+                        .geoDistanceType(geoDistance)
                         .build();
                 baseSortParams.add(baseSortParam);
             }
@@ -436,7 +436,7 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
                         .orderTypeEnum(OrderTypeEnum.GEO)
                         .geoPoints(Arrays.asList(geoPoints))
                         .unit(unit)
-                        .geoDistance(geoDistance)
+                        .geoDistanceType(geoDistance)
                         .build();
                 baseSortParams.add(baseSortParam);
             }
