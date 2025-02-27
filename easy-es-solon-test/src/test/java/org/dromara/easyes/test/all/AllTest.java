@@ -10,6 +10,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.rest_client.RestClientOptions;
+import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
@@ -940,39 +941,39 @@ public class AllTest {
     }
 
     // 4.删除
-//    @Test
-//    @Order(76)
-//    public void testDeleteById() {
-//        int count = documentMapper.deleteById("1");
-//        Assertions.assertEquals(1, count);
-//    }
-//
-//    @Test
-//    @Order(77)
-//    public void testDeleteBatchIds() {
-//        List<String> idList = Arrays.asList("2", "3", "4");
-//        int count = documentMapper.deleteBatchIds(idList);
-//        Assertions.assertEquals(3, count);
-//    }
+    @Test
+    @Order(76)
+    public void testDeleteById() {
+        int count = documentMapper.deleteById("1");
+        Assertions.assertEquals(1, count);
+    }
 
-//    @Test
-//    @Order(78)
-//    public void testDeleteByWrapper() {
-//        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-//        wrapper.match(Document::getCreator, "老汉");
-//
-//        int count = documentMapper.delete(wrapper);
-//        Assertions.assertEquals(18, count);
-//    }
+    @Test
+    @Order(77)
+    public void testDeleteBatchIds() {
+        List<String> idList = Arrays.asList("2", "3", "4");
+        int count = documentMapper.deleteBatchIds(idList);
+        Assertions.assertEquals(3, count);
+    }
 
-//    @Test
-//    @Order(80)
-//    public void testDeleteIndex() {
-//        boolean deleted = documentMapper.deleteIndex(EntityInfoHelper.getEntityInfo(Document.class).getIndexName());
-//        boolean lockDeleted = documentMapper.deleteIndex(BaseEsConstants.LOCK_INDEX);
-//        Assertions.assertTrue(deleted);
-//        Assertions.assertTrue(lockDeleted);
-//    }
+    @Test
+    @Order(78)
+    public void testDeleteByWrapper() {
+        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+        wrapper.match(Document::getCreator, "老汉");
+
+        int count = documentMapper.delete(wrapper);
+        Assertions.assertEquals(18, count);
+    }
+
+    @Test
+    @Order(80)
+    public void testDeleteIndex() {
+        boolean deleted = documentMapper.deleteIndex(EntityInfoHelper.getEntityInfo(Document.class).getIndexName());
+        boolean lockDeleted = documentMapper.deleteIndex(BaseEsConstants.LOCK_INDEX);
+        Assertions.assertTrue(deleted);
+        Assertions.assertTrue(lockDeleted);
+    }
 
     @Test
     @Order(79)
@@ -996,7 +997,8 @@ public class AllTest {
                         .must(d -> d.terms(e -> e.field("state").terms(f -> f.value(values))))
                 ));
 
-        System.out.println(boolQueryBuilder);
+        Query query = boolQueryBuilder.build()._toQuery();
+        System.out.println(query.toString());
         System.out.println("--------------------");
 
         // MP及EE写法
@@ -1004,7 +1006,12 @@ public class AllTest {
         wrapper.eq("business_type", 1)
                 .and(a -> a.eq("state", 9).or(b -> b.eq("state", 8).eq("bidding_sign", 1)))
                 .or(i -> i.eq("business_type", 2).in("state", 2, 3));
-        documentMapper.selectList(wrapper);
+        SearchRequest.Builder searchBuilder = documentMapper.getSearchBuilder(wrapper);
+        Query qry = searchBuilder.build().query();
+        if (qry != null) {
+            System.out.println(qry);
+        }
+        List<Document> documents = documentMapper.selectList(wrapper);
     }
 
 }

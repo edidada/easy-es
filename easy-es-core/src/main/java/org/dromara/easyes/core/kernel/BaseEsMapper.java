@@ -164,7 +164,7 @@ public interface BaseEsMapper<T> {
      * @param wrapper 条件
      * @return 查询参数
      */
-    SearchRequest.Builder getSearchSourceBuilder(Wrapper<T> wrapper);
+    SearchRequest.Builder getSearchBuilder(Wrapper<T> wrapper);
 
     /**
      * es原生查询

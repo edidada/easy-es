@@ -201,7 +201,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     }
 
     @Override
-    public SearchRequest.Builder getSearchSourceBuilder(Wrapper<T> wrapper) {
+    public SearchRequest.Builder getSearchBuilder(Wrapper<T> wrapper) {
         return WrapperProcessor.buildSearchBuilder(wrapper, entityClass);
     }
 

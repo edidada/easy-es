@@ -108,7 +108,7 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // 追加或者设置一些SearchSourceBuilder支持但EE暂不支持的参数 不建议追加query参数,因为如果追加query参数会直接覆盖上面EE已经帮你生成好的query,以最后set的query为准
         searchSourceBuilder.timeout(TimeValue.timeValueSeconds(3L));
@@ -127,7 +127,7 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // ElasticsearchClient原生语法
         AggregationBuilder aggregation = AggregationBuilders.terms("titleAgg")
@@ -148,7 +148,7 @@ public class MixTest {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.eq(Document::getTitle, "老汉")
                 .match(Document::getContent, "推*");
-        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchSourceBuilder(wrapper);
+        SearchRequest.Builder searchSourceBuilder = documentMapper.getSearchBuilder(wrapper);
 
         // 用户又想在上面的基础上,再追加一些个性化的查询参数进去 但实际上此时执行查询时,查询条件仅仅是最后设置的title=隔壁老王,前面的老汉推*会被覆盖
         searchSourceBuilder.query(QueryBuilders.matchQuery("title", "隔壁老王"));
