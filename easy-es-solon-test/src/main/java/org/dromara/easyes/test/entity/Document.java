@@ -119,7 +119,7 @@ public class Document extends BaseJoin {
      * es返回的得分字段,字段名字随便取,只要加了@Score注解即可
      */
     @Score(decimalPlaces = 2)
-    private Float score;
+    private Double score;
     /**
      * es返回的距离,字段名字随便取,距离单位以用户在序器中指定的为准,不指定es默认为:米
      */

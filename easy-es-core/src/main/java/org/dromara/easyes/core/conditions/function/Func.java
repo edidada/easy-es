@@ -1666,21 +1666,21 @@ public interface Func<Children, R> extends Serializable {
     /**
      * 用户自定义SearchRequest.Builder 用于混合查询
      *
-     * @param searchSourceBuilder 用户自定义的SearchSourceBuilder
+     * @param searchBuilder 用户自定义的SearchSourceBuilder
      * @return wrapper
      */
-    default Children setSearchSourceBuilder(SearchRequest.Builder searchSourceBuilder) {
-        return setSearchSourceBuilder(true, searchSourceBuilder);
+    default Children setSearchBuilder(SearchRequest.Builder searchBuilder) {
+        return setSearchBuilder(true, searchBuilder);
     }
 
     /**
      * 用户自定义SearchRequest.Builder 用于混合查询
      *
-     * @param condition           执行条件
-     * @param searchSourceBuilder 用户自定义的SearchSourceBuilder
+     * @param condition     执行条件
+     * @param searchBuilder 用户自定义的SearchSourceBuilder
      * @return wrapper
      */
-    Children setSearchSourceBuilder(boolean condition, SearchRequest.Builder searchSourceBuilder);
+    Children setSearchBuilder(boolean condition, SearchRequest.Builder searchBuilder);
 
     /**
      * 混合查询

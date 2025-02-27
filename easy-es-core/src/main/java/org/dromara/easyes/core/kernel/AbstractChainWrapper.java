@@ -657,8 +657,8 @@ public abstract class AbstractChainWrapper<T, R, Children extends AbstractChainW
     }
 
     @Override
-    public Children setSearchSourceBuilder(boolean condition, SearchRequest.Builder searchSourceBuilder) {
-        getWrapper().setSearchSourceBuilder(condition, searchSourceBuilder);
+    public Children setSearchBuilder(boolean condition, SearchRequest.Builder searchSourceBuilder) {
+        getWrapper().setSearchBuilder(condition, searchSourceBuilder);
         return typedThis;
     }
 

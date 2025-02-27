@@ -23,13 +23,12 @@ import co.elastic.clients.elasticsearch.indices.RefreshResponse;
 import co.elastic.clients.elasticsearch.sql.QueryResponse;
 import co.elastic.clients.elasticsearch.sql.query.SqlFormat;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.JsonpUtils;
 import co.elastic.clients.transport.TransportOptions;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.alibaba.fastjson.JSON;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.util.EntityUtils;
 import org.dromara.easyes.annotation.rely.IdType;
 import org.dromara.easyes.annotation.rely.RefreshPolicy;
@@ -69,17 +68,15 @@ import static org.dromara.easyes.core.kernel.WrapperProcessor.getIndexName;
  * </p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
+@Setter
 public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
-    private static final Log log = LogFactory.getLog(BaseEsMapperImpl.class);
     /**
      * restHighLevel client
      */
-    @Setter
     private ElasticsearchClient client;
     /**
      * T 对应的类
      */
-    @Setter
     private Class<T> entityClass;
 
     @Override
@@ -169,7 +166,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     @SneakyThrows
     public String executeSQL(String sql) {
         QueryResponse response = client.sql().query(x -> x.query(sql).format(SqlFormat.Json));
-        return response.toString();
+        return JsonpUtils.toString(response, new StringBuilder()).toString();
     }
 
     /**
@@ -205,7 +202,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public SearchRequest.Builder getSearchSourceBuilder(Wrapper<T> wrapper) {
-        return WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass);
+        return WrapperProcessor.buildSearchBuilder(wrapper, entityClass);
     }
 
     @Override
@@ -213,7 +210,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         try {
             // 用户在wrapper中指定的混合查询条件优先级最高
             SearchRequest.Builder builder = Optional.ofNullable(wrapper.searchBuilder)
-                    .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass));
+                    .orElse(WrapperProcessor.buildSearchBuilder(wrapper, entityClass))
+                    .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
+                    .routing(wrapper.routing)
+                    .preference(wrapper.preference)
+                    ;
             return builder.build().toString();
         } catch (Exception e) {
             throw ExceptionUtils.eee("get search source exception", e);
@@ -751,8 +752,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         );
 
         // 执行批量请求并返回结果
-        PrintUtils.printDsl(bulkRequest, client);
-
         return doBulkRequest(bulkRequest, Result.Created.jsonValue());
     }
 
@@ -844,7 +843,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .operations(operations)
         );
 
-        PrintUtils.printDsl(request, client);
         return doBulkRequest(request, Result.Deleted.jsonValue());
     }
 
@@ -950,7 +948,6 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .operations(operations)
         );
 
-        PrintUtils.printDsl(request, client);
         return doBulkRequest(request, Result.Updated.jsonValue());
     }
 
@@ -1037,7 +1034,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     private SearchResponse<T> getSearchResponse(Wrapper<T> wrapper, List<FieldValue> searchAfter, boolean needSearchAfter) {
         // 用户在wrapper中指定的混合查询条件优先级最高
         SearchRequest.Builder builder = Optional.ofNullable(wrapper.searchBuilder)
-                .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass));
+                .orElse(WrapperProcessor.buildSearchBuilder(wrapper, entityClass))
+                .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
+                .routing(wrapper.routing)
+                .preference(wrapper.preference)
+                ;
 
         if (needSearchAfter && CollectionUtils.isNotEmpty(searchAfter)) {
             builder.searchAfter(searchAfter);
@@ -1466,6 +1467,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      * @return 成功个数
      */
     private Integer doBulkRequest(BulkRequest bulkRequest, String successResult) {
+        PrintUtils.printDsl(bulkRequest, client);
         try {
             BulkResponse bulkResponse = client.withTransportOptions(getTransportOptions()).bulk(bulkRequest);
             if (bulkResponse.errors()) {
@@ -1490,7 +1492,11 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     private List<Hit<T>> getSearchHits(Wrapper<T> wrapper) {
         // 用户在wrapper中指定的混合查询条件优先级最高
         SearchRequest searchRequest = Optional.ofNullable(wrapper.searchBuilder)
-                .orElse(WrapperProcessor.buildSearchSourceBuilder(wrapper, entityClass)).build();
+                .orElse(WrapperProcessor.buildSearchBuilder(wrapper, entityClass))
+                .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
+                .routing(wrapper.routing)
+                .preference(wrapper.preference)
+                .build();
 
         PrintUtils.printDsl(searchRequest, client);
         SearchResponse<T> response;

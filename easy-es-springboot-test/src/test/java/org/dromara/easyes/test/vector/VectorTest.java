@@ -62,7 +62,7 @@ public class VectorTest {
         SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.query(queryBuilder);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
 
         List<Document> Documents = documentMapper.selectList(wrapper);
         Assertions.assertFalse(Documents.isEmpty());

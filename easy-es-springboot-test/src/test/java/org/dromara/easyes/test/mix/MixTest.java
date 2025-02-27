@@ -73,7 +73,7 @@ public class MixTest {
 
         // 仅利用EE查询并解析数据功能
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -112,7 +112,7 @@ public class MixTest {
 
         // 追加或者设置一些SearchSourceBuilder支持但EE暂不支持的参数 不建议追加query参数,因为如果追加query参数会直接覆盖上面EE已经帮你生成好的query,以最后set的query为准
         searchSourceBuilder.timeout(TimeValue.timeValueSeconds(3L));
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -133,7 +133,7 @@ public class MixTest {
         AggregationBuilder aggregation = AggregationBuilders.terms("titleAgg")
                 .field("title");
         searchSourceBuilder.aggregation(aggregation);
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         SearchResponse searchResponse = documentMapper.search(wrapper);
         // tip: 聚合后的信息是动态的,框架无法解析,需要用户根据聚合器类型自行从桶中解析,参考ElasticsearchClient官方Aggregation解析文档
     }
@@ -152,7 +152,7 @@ public class MixTest {
 
         // 用户又想在上面的基础上,再追加一些个性化的查询参数进去 但实际上此时执行查询时,查询条件仅仅是最后设置的title=隔壁老王,前面的老汉推*会被覆盖
         searchSourceBuilder.query(QueryBuilders.matchQuery("title", "隔壁老王"));
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
         // 思考: 为什么会被覆盖? 因为目前技术上做不到,查询树已经建立好了,es底层并没有提供向树的指定层级上继续追加查询条件的API
@@ -171,7 +171,7 @@ public class MixTest {
         // SearchSourceBuilder的构造是自己new出来的,不是通过mapper.getSearchSourceBuilder(wrapper)构造 相当于脱裤子放P,那么上面的查询条件老汉推*自然不会生效
         SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.minScore(10.5);
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }

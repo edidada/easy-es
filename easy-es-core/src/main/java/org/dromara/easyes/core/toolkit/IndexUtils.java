@@ -431,6 +431,14 @@ public class IndexUtils {
      */
     private static Map<String, Property> initInfo(EntityInfo entityInfo, GlobalConfig.DbConfig dbConfig,
                                                   Map<String, Property> properties, List<EsIndexParam> indexParamList) {
+        // 主键
+        String idFieldName = entityInfo.getKeyProperty();
+        if (dbConfig.isMapUnderscoreToCamelCase()) {
+            idFieldName = StringUtils.camelToUnderline(idFieldName);
+        }
+        properties.put(idFieldName, KeywordProperty.of(a -> a)._toProperty());
+
+        // 其他字段
         indexParamList.forEach(indexParam -> {
             // 驼峰处理
             String fieldName = indexParam.getFieldName();

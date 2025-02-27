@@ -593,9 +593,9 @@ public abstract class AbstractWrapper<T, R, Children extends AbstractWrapper<T, 
     }
 
     @Override
-    public Children setSearchSourceBuilder(boolean condition, SearchRequest.Builder searchSourceBuilder) {
+    public Children setSearchBuilder(boolean condition, SearchRequest.Builder searchBuilder) {
         if (condition) {
-            this.searchBuilder = searchSourceBuilder;
+            this.searchBuilder = searchBuilder;
         }
         return typedThis;
     }

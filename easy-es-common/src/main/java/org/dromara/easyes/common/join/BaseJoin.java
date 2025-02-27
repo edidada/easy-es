@@ -1,6 +1,7 @@
 package org.dromara.easyes.common.join;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Setter;
 
 import java.util.HashMap;
@@ -9,11 +10,12 @@ import java.util.Map;
 @Setter
 public class BaseJoin {
 
-    public Map<String, Map<String, String>> joinFiled;
+    @JsonIgnore
+    public Map<String, Map<String, String>> joinField;
 
     @JsonAnyGetter
     public Map<String, Map<String, String>> getJoinField() {
-        return joinFiled;
+        return joinField;
     }
 
     /**
@@ -28,7 +30,7 @@ public class BaseJoin {
      * @param parentId  父id
      */
     public void addJoinField(String fieldName, String name, String parentId) {
-        joinFiled = new HashMap<>() {{
+        joinField = new HashMap<>() {{
             put(fieldName, new HashMap<>() {{
                 put("name", name);
                 if (parentId != null) {

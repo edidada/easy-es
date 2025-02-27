@@ -502,6 +502,16 @@ public interface BaseEsMapper<T> {
     /**
      * 根据 whereEntity 条件，更新记录
      *
+     * @param updateWrapper 条件
+     * @return 成功条数
+     */
+    default Integer update(Wrapper<T> updateWrapper) {
+        return update(null, updateWrapper);
+    }
+
+    /**
+     * 根据 whereEntity 条件，更新记录
+     *
      * @param entity        更新对象
      * @param updateWrapper 条件
      * @return 成功条数

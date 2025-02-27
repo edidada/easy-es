@@ -35,6 +35,7 @@ public class JsonUtils {
                 // 反序列化时是否将一个对象封装成单元素数组
                 .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
                 .configure(SerializationFeature.INDENT_OUTPUT, false)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .build();
         AnnotationIntrospector anno = base.getSerializerProviderInstance().getAnnotationIntrospector();
         base.setAnnotationIntrospector(new AnnotationIntrospectorPair(anno, new JacksonCustomAnnotationIntrospector()));

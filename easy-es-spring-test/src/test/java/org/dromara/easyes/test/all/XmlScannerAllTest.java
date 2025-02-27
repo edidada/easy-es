@@ -169,7 +169,7 @@ public class XmlScannerAllTest {
         LambdaEsUpdateWrapper<Document> wrapper = new LambdaEsUpdateWrapper<>();
         SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.query(QueryBuilders.termQuery(FieldUtils.val(Document::getTitle) + KEYWORD_SUFFIX, "测试文档2"));
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
 
         Document document = new Document();
         document.setContent("测试文档内容2的内容再次被更新了");
@@ -540,7 +540,7 @@ public class XmlScannerAllTest {
                 .flatMap(i -> Optional.ofNullable(i.getMaxResultWindow()))
                 .ifPresent(searchSourceBuilder::size);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
         List<Document> documents = documentMapper.selectList(wrapper);
         Assertions.assertEquals(22, documents.size());
     }
@@ -930,7 +930,7 @@ public class XmlScannerAllTest {
         SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
         searchSourceBuilder.query(queryBuilder);
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        wrapper.setSearchBuilder(searchSourceBuilder);
 
         List<Document> Documents = documentMapper.selectList(wrapper);
         Assertions.assertFalse(Documents.isEmpty());

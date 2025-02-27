@@ -17,6 +17,7 @@ import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
+import org.dromara.easyes.core.toolkit.GeoUtils;
 import org.dromara.easyes.core.toolkit.TreeBuilder;
 import org.elasticsearch.geometry.Geometry;
 
@@ -43,12 +44,12 @@ public class WrapperProcessor {
      * @param entityClass 实体类
      * @return ES查询参数
      */
-    public static SearchRequest.Builder buildSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
+    public static SearchRequest.Builder buildSearchBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
         // 初始化boolQueryBuilder 参数
         BoolQuery.Builder boolQueryBuilder = initBoolQueryBuilder(wrapper.paramQueue, entityClass);
 
         // 初始化searchSourceBuilder 参数
-        SearchRequest.Builder searchSourceBuilder = initSearchSourceBuilder(wrapper, entityClass);
+        SearchRequest.Builder searchSourceBuilder = initSearchBuilder(wrapper, entityClass);
 
         // 设置boolQuery参数
         searchSourceBuilder.query(x -> x.bool(boolQueryBuilder.build()));
@@ -191,8 +192,8 @@ public class WrapperProcessor {
                 query = Query.of(q -> q.range(p ->
                         p.untyped(v -> {
                             v.field(realField).gte(JsonData.of(param.getExt1())).lte(JsonData.of(param.getExt2())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
-                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
+                            Optional.ofNullable(param.getExt3()).ifPresent(ex -> v.timeZone(((ZoneId) ex).getId()));
+                            Optional.ofNullable(param.getExt4()).ifPresent(ex -> v.format(ex.toString()));
                             return v;
                         })
                 ));
@@ -228,11 +229,10 @@ public class WrapperProcessor {
             case GEO_DISTANCE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 query = Query.of(q -> q.geoDistance(p -> {
-                    p.field(realField).location(x -> x.latlon((LatLonGeoLocation) param.getExt2())).boost(param.getBoost());
+                    p.field(realField).location((GeoLocation) param.getExt2()).boost(param.getBoost());
                     String unit = param.getExt1() == null ? DistanceUnit.Meters.jsonValue() : ((DistanceUnit) param.getExt1()).jsonValue();
-                    String val = (String) param.getVal();
-                    String distance = val.endsWith(unit) ? val : val + unit;
-                    p.distance(distance);
+                    Double distance = (Double) param.getVal();
+                    p.distance(distance + unit);
                     return p;
                 }));
                 setBool(bool, query, param.getPrevQueryType());
@@ -240,7 +240,7 @@ public class WrapperProcessor {
             case GEO_POLYGON:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
                 query = Query.of(q -> q.geoPolygon(p -> p.field(realField).polygon(x ->
-                        x.points((List<GeoLocation>) param.getExt2()))));
+                        x.points((List<GeoLocation>) param.getVal()))));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GEO_SHAPE_ID:
@@ -251,10 +251,15 @@ public class WrapperProcessor {
                 break;
             case GEO_SHAPE:
                 realField = getRealField(param.getColumn(), mappingColumnMap);
-                query = Query.of(q -> q.geoShape(p -> p.field(realField).shape(x ->
-                                x.shape(JsonData.of((Geometry)param.getVal())).relation((GeoShapeRelation) param.getExt1())
-                        ).boost(param.getBoost())
-                ));
+                query = QueryBuilders.geoShape()
+                        .field(realField)
+                        .shape(x -> x
+//                                .shape(JsonData.of(WellKnownText.toWKT(val)))
+                                .shape(JsonData.of(GeoUtils.toMap((Geometry) param.getVal())))
+                                .relation((GeoShapeRelation) param.getExt1())
+                        )
+                        .boost(param.getBoost())
+                        .build()._toQuery();
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case PARENT_ID:
@@ -417,16 +422,12 @@ public class WrapperProcessor {
      * @param wrapper 条件
      * @return SearchSourceBuilder
      */
-    private static SearchRequest.Builder initSearchSourceBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
+    private static SearchRequest.Builder initSearchBuilder(Wrapper<?> wrapper, Class<?> entityClass) {
         EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
         // 获取自定义字段map
         Map<String, String> mappingColumnMap = entityInfo.getMappingColumnMap();
 
         SearchRequest.Builder builder = new SearchRequest.Builder();
-
-        builder.index(getIndexName(entityClass, wrapper.indexNames));
-        builder.routing(wrapper.routing);
-        builder.preference(wrapper.preference);
 
         // 设置高亮
         setHighLight(entityInfo.getHighlightParams(), builder);
@@ -666,17 +667,19 @@ public class WrapperProcessor {
         Aggregation.Builder.ContainerBuilder cursor = null;
         for (AggregationParam aggParam : aggregationParamList) {
             String realField = getRealField(aggParam.getField(), mappingColumnMap);
-            Aggregation.Builder.ContainerBuilder builder = getRealAggregationBuilder(aggParam.getAggregationType()
-                    , aggParam.getName(), realField, wrapper.size, wrapper.bucketOrders);
+            Aggregation.Builder.ContainerBuilder builder = getRealAggregationBuilder(
+                    aggParam.getAggregationType(), realField, wrapper.size, wrapper.bucketOrders);
+            // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
+            String aggName = aggParam.getName() + aggParam.getAggregationType().getValue();
             if (aggParam.isEnablePipeline()) {
                 // 管道聚合, 构造聚合树
                 if (root == null) {
                     root = builder;
-                    rootName = aggParam.getName();
+                    rootName = aggName;
                     cursor = root;
                 } else {
                     Aggregation agg = builder.build();
-                    cursor.aggregations(aggParam.getName(), agg);
+                    cursor.aggregations(aggName, agg);
                     // 解决max、min、avg和sum聚合函数不支持sub-aggregations的问题
                     if (agg._kind().equals(Aggregation.Kind.Terms)) {
                         cursor = builder;
@@ -685,7 +688,7 @@ public class WrapperProcessor {
             } else {
                 // 非管道聚合
                 if (builder != null) {
-                    searchSourceBuilder.aggregations(aggParam.getName(), builder.build());
+                    searchSourceBuilder.aggregations(aggName, builder.build());
                 }
             }
 
@@ -704,38 +707,28 @@ public class WrapperProcessor {
      * 根据聚合类型获取具体的聚合建造者
      *
      * @param aggType   聚合类型
-     * @param name      聚合返回桶的名称 保持原字段名称
      * @param realField 原字段名称
      * @param size      聚合桶大小
      * @return 聚合建造者
      */
     private static Aggregation.Builder.ContainerBuilder getRealAggregationBuilder(
             AggregationTypeEnum aggType,
-            String name,
             String realField,
             Integer size,
             List<NamedValue<SortOrder>> bucketOrders
     ) {
         // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
-        String finalName = name + aggType.getValue();
-        switch (aggType) {
-            case AVG:
-                return new Aggregation.Builder().avg(x -> x.field(realField));
-            case MIN:
-                return new Aggregation.Builder().min(x -> x.field(finalName));
-            case MAX:
-                return new Aggregation.Builder().max(x -> x.field(realField));
-            case SUM:
-                return new Aggregation.Builder().sum(x -> x.field(realField));
-            case TERMS:
-                return new Aggregation.Builder().terms(x -> {
-                    x.field(realField);
-                    Optional.ofNullable(size).ifPresent(x::size);
-                    Optional.ofNullable(bucketOrders).ifPresent(x::order);
-                    return x;
-                });
-            default:
-                throw new UnsupportedOperationException("不支持的聚合类型,参见AggregationTypeEnum");
-        }
+        return switch (aggType) {
+            case AVG -> new Aggregation.Builder().avg(x -> x.field(realField));
+            case MIN -> new Aggregation.Builder().min(x -> x.field(realField));
+            case MAX -> new Aggregation.Builder().max(x -> x.field(realField));
+            case SUM -> new Aggregation.Builder().sum(x -> x.field(realField));
+            case TERMS -> new Aggregation.Builder().terms(x -> {
+                x.field(realField);
+                Optional.ofNullable(size).ifPresent(x::size);
+                Optional.ofNullable(bucketOrders).ifPresent(x::order);
+                return x;
+            });
+        };
     }
 }
