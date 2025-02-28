@@ -1,7 +1,5 @@
 package org.dromara.easyes.test.vector;
 
-
-import co.elastic.clients.elasticsearch._types.ScriptLanguage;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -54,11 +52,11 @@ public class VectorTest {
     public void testVectorSearch() {
         Query query = Query.of(a -> a.scriptScore(b -> b
                 .query(QueryBuilders.matchAll().build()._toQuery())
-                .script(d -> d
-                        .lang(ScriptLanguage.Painless)
+                .script(d -> d.inline(e -> e
+                        .lang("painless")
                         .params("vector", JsonData.of(new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594}))
                         .source("cosineSimilarity(params.vector, 'vector') + 1.0")
-                )
+                ))
         ));
 
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();

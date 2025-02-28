@@ -97,7 +97,7 @@ public class MixTest {
         wrapper.sort(SortOptions.of(a -> a.script(b -> b
                 .type(ScriptSortType.Number)
                 .order(SortOrder.Desc)
-                .script(c -> c.source("doc['star_num'].value"))
+                .script(c -> c.inline(e -> e.source("doc['star_num'].value")))
         )));
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);

@@ -32,7 +32,7 @@ public class CompareTest {
     @Autowired
     private ElasticsearchClient client;
 
-    public static RestClientOptions options = new RestClientOptions(RequestOptions.DEFAULT, true);
+    public static RestClientOptions options = new RestClientOptions(RequestOptions.DEFAULT);
 
     @Test
     public void testCompare() {

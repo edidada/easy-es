@@ -194,7 +194,7 @@ public class EntityInfo {
     /**
      * 请求配置 默认值为官方内置的默认配置
      */
-    private TransportOptions requestOptions = new RestClientOptions(RequestOptions.DEFAULT, true);
+    private TransportOptions requestOptions = new RestClientOptions(RequestOptions.DEFAULT);
     /**
      * 最大返回数
      */

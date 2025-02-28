@@ -324,8 +324,7 @@ public class IndexUtils {
                     .source(mappings.source())
                     .runtime(mappings.runtime())
                     .enabled(mappings.enabled())
-                    .subobjects(mappings.subobjects())
-                    .dataStreamTimestamp(mappings.dataStreamTimestamp());
+                    ;
             esIndexInfo.setMapping(builder);
         }
 
@@ -418,7 +417,7 @@ public class IndexUtils {
         if (CollectionUtils.isNotEmpty(entityInfo.getRelationMap())) {
             mapping.properties(entityInfo.getJoinFieldName(), x -> x.join(y -> y
                     .relations(entityInfo.getRelationMap())
-                    .eagerGlobalOrdinals(entityInfo.isEagerGlobalOrdinals())
+//                    .eagerGlobalOrdinals(entityInfo.isEagerGlobalOrdinals())
             ));
         }
 
@@ -455,7 +454,6 @@ public class IndexUtils {
 
             if (FieldType.BYTE.getType().equals(indexParam.getFieldType())) {
                 ByteNumberProperty property = ByteNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -465,7 +463,6 @@ public class IndexUtils {
             }
             if (FieldType.SHORT.getType().equals(indexParam.getFieldType())) {
                 ShortNumberProperty property = ShortNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -475,7 +472,6 @@ public class IndexUtils {
             }
             if (FieldType.INTEGER.getType().equals(indexParam.getFieldType())) {
                 IntegerNumberProperty property = IntegerNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -485,7 +481,6 @@ public class IndexUtils {
             }
             if (FieldType.LONG.getType().equals(indexParam.getFieldType())) {
                 LongNumberProperty property = LongNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -495,7 +490,6 @@ public class IndexUtils {
             }
             if (FieldType.FLOAT.getType().equals(indexParam.getFieldType())) {
                 FloatNumberProperty property = FloatNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -505,7 +499,6 @@ public class IndexUtils {
             }
             if (FieldType.DOUBLE.getType().equals(indexParam.getFieldType())) {
                 DoubleNumberProperty property = DoubleNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -515,7 +508,6 @@ public class IndexUtils {
             }
             if (FieldType.HALF_FLOAT.getType().equals(indexParam.getFieldType())) {
                 HalfFloatNumberProperty property = HalfFloatNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     return a;
@@ -527,7 +519,6 @@ public class IndexUtils {
                 Double scalingFactor = Optional.ofNullable(indexParam.getScalingFactor())
                         .map(NumericUtils::formatNumberWithOneDecimal).orElse(DEFAULT_SCALING_FACTOR);
                 ScaledFloatNumberProperty property = ScaledFloatNumberProperty.of(a -> {
-                    a.boost(indexParam.getBoost());
                     buildCopyTo(a, entityInfo.isIndexEqualStage(), indexParam.getCopyToList());
                     buildInnerFields(a, indexParam);
                     a.scalingFactor(scalingFactor);

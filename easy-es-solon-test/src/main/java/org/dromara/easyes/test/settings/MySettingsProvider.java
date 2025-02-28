@@ -12,7 +12,7 @@ public class MySettingsProvider extends DefaultSettingsProvider {
 
     @Override
     public void settings(IndexSettings.Builder builder) {
-        builder.index(a -> a.search(b -> b
-                .slowlog(c -> c.threshold(d -> d.query(e -> e.warn(f -> f.time("30s")))))));
+        builder.index(a -> a.indexingSlowlog(b -> b
+                .threshold(c -> c.query(d -> d.warn(e -> e.time("30s"))))));
     }
 }

@@ -2,17 +2,17 @@ package org.dromara.easyes.core.toolkit;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.JsonpMapper;
-import co.elastic.clients.json.JsonpUtils;
 import co.elastic.clients.json.NdJsonpSerializable;
 import co.elastic.clients.transport.ElasticsearchTransportBase;
 import co.elastic.clients.transport.Endpoint;
 import co.elastic.clients.util.BinaryData;
+import jakarta.json.stream.JsonGenerator;
 import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
 
+import java.io.StringWriter;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -114,7 +114,10 @@ public class PrintUtils {
         for (Map.Entry<String, String> param : params.entrySet()) {
             fullUrlSb.append(delim);
             delim = "&";
-            fullUrlSb.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
+            try {
+                fullUrlSb.append(param.getKey()).append("=").append(URLEncoder.encode(param.getValue(), "UTF-8"));
+            } catch (Exception ignore) {
+            }
         }
         return fullUrlSb.toString();
     }
@@ -135,7 +138,7 @@ public class PrintUtils {
         }
 
         if (!(body instanceof NdJsonpSerializable)) {
-            return JsonpUtils.toJsonString(body, mapper);
+            return toJsonString(body, mapper);
         }
         NdJsonpSerializable nd = (NdJsonpSerializable) body;
 
@@ -161,8 +164,16 @@ public class PrintUtils {
                 NdJsonpSerializable nd = (NdJsonpSerializable) item; // do not recurse on the item itself
                 collectNdJsonLines(body, nd, mapper);
             } else {
-                body.append(JsonpUtils.toJsonString(item, mapper)).append("\n");
+                body.append(toJsonString(item, mapper)).append("\n");
             }
         }
+    }
+
+    public static String toJsonString(Object value, JsonpMapper mapper) {
+        StringWriter writer = new StringWriter();
+        JsonGenerator generator = mapper.jsonProvider().createGenerator(writer);
+        mapper.serialize(value, generator);
+        generator.close();
+        return writer.toString();
     }
 }
