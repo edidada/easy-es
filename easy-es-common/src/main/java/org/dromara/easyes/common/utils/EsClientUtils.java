@@ -112,8 +112,10 @@ public class EsClientUtils {
                     throw ExceptionUtils.eee(e);
                 }
             }
-            //
-            buildCompatible(httpClientBuilder);
+            // 兼容性配置
+            if (easyEsConfigProperties.isCompatible()) {
+                buildCompatible(httpClientBuilder);
+            }
             return httpClientBuilder;
         });
 

@@ -187,7 +187,7 @@ public class AllTest {
     @Order(8)
     public void testSQL() {
         // 注意 sql中的from后面跟的是要被查询的索引名,也可以是索引别名(效果一样) 由于索引名可能会变,所以此处我采用别名ee_default_alias进行查询
-        String sql = "select count(*) from ee_default_alias where star_num > 0";
+        String sql = "select count(*) from ee_default_alias where starNum > 0";
         String jsonResult = documentMapper.executeSQL(sql);
         System.out.println(jsonResult);
         Assertions.assertNotNull(jsonResult);

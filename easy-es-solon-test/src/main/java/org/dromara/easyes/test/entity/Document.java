@@ -155,6 +155,6 @@ public class Document extends BaseJoin {
     /**
      * 稠密向量类型，dims 非负 最大为2048
      */
-    @IndexField(fieldType = FieldType.DENSE_VECTOR)
+    @IndexField(fieldType = FieldType.DENSE_VECTOR, dims = 3)
     private double[] vector;
 }
