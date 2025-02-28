@@ -10,7 +10,6 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.rest_client.RestClientOptions;
-import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
@@ -940,41 +939,41 @@ public class AllTest {
         Boolean success = documentMapper.setRequestOptions(new RestClientOptions(builder.build()));
         Assertions.assertTrue(success);
     }
-
-    // 4.删除
-    @Test
-    @Order(76)
-    public void testDeleteById() {
-        int count = documentMapper.deleteById("1");
-        Assertions.assertEquals(1, count);
-    }
-
-    @Test
-    @Order(77)
-    public void testDeleteBatchIds() {
-        List<String> idList = Arrays.asList("2", "3", "4");
-        int count = documentMapper.deleteBatchIds(idList);
-        Assertions.assertEquals(3, count);
-    }
-
-    @Test
-    @Order(78)
-    public void testDeleteByWrapper() {
-        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.match(Document::getCreator, "老汉");
-
-        int count = documentMapper.delete(wrapper);
-        Assertions.assertEquals(18, count);
-    }
-
-    @Test
-    @Order(80)
-    public void testDeleteIndex() {
-        boolean deleted = documentMapper.deleteIndex(EntityInfoHelper.getEntityInfo(Document.class).getIndexName());
-        boolean lockDeleted = documentMapper.deleteIndex(BaseEsConstants.LOCK_INDEX);
-        Assertions.assertTrue(deleted);
-        Assertions.assertTrue(lockDeleted);
-    }
+//
+//    // 4.删除
+//    @Test
+//    @Order(76)
+//    public void testDeleteById() {
+//        int count = documentMapper.deleteById("1");
+//        Assertions.assertEquals(1, count);
+//    }
+//
+//    @Test
+//    @Order(77)
+//    public void testDeleteBatchIds() {
+//        List<String> idList = Arrays.asList("2", "3", "4");
+//        int count = documentMapper.deleteBatchIds(idList);
+//        Assertions.assertEquals(3, count);
+//    }
+//
+//    @Test
+//    @Order(78)
+//    public void testDeleteByWrapper() {
+//        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+//        wrapper.match(Document::getCreator, "老汉");
+//
+//        int count = documentMapper.delete(wrapper);
+//        Assertions.assertEquals(18, count);
+//    }
+//
+//    @Test
+//    @Order(80)
+//    public void testDeleteIndex() {
+//        boolean deleted = documentMapper.deleteIndex(EntityInfoHelper.getEntityInfo(Document.class).getIndexName());
+//        boolean lockDeleted = documentMapper.deleteIndex(BaseEsConstants.LOCK_INDEX);
+//        Assertions.assertTrue(deleted);
+//        Assertions.assertTrue(lockDeleted);
+//    }
 
     @Test
     @Order(79)

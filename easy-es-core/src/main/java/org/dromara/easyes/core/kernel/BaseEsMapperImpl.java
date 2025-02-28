@@ -1328,14 +1328,10 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 continue;
             }
             FieldValue sortValue = sortValues.get(i);
-
-            if (!(sortValue._kind().equals(FieldValue.Kind.Double))) {
+            if (sortValue == null || sortValue._get() == null) {
                 continue;
             }
-            double distance = sortValue.doubleValue();
-            if (Double.isNaN(distance)) {
-                continue;
-            }
+            double distance = (double)sortValue._get();
             Integer distanceDecimalPlaces = entityInfo.getDistanceDecimalPlaces().get(geoFieldIndex);
             if (distanceDecimalPlaces > ZERO) {
                 distance = NumericUtils.setDecimalPlaces(distance, distanceDecimalPlaces);
@@ -1359,7 +1355,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
      */
     private void setScore(T entity, Double score, EntityInfo entityInfo) {
         String scoreField = entityInfo.getScoreField();
-        if (Objects.isNull(scoreField) || Double.isNaN(score)) {
+        if (Objects.isNull(scoreField) || Objects.isNull(score)) {
             return;
         }
 

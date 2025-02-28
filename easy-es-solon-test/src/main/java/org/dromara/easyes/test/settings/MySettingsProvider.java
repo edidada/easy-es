@@ -1,6 +1,7 @@
 package org.dromara.easyes.test.settings;
 
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.json.JsonData;
 import org.dromara.easyes.annotation.rely.DefaultSettingsProvider;
 
 /**
@@ -12,7 +13,6 @@ public class MySettingsProvider extends DefaultSettingsProvider {
 
     @Override
     public void settings(IndexSettings.Builder builder) {
-        builder.index(a -> a.indexingSlowlog(b -> b
-                .threshold(c -> c.query(d -> d.warn(e -> e.time("30s"))))));
+        builder.otherSettings("index.search.slowlog.threshold.query.warn", JsonData.of("30s"));
     }
 }

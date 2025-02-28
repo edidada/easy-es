@@ -135,7 +135,7 @@ public class WrapperProcessor {
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case PREFIX:
-                realField = getRealFieldAndSuffix(param.getColumn(), mappingColumnMap, fieldTypeMap, entityInfo);
+                realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
                 query = Query.of(q -> q.prefix(p -> p.field(realField).value((String) param.getVal()).boost(param.getBoost())));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
