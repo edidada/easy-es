@@ -1,11 +1,12 @@
 package org.dromara.easyes.core.toolkit;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import lombok.SneakyThrows;
-import org.dromara.easyes.common.utils.CollectionUtils;
 import org.dromara.easyes.common.utils.StringUtils;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.config.GeneratorConfig;
-import org.elasticsearch.client.RestHighLevelClient;
 
 import java.util.*;
 
@@ -35,23 +36,24 @@ public abstract class Generator {
      * @param config 配置
      */
     @SneakyThrows
-    public void generateEntity(GeneratorConfig config, RestHighLevelClient client) {
+    public void generateEntity(GeneratorConfig config, ElasticsearchClient client) {
         // get index info
         EsIndexInfo esIndexInfo = IndexUtils.getIndexInfo(client, config.getIndexName());
-        Map<String, Object> mapping = esIndexInfo.getMapping();
-        if (CollectionUtils.isEmpty(mapping)) {
+        TypeMapping.Builder mapping = esIndexInfo.getMapping();
+        if (mapping == null) {
             return;
         }
+        Map<String, Map> map = JsonUtils.toMap(mapping.build().toString(), String.class, Map.class);
 
         // parse fields info
-        LinkedHashMap<String, LinkedHashMap<String, Object>> properties = (LinkedHashMap<String, LinkedHashMap<String, Object>>) mapping.get(PROPERTIES);
+        Map<String, Map<String, Object>> properties = (Map<String, Map<String, Object>>) map.get(PROPERTIES);
 
         // execute generate
         executeGenerate(properties, config, esIndexInfo, config.getIndexName());
     }
 
     @SneakyThrows
-    private void executeGenerate(LinkedHashMap<String, LinkedHashMap<String, Object>> properties, GeneratorConfig config, EsIndexInfo esIndexInfo, String className) {
+    private void executeGenerate(Map<String, Map<String, Object>> properties, GeneratorConfig config, EsIndexInfo esIndexInfo, String className) {
         Map<String, String> modelMap = new HashMap<>(properties.size());
         properties.forEach((k, v) -> Optional.ofNullable(v.get(TYPE)).ifPresent(esType -> {
             if (SKIP_TYPE.contains(esType.toString())) {
@@ -59,7 +61,7 @@ public abstract class Generator {
             }
             if (NESTED.equals(esType.toString())) {
                 // nested recursion
-                executeGenerate((LinkedHashMap<String, LinkedHashMap<String, Object>>) v.get(PROPERTIES), config, esIndexInfo, parseClassName(k));
+                executeGenerate((Map<String, Map<String, Object>>) v.get(PROPERTIES), config, esIndexInfo, parseClassName(k));
             }
             String javaType = getJavaType(esType.toString(), k);
             modelMap.put(k, javaType);

@@ -1,6 +1,6 @@
 package org.dromara.easyes.annotation.rely;
 
-import java.util.Map;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
 
 /**
  * es 索引 settings 提供接口
@@ -10,8 +10,6 @@ import java.util.Map;
 public interface ISettingsProvider {
     /**
      * 获取settings
-     *
-     * @return settingsMap
      */
-    Map<String, Object> getSettings();
+    void settings(IndexSettings.Builder builder);
 }

@@ -11,13 +11,15 @@
 
     <bean id="easyEsProperties" class="org.dromara.easyes.common.property.EasyEsProperties">
         <property name="enable" value="true"/>
-        <property name="address" value="127.0.0.1:9200"/>
+        <property name="address" value="192.168.1.16:30156"/>
+        <property name="username" value="elastic"/>
+        <property name="password" value="mg123456"/>
         <property name="keepAliveMillis" value="18000"/>
-        <property name="globalConfig.IKunMode" value="true"/>
+        <property name="globalConfig.IKunMode" value="false"/>
         <property name="globalConfig.processIndexMode" value="MANUAL"/>
         <property name="globalConfig.asyncProcessIndexBlocking" value="true"/>
         <property name="globalConfig.printDsl" value="true"/>
-        <property name="globalConfig.dbConfig.mapUnderscoreToCamelCase" value="true"/>
+        <property name="globalConfig.dbConfig.mapUnderscoreToCamelCase" value="false"/>
         <property name="globalConfig.dbConfig.idType" value="CUSTOMIZE"/>
         <property name="globalConfig.dbConfig.fieldStrategy" value="NOT_EMPTY"/>
         <property name="globalConfig.dbConfig.refreshPolicy" value="IMMEDIATE"/>

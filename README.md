@@ -46,7 +46,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 
 简化`CRUD`及其它高阶操作,可以更好的帮助开发者减轻开发负担
 
-底层采用Es官方提供的RestHighLevelClient,保证其原生性能及拓展性.
+底层采用Es官方提供的ElasticsearchClient,保证其原生性能及拓展性.
 
 技术讨论 QQ 群 ：897570597 群内可在群文件中免费领取 颈椎保护 | 增肌 | 减脂 等健身计划 无套路
 
@@ -62,7 +62,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 - **全自动索引托管:** 全球开源首创的索引托管模式,开发者无需关心索引的创建更新及数据迁移等繁琐步骤,索引全生命周期皆可托管给框架,由框架自动完成,过程零停机,用户无感知,彻底解放开发者
 - **智能字段类型推断:** 根据索引类型和当前查询类型上下文综合智能判断当前查询是否需要拼接.keyword后缀,减少小白误用的可能
 - **屏蔽语言差异:** 开发者只需要会MySQL语法即可使用Es
-- **代码量极少:** 与直接使用RestHighLevelClient相比,相同的查询平均可以节3-80倍左右的代码量
+- **代码量极少:** 与直接使用ElasticsearchClient相比,相同的查询平均可以节3-80倍左右的代码量
 - **零魔法值:** 字段名称直接从实体中获取,无需输入字段名称字符串这种魔法值
 - **零额外学习成本:** 开发者只要会国内最受欢迎的Mybatis-Plus语法,即可无缝迁移至Easy-Es
 - **降低开发者门槛:** 即便是只了解ES基础的初学者也可以轻松驾驭ES完成绝大多数需求的开发
@@ -82,7 +82,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
 
 
 ```java
-    // 传统方式, 直接用RestHighLevelClient进行查询 需要19行代码,还不包含下划线转驼峰,自定义字段处理及_id处理等代码
+    // 传统方式, 直接用ElasticsearchClient进行查询 需要19行代码,还不包含下划线转驼峰,自定义字段处理及_id处理等代码
     String indexName = "document";
     SearchRequest searchRequest = new SearchRequest(indexName);
     BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
@@ -90,7 +90,7 @@ Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动�
     TermsQueryBuilder creatorTerm = QueryBuilders.termsQuery("creator", "码保国");
     boolQueryBuilder.must(titleTerm);
     boolQueryBuilder.must(creatorTerm);
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+    SearchRequest.Builder searchSourceBuilder = new SearchRequest.Builder();
     searchSourceBuilder.query(boolQueryBuilder);
     searchRequest.source(searchSourceBuilder);
     try {

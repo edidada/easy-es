@@ -1,62 +1,67 @@
 package org.dromara.easyes.common.utils;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.property.EasyEsProperties;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 
 import javax.net.ssl.SSLContext;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
 
 /**
  * @author lyy
  */
-public class RestHighLevelClientUtils {
+public class EsClientUtils {
 
     public static final String DEFAULT_DS = "DEFAULT_DS";
 
-    private final static Map<String, RestHighLevelClient> restHighLevelClientMap = new ConcurrentHashMap<>();
+    private final static Map<String, ElasticsearchClient> restHighLevelClientMap = new ConcurrentHashMap<>();
 
-    public RestHighLevelClientUtils() {
+    public EsClientUtils() {
     }
 
-    public static RestHighLevelClient getRestHighLevelClient(String restHighLevelClientId) {
+    public static ElasticsearchClient getElasticsearchClient(String restHighLevelClientId) {
         if (DEFAULT_DS.equals(restHighLevelClientId)) {
             return restHighLevelClientMap.values()
                     .stream()
                     .findFirst()
-                    .orElseThrow(() -> ExceptionUtils.eee("Could not found RestHighLevelClient,restHighLevelClientId:%s", restHighLevelClientId));
+                    .orElseThrow(() -> ExceptionUtils.eee("Could not found ElasticsearchClient,restHighLevelClientId:%s", restHighLevelClientId));
         }
-        RestHighLevelClient restHighLevelClient = restHighLevelClientMap.get(restHighLevelClientId);
-        if (restHighLevelClient == null) {
+        ElasticsearchClient client = restHighLevelClientMap.get(restHighLevelClientId);
+        if (client == null) {
             LogUtils.formatError("restHighLevelClientId: %s can not find any data source, please check your config", restHighLevelClientId);
-            throw ExceptionUtils.eee("Cloud not found RestHighLevelClient,restHighLevelClientId:%s", restHighLevelClientId);
+            throw ExceptionUtils.eee("Cloud not found ElasticsearchClient,restHighLevelClientId:%s", restHighLevelClientId);
         }
-        return restHighLevelClient;
+        return client;
     }
 
-    public RestHighLevelClient getClient(String restHighLevelClientId) {
-        return RestHighLevelClientUtils.getRestHighLevelClient(restHighLevelClientId);
+    public static void registerClient(String restHighLevelClientId, Supplier<ElasticsearchClient> restHighLevelClient) {
+        EsClientUtils.restHighLevelClientMap.putIfAbsent(restHighLevelClientId, restHighLevelClient.get());
     }
 
-    public static void registerRestHighLevelClient(String restHighLevelClientId, RestHighLevelClient restHighLevelClient) {
-        RestHighLevelClientUtils.restHighLevelClientMap.putIfAbsent(restHighLevelClientId, restHighLevelClient);
-    }
-
-    public static RestHighLevelClient restHighLevelClient(EasyEsProperties easyEsConfigProperties) {
+    public static ElasticsearchClient buildClient(EasyEsProperties easyEsConfigProperties) {
         // 处理地址
         String address = easyEsConfigProperties.getAddress();
         if (StringUtils.isEmpty(address)) {
@@ -107,6 +112,10 @@ public class RestHighLevelClientUtils {
                     throw ExceptionUtils.eee(e);
                 }
             }
+            // 兼容性配置
+            if (easyEsConfigProperties.isCompatible()) {
+                buildCompatible(httpClientBuilder);
+            }
             return httpClientBuilder;
         });
 
@@ -118,6 +127,40 @@ public class RestHighLevelClientUtils {
                     .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
             return requestConfigBuilder;
         });
-        return new RestHighLevelClient(builder);
+
+        return new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper(JsonUtils.OM_DEFAULT)));
+    }
+
+    /**
+     * 兼容性配置
+     *
+     * @param httpClientBuilder httpClientBuilder
+     */
+    private static void buildCompatible(HttpAsyncClientBuilder httpClientBuilder) {
+        httpClientBuilder.addInterceptorFirst((HttpRequestInterceptor) (request, context) -> {
+            // 这里主动编辑请求头，避免兼容性问题报错
+            // 在es8中，默认的请求头 Accept 字段为：
+            // Accept: application/vnd.elasticsearch+json; compatible-with=8
+            // 访问低版本es集群有可能出现
+            // [es/create] failed:
+            // [media_type_header_exception] Invalid media-type value
+            // on headers [Accept, Content-Type]
+            // 通过拦截器编辑请求头以避免此错误！
+            request.setHeader("Accept", "application/json");
+        });
+        httpClientBuilder.setDefaultHeaders(new ArrayList<Header>() {{
+            add(new BasicHeader("Accept", "application/json"));
+            add(new BasicHeader("Content-Type", "application/json"));
+            add(new BasicHeader("Connection", "Keep-Alive"));
+            add(new BasicHeader("Charset", "UTF-8"));
+        }});
+        // 这部分为了避免旧版本406报错（如果es更新到了8.xx，把这个去掉即可）
+        httpClientBuilder.addInterceptorLast((HttpResponseInterceptor)
+                (response, context) ->
+                        response.addHeader("X-Elastic-Product", "Elasticsearch"));
+    }
+
+    public ElasticsearchClient getClient(String clientId) {
+        return getElasticsearchClient(clientId);
     }
 }

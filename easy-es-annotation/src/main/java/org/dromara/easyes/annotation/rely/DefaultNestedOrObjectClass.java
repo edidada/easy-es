@@ -5,5 +5,5 @@ package org.dromara.easyes.annotation.rely;
  * <p>
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
-public class DefaultNestedClass {
+public class DefaultNestedOrObjectClass {
 }

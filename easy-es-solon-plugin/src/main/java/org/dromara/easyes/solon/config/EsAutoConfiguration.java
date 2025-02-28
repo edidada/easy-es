@@ -1,18 +1,19 @@
 package org.dromara.easyes.solon.config;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
-import org.dromara.easyes.common.utils.*;
+import org.dromara.easyes.common.utils.CollectionUtils;
+import org.dromara.easyes.common.utils.EsClientUtils;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Configuration;
 import org.noear.solon.annotation.Inject;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  * es自动配置
@@ -20,7 +21,7 @@ import java.util.*;
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
 @Configuration
-@Condition(onClass = RestHighLevelClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
+@Condition(onClass = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
 public class EsAutoConfiguration {
 
     @Bean
@@ -39,31 +40,30 @@ public class EsAutoConfiguration {
     }
 
     /**
-     * 装配RestHighLevelClient
+     * 装配ElasticsearchClient
      *
-     * @return RestHighLevelClient bean
+     * @return ElasticsearchClient bean
      */
     @Bean
-    @Condition(onMissingBean = RestHighLevelClient.class)
-    public RestHighLevelClient restHighLevelClient(EasyEsProperties easyEsProperties) {
-        return RestHighLevelClientUtils.restHighLevelClient(easyEsProperties);
+    @Condition(onMissingBean = ElasticsearchClient.class)
+    public ElasticsearchClient elasticClient(EasyEsProperties easyEsProperties) {
+        return EsClientUtils.buildClient(easyEsProperties);
     }
 
     @Bean
-    public RestHighLevelClientUtils restHighLevelClientUtils(
+    public EsClientUtils esClientUtils(
             EasyEsProperties properties, EasyEsDynamicProperties dynamicProperties) {
-        RestHighLevelClientUtils restHighLevelClientUtils = new RestHighLevelClientUtils();
+        EsClientUtils esClientUtils = new EsClientUtils();
         Map<String, EasyEsProperties> datasourceMap = dynamicProperties.getDatasource();
         if (CollectionUtils.isEmpty(datasourceMap)) {
             // 设置默认数据源,兼容不使用多数据源配置场景的老用户使用习惯
-            datasourceMap.put(RestHighLevelClientUtils.DEFAULT_DS, properties);
+            datasourceMap.put(EsClientUtils.DEFAULT_DS, properties);
         }
         for (String key : datasourceMap.keySet()) {
             EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-            RestHighLevelClientUtils.registerRestHighLevelClient(key, RestHighLevelClientUtils
-                    .restHighLevelClient(easyEsConfigProperties));
+            EsClientUtils.registerClient(key, () -> EsClientUtils.buildClient(easyEsConfigProperties));
         }
-        return restHighLevelClientUtils;
+        return esClientUtils;
     }
 
     @Bean
