@@ -85,12 +85,16 @@ public class GeoUtils {
             return createFromGeoHash(geohash);
         } else {
             Rectangle rectangle = Geohash.toBoundingBox(geohash);
-            return switch (effectivePoint) {
-                case TOP_LEFT -> create(rectangle.getMaxY(), rectangle.getMinX());
-                case TOP_RIGHT -> create(rectangle.getMaxY(), rectangle.getMaxX());
-                case BOTTOM_RIGHT -> create(rectangle.getMinY(), rectangle.getMaxX());
-                default -> throw new IllegalArgumentException("Unsupported effective point " + effectivePoint);
-            };
+            switch (effectivePoint) {
+                case TOP_LEFT:
+                    return create(rectangle.getMaxY(), rectangle.getMinX());
+                case TOP_RIGHT:
+                    return create(rectangle.getMaxY(), rectangle.getMaxX());
+                case BOTTOM_RIGHT:
+                    return create(rectangle.getMinY(), rectangle.getMaxX());
+                default:
+                    throw new IllegalArgumentException("Unsupported effective point " + effectivePoint);
+            }
         }
     }
 
@@ -128,8 +132,14 @@ public class GeoUtils {
      * @return Map<String, Object>
      */
     public static Map<String, Object> toMap(Geometry geometry) {
+        String geoJsonName = null;
+        try {
+            geoJsonName = getGeoJsonName(geometry);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         Map<String, Object> root = new HashMap<>();
-        root.put("type", getGeoJsonName(geometry));
+        root.put("type", geoJsonName);
 
         geometry.visit(new GeometryVisitor<Void, RuntimeException>() {
             @Override
@@ -267,8 +277,8 @@ public class GeoUtils {
      * @param geometry geometry
      * @return String
      */
-    public static String getGeoJsonName(Geometry geometry) {
-        return geometry.visit(new GeometryVisitor<>() {
+    public static String getGeoJsonName(Geometry geometry) throws Exception {
+        return geometry.visit(new GeometryVisitor<String, Exception>() {
             @Override
             public String visit(Circle circle) {
                 return "Circle";

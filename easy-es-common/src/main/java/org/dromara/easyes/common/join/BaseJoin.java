@@ -30,8 +30,8 @@ public class BaseJoin {
      * @param parentId  父id
      */
     public void addJoinField(String fieldName, String name, String parentId) {
-        joinField = new HashMap<>() {{
-            put(fieldName, new HashMap<>() {{
+        joinField = new HashMap<String, Map<String, String>>() {{
+            put(fieldName, new HashMap<String, String>() {{
                 put("name", name);
                 if (parentId != null) {
                     put("parent", parentId);

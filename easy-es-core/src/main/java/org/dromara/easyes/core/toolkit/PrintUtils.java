@@ -134,9 +134,10 @@ public class PrintUtils {
             return "";
         }
 
-        if (!(body instanceof NdJsonpSerializable nd)) {
+        if (!(body instanceof NdJsonpSerializable)) {
             return JsonpUtils.toJsonString(body, mapper);
         }
+        NdJsonpSerializable nd = (NdJsonpSerializable) body;
 
         StringBuilder bodyStr = new StringBuilder();
         collectNdJsonLines(bodyStr, nd, mapper);
@@ -156,7 +157,8 @@ public class PrintUtils {
             Object item = values.next();
             if (item == null) {
                 // skip
-            } else if (item instanceof NdJsonpSerializable nd && item != value) { // do not recurse on the item itself
+            } else if (item instanceof NdJsonpSerializable && item != value) {
+                NdJsonpSerializable nd = (NdJsonpSerializable) item; // do not recurse on the item itself
                 collectNdJsonLines(body, nd, mapper);
             } else {
                 body.append(JsonpUtils.toJsonString(item, mapper)).append("\n");

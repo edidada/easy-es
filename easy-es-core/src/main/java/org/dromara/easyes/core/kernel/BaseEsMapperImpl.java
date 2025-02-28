@@ -21,7 +21,6 @@ import co.elastic.clients.elasticsearch.indices.PutMappingRequest;
 import co.elastic.clients.elasticsearch.indices.RefreshRequest;
 import co.elastic.clients.elasticsearch.indices.RefreshResponse;
 import co.elastic.clients.elasticsearch.sql.QueryResponse;
-import co.elastic.clients.elasticsearch.sql.query.SqlFormat;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.JsonpUtils;
 import co.elastic.clients.transport.TransportOptions;
@@ -166,7 +165,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     @SneakyThrows
     public String executeSQL(String sql) {
         PrintUtils.printSql(sql);
-        QueryResponse response = client.sql().query(x -> x.query(sql).format(SqlFormat.Json));
+        QueryResponse response = client.sql().query(x -> x.query(sql).format("json"));
         return JsonpUtils.toString(response, new StringBuilder()).toString();
     }
 
@@ -216,8 +215,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                     .orElse(WrapperProcessor.buildSearchBuilder(wrapper, entityClass))
                     .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
                     .routing(wrapper.routing)
-                    .preference(wrapper.preference)
-                    ;
+                    .preference(wrapper.preference);
             return builder.build().toString();
         } catch (Exception e) {
             throw ExceptionUtils.eee("get search source exception", e);
@@ -585,7 +583,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         if (CollectionUtils.isEmpty(searchHits)) {
             return null;
         }
-        return parseOne(searchHits.getFirst(), wrapper);
+        return parseOne(searchHits.get(0), wrapper);
     }
 
     @Override
@@ -993,7 +991,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         SearchRequest searchRequest = new SearchRequest.Builder()
                 .index(indexName)
                 .routing(routing)
-                .query(QueryBuilders.ids().values(List.of(id.toString())).build()._toQuery())
+                .query(QueryBuilders.ids().values(id.toString()).build()._toQuery())
                 .build();
         // 请求es获取数据
         List<Hit<T>> searchHits = getSearchHits(searchRequest);
@@ -1002,7 +1000,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         // 解析数据并返回
-        return parseOne(searchHits.getFirst());
+        return parseOne(searchHits.get(0));
     }
 
 
@@ -1036,8 +1034,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                 .orElse(WrapperProcessor.buildSearchBuilder(wrapper, entityClass))
                 .index(WrapperProcessor.getIndexName(entityClass, wrapper.indexNames))
                 .routing(wrapper.routing)
-                .preference(wrapper.preference)
-                ;
+                .preference(wrapper.preference);
 
         if (needSearchAfter && CollectionUtils.isNotEmpty(searchAfter)) {
             builder.searchAfter(searchAfter);
@@ -1271,7 +1268,8 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         }
 
         // 嵌套对象为容器的情况
-        if (invoke instanceof Collection<?> coll) {
+        if (invoke instanceof Collection<?>) {
+            Collection<?> coll = (Collection<?>) invoke;
             Iterator<?> iterator = coll.iterator();
             int i = 0;
             while (iterator.hasNext()) {
@@ -1414,9 +1412,10 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
         // 针对父子类型-追加joinField信息
         if (StringUtils.isNotBlank(entityInfo.getJoinAlias())) {
-            if (!(entity instanceof BaseJoin b)) {
+            if (!(entity instanceof BaseJoin)) {
                 throw ExceptionUtils.eee("实体类" + entityClass.getName() + "必须继承BaseJoin实现Join功能");
             }
+            BaseJoin b = (BaseJoin) entity;
             b.addJoinField(entityInfo.getJoinFieldName(), entityInfo.getJoinAlias(), entityInfo.isChild() ? parentId : null);
         }
 
@@ -1619,7 +1618,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
         if (Objects.nonNull(searchResponse)
             && searchResponse.shards().failures() != null
             && searchResponse.shards().failures().size() > ZERO) {
-            String errorMsg = searchResponse.shards().failures().getFirst().toString();
+            String errorMsg = searchResponse.shards().failures().get(0).toString();
             throw ExceptionUtils.eee("search response failed ,failedShards: " + errorMsg);
         }
     }
@@ -1632,11 +1631,14 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     private Refresh getRefreshPolicy() {
         // 防止傻狍子用户在全局中把刷新策略修改为GLOBAL
         final RefreshPolicy refreshPolicy = Optional.ofNullable(EntityInfoHelper.getEntityInfo(entityClass).getRefreshPolicy()).orElse(RefreshPolicy.NONE);
-        return switch (refreshPolicy) {
-            case RefreshPolicy.IMMEDIATE -> Refresh.True;
-            case RefreshPolicy.WAIT_UNTIL -> Refresh.WaitFor;
-            default -> Refresh.False;
-        };
+        switch (refreshPolicy) {
+            case IMMEDIATE:
+                return Refresh.True;
+            case WAIT_UNTIL:
+                return Refresh.WaitFor;
+            default:
+                return Refresh.False;
+        }
     }
 
     /**

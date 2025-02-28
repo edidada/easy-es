@@ -22,7 +22,8 @@ public class JacksonCustomAnnotationIntrospector extends JacksonAnnotationIntros
      * 获取序列化和反序列化时的名称
      */
     private static PropertyName getPropertyName(Annotated m) {
-        if (m instanceof AnnotatedField f) {
+        if (m instanceof AnnotatedField) {
+            AnnotatedField f = (AnnotatedField) m;
             JacksonCustomConfig config = JacksonCustomConfig.jacksonConfigMap.get(f.getDeclaringClass());
             if (config != null) {
                 String jsonName = config.javaJsonFieldNameMap.get(f.getName());
@@ -58,7 +59,8 @@ public class JacksonCustomAnnotationIntrospector extends JacksonAnnotationIntros
      */
     @Override
     public JsonIncludeProperties.Value findPropertyInclusionByName(MapperConfig<?> c, Annotated a) {
-        if (a instanceof AnnotatedClass f) {
+        if (a instanceof AnnotatedClass) {
+            AnnotatedClass f = (AnnotatedClass) a;
             JacksonCustomConfig config = JacksonCustomConfig.jacksonConfigMap.get(f.getAnnotated());
             if (config != null) {
                 return config.allJsonField;
@@ -73,7 +75,8 @@ public class JacksonCustomAnnotationIntrospector extends JacksonAnnotationIntros
      */
     @Override
     public JsonFormat.Value findFormat(Annotated a) {
-        if (a instanceof AnnotatedMethod f) {
+        if (a instanceof AnnotatedMethod) {
+            AnnotatedMethod f = (AnnotatedMethod) a;
             JacksonCustomConfig config = JacksonCustomConfig.jacksonConfigMap.get(f.getDeclaringClass());
             if (config != null) {
                 JsonFormat.Value value = config.formatMap.get(f.getName());
@@ -91,7 +94,8 @@ public class JacksonCustomAnnotationIntrospector extends JacksonAnnotationIntros
      */
     @Override
     public JsonInclude.Value findPropertyInclusion(Annotated a) {
-        if (a instanceof AnnotatedMember f) {
+        if (a instanceof AnnotatedMember) {
+            AnnotatedMember f = (AnnotatedMember) a;
             JacksonCustomConfig config = JacksonCustomConfig.jacksonConfigMap.get(f.getDeclaringClass());
             if (config != null) {
                 JsonInclude.Value value = config.includeMap.get(f.getName());

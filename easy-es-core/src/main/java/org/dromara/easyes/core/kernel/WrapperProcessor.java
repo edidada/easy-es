@@ -141,61 +141,57 @@ public class WrapperProcessor {
                 break;
             case GT:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
-                query = Query.of(q -> q.range(p ->
-                        p.untyped(v -> {
-                            v.field(realField).gt(JsonData.of(param.getVal())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
-                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
-                            return v;
-                        })
+                query = Query.of(q -> q.range(p -> p
+                        .field(realField)
+                        .gt(JsonData.of(param.getVal()))
+                        .timeZone(param.getExt1() == null ? null : ((ZoneId) param.getExt1()).getId())
+                        .format((String)param.getExt2())
+                        .boost(param.getBoost())
                 ));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case GE:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
-                query = Query.of(q -> q.range(p ->
-                        p.untyped(v -> {
-                            v.field(realField).gte(JsonData.of(param.getVal())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
-                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
-                            return v;
-                        })
+                query = Query.of(q -> q.range(p -> p
+                        .field(realField)
+                        .gte(JsonData.of(param.getVal()))
+                        .timeZone(param.getExt1() == null ? null : ((ZoneId) param.getExt1()).getId())
+                        .format((String)param.getExt2())
+                        .boost(param.getBoost())
                 ));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case LT:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
-                query = Query.of(q -> q.range(p ->
-                        p.untyped(v -> {
-                            v.field(realField).lt(JsonData.of(param.getVal())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
-                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
-                            return v;
-                        })
+                query = Query.of(q -> q.range(p -> p
+                        .field(realField)
+                        .lt(JsonData.of(param.getVal()))
+                        .timeZone(param.getExt1() == null ? null : ((ZoneId) param.getExt1()).getId())
+                        .format((String)param.getExt2())
+                        .boost(param.getBoost())
                 ));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case LE:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
-                query = Query.of(q -> q.range(p ->
-                        p.untyped(v -> {
-                            v.field(realField).lte(JsonData.of(param.getVal())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt1()).ifPresent(ext1 -> v.timeZone(((ZoneId) ext1).getId()));
-                            Optional.ofNullable(param.getExt2()).ifPresent(ext2 -> v.format(ext2.toString()));
-                            return v;
-                        })
+                query = Query.of(q -> q.range(p -> p
+                        .field(realField)
+                        .lte(JsonData.of(param.getVal()))
+                        .timeZone(param.getExt1() == null ? null : ((ZoneId) param.getExt1()).getId())
+                        .format((String)param.getExt2())
+                        .boost(param.getBoost())
                 ));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
             case BETWEEN:
                 realField = getRealFieldAndSuffix(param.getColumn(), fieldTypeMap, mappingColumnMap, entityInfo);
-                query = Query.of(q -> q.range(p ->
-                        p.untyped(v -> {
-                            v.field(realField).gte(JsonData.of(param.getExt1())).lte(JsonData.of(param.getExt2())).boost(param.getBoost());
-                            Optional.ofNullable(param.getExt3()).ifPresent(ex -> v.timeZone(((ZoneId) ex).getId()));
-                            Optional.ofNullable(param.getExt4()).ifPresent(ex -> v.format(ex.toString()));
-                            return v;
-                        })
+                query = Query.of(q -> q.range(p -> p
+                        .field(realField)
+                        .gte(JsonData.of(param.getExt1()))
+                        .lte(JsonData.of(param.getExt2()))
+                        .timeZone(param.getExt3() == null ? null : ((ZoneId) param.getExt3()).getId())
+                        .format((String)param.getExt4())
+                        .boost(param.getBoost())
                 ));
                 setBool(bool, query, param.getPrevQueryType());
                 break;
@@ -330,17 +326,24 @@ public class WrapperProcessor {
      * @return FieldValue
      */
     public static FieldValue fieldValue(Object val) {
-        return switch (val) {
-            case null -> FieldValue.NULL;
-            case FieldValue fieldValue -> fieldValue;
-            case Long l -> FieldValue.of((long) val);
-            case Integer i -> FieldValue.of((int) val);
-            case Double v -> FieldValue.of((double) val);
-            case Boolean b -> FieldValue.of((boolean) val);
-            case String s -> FieldValue.of(s);
-            default -> FieldValue.of(val);
-        };
+        if (val == null) {
+            return FieldValue.NULL;
+        }
 
+        if (val instanceof FieldValue) {
+            return (FieldValue) val;
+        } else if (val instanceof Long) {
+            return FieldValue.of((long) val);
+        } else if (val instanceof Integer) {
+            return FieldValue.of((int) val);
+        } else if (val instanceof Double) {
+            return FieldValue.of((double) val);
+        } else if (val instanceof Boolean) {
+            return FieldValue.of((boolean) val);
+        } else if (val instanceof String) {
+            return FieldValue.of((String) val);
+        }
+        return FieldValue.of(val);
     }
 
     /**
@@ -584,7 +587,7 @@ public class WrapperProcessor {
                 HighlightField field = HighlightField.of(x -> x
                         .preTags(highLightParam.getPreTag())
                         .postTags(highLightParam.getPostTag())
-                        .type(highLightParam.getHighLightType().getValue())
+                        .type(a -> a.custom(highLightParam.getHighLightType().getValue()))
                         .requireFieldMatch(highLightParam.getRequireFieldMatch())
                 );
                 highlightBuilder.fields(highlightField, field);
@@ -643,18 +646,24 @@ public class WrapperProcessor {
      * @return 排序器
      */
     private static SortOptions getSortBuilder(String realField, BaseSortParam baseSortParam) {
-        return switch (baseSortParam.getOrderTypeEnum()) {
-            case FIELD -> SortOptions.of(x -> x.field(y -> y.field(realField).order(baseSortParam.getSortOrder())));
-            case SCORE -> SortOptions.of(x -> x.score(y -> y.order(baseSortParam.getSortOrder())));
-            case GEO -> SortOptions.of(x -> x.geoDistance(y -> y
-                    .field(realField)
-                    .location(baseSortParam.getGeoPoints())
-                    .order(baseSortParam.getSortOrder())
-                    .distanceType(baseSortParam.getGeoDistanceType())
-                    .unit(baseSortParam.getUnit())
-            ));
-            case CUSTOMIZE -> baseSortParam.getSortBuilder();
-        };
+        switch (baseSortParam.getOrderTypeEnum()) {
+            case FIELD:
+                return SortOptions.of(x -> x.field(y -> y.field(realField).order(baseSortParam.getSortOrder())));
+            case SCORE:
+                return SortOptions.of(x -> x.score(y -> y.order(baseSortParam.getSortOrder())));
+            case GEO:
+                return SortOptions.of(x -> x.geoDistance(y -> y
+                        .field(realField)
+                        .location(baseSortParam.getGeoPoints())
+                        .order(baseSortParam.getSortOrder())
+                        .distanceType(baseSortParam.getGeoDistanceType())
+                        .unit(baseSortParam.getUnit())
+                ));
+            case CUSTOMIZE:
+                return baseSortParam.getSortBuilder();
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
 
@@ -739,17 +748,24 @@ public class WrapperProcessor {
             List<NamedValue<SortOrder>> bucketOrders
     ) {
         // 解决同一个字段聚合多次，如min(starNum), max(starNum) 字段名重复问题
-        return switch (aggType) {
-            case AVG -> new Aggregation.Builder().avg(x -> x.field(realField));
-            case MIN -> new Aggregation.Builder().min(x -> x.field(realField));
-            case MAX -> new Aggregation.Builder().max(x -> x.field(realField));
-            case SUM -> new Aggregation.Builder().sum(x -> x.field(realField));
-            case TERMS -> new Aggregation.Builder().terms(x -> {
-                x.field(realField);
-                Optional.ofNullable(size).ifPresent(x::size);
-                Optional.ofNullable(bucketOrders).ifPresent(x::order);
-                return x;
-            });
-        };
+        switch (aggType) {
+            case AVG:
+                return new Aggregation.Builder().avg(x -> x.field(realField));
+            case MIN:
+                return new Aggregation.Builder().min(x -> x.field(realField));
+            case MAX:
+                return new Aggregation.Builder().max(x -> x.field(realField));
+            case SUM:
+                return new Aggregation.Builder().sum(x -> x.field(realField));
+            case TERMS:
+                return new Aggregation.Builder().terms(x -> {
+                    x.field(realField);
+                    Optional.ofNullable(size).ifPresent(x::size);
+                    Optional.ofNullable(bucketOrders).ifPresent(x::order);
+                    return x;
+                });
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 }
