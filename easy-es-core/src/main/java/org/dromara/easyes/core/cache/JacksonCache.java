@@ -43,7 +43,7 @@ public class JacksonCache {
 
             // nested嵌套类
             e.getNestedOrObjectClassMappingColumnMap().forEach((nestedClz, nestedMappingColumnMap) -> {
-                if (JacksonCustomConfig.jacksonConfigMap.containsKey(clz)) {
+                if (JacksonCustomConfig.jacksonConfigMap.containsKey(nestedClz)) {
                     return;
                 }
                 JacksonCustomConfig c = init(nestedClz, null, null, nestedMappingColumnMap,
