@@ -21,7 +21,7 @@ import java.util.Map;
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
 @Configuration
-@Condition(onClass = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
+@Condition(onClass = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true")
 public class EsAutoConfiguration {
 
     @Bean

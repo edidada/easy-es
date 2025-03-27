@@ -4,13 +4,16 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.utils.EsClientUtils;
+import org.dromara.easyes.spring.config.EasyEsConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.core.Ordered;
 
 /**
  * es自动配置
@@ -19,20 +22,9 @@ import org.springframework.context.annotation.Configuration;
  **/
 @Configuration
 @ConditionalOnClass(ElasticsearchClient.class)
-@ConditionalOnExpression("'${easy-es.address:x}'!='x'")
-@ConditionalOnProperty(prefix = "easy-es", name = {"enable"}, havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "easy-es", name = "enable", havingValue = "true", matchIfMissing = true)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)  // 确保配置类优先加载
 public class EsAutoConfiguration {
-
-    /**
-     * 装配ElasticsearchClient
-     *
-     * @return ElasticsearchClient bean
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public ElasticsearchClient elasticClient() {
-        return EsClientUtils.buildClient(easyEsProperties());
-    }
 
     @Bean
     @ConfigurationProperties(prefix = "easy-es")
@@ -44,6 +36,18 @@ public class EsAutoConfiguration {
     @ConfigurationProperties(prefix = "easy-es.dynamic")
     public EasyEsDynamicProperties easyEsDynamicProperties() {
         return new EasyEsDynamicProperties();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @DependsOn({"easyEsProperties", "easyEsDynamicProperties"})  // 显式依赖
+    public ElasticsearchClient elasticClient() {
+        return EsClientUtils.buildClient(easyEsProperties());
+    }
+
+    @Bean
+    public EasyEsConfiguration esConfiguration() {
+        return new EasyEsConfiguration();
     }
 
 }

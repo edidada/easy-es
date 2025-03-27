@@ -118,6 +118,12 @@ public class MapperScannerRegister implements BeanBuilder<EsMapperScan> {
         }
         // 查找es mapper
         for (String doScan : anno.value()) {
+            // 判断是否需要处理${}变量
+            if (doScan.contains("${") && doScan.contains("}")) {
+                String basePackage = Solon.cfg().getByTmpl(doScan);
+                LogUtils.formatInfo("Scan Easy-Es Mapper[%s -> %s]", doScan, basePackage);
+                doScan = basePackage;
+            }
             Collection<Class<?>> classPath = ClassUtil.scanClasses(doScan);
             for (Class<?> clazz : classPath) {
                 // 跳过非ee的mapper,比如瞎几把写的接口,没有继承BaseEsMapper，继承了的推入容器

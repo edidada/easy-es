@@ -52,7 +52,7 @@ public class TenantLineInnerInterceptor implements Interceptor {
         //     wrapper.eq("tenantId", "1");
         //     return invocation.proceed();
         // }
-        System.out.println("增则拦截方法");
+        System.out.println("easy-es intercept...");
         return invocation.proceed();
     }
 }

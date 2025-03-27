@@ -67,12 +67,13 @@ public class MapperScannerConfigurer
 
         // 取变量
         this.basePackage = Optional.ofNullable(this.basePackage)
-                .map(getEnvironment()::resolvePlaceholders).orElse(null);
+                .map(getEnvironment()::resolvePlaceholders).orElse(EMPTY_STR);
         // 做扫包的操作了、与注解扫包类似，只不过这里是spring配置方式
         // 在mybatis中配置了很多扫描拦截属性，这里放到后面拓展
         ClassPathMapperScanner scanner = new ClassPathMapperScanner(beanDefinitionRegistry, getEnvironment());
         scanner.registerFilters();
-        scanner.doScan(this.basePackage);
+        String[] packages = this.basePackage.split(COMMA);
+        scanner.doScan(packages);
     }
 
     private String getPropertyValue(String propertyName, PropertyValues values) {

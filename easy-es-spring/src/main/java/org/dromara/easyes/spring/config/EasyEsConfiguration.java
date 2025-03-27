@@ -1,5 +1,6 @@
 package org.dromara.easyes.spring.config;
 
+import lombok.NonNull;
 import lombok.Setter;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
@@ -10,8 +11,10 @@ import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 
 import java.util.Map;
@@ -22,22 +25,27 @@ import java.util.Map;
  */
 @Setter
 @Configuration
-public class EasyEsConfiguration implements InitializingBean {
+public class EasyEsConfiguration implements InitializingBean, EnvironmentAware {
+    private Environment environment;
 
+    @Autowired(required = false)
     private EasyEsProperties easyEsProperties;
 
+    @Autowired(required = false)
     private EasyEsDynamicProperties easyEsDynamicProperties;
 
-    @Autowired
-    public EasyEsConfiguration(EasyEsProperties easyEsProperties, EasyEsDynamicProperties easyEsDynamicProperties) {
-        this.easyEsProperties = easyEsProperties;
-        this.easyEsDynamicProperties = easyEsDynamicProperties;
+    @Override
+    public void setEnvironment(@NonNull Environment environment) {
+        this.environment = environment;
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        Assert.notNull(this.easyEsProperties, "easyEsProperties must is A bean. easy-es配置类必须给配置一个bean");
+    public void afterPropertiesSet() {
+        Boolean enable = environment.getProperty("easy-es.enable", Boolean.class, Boolean.TRUE);
+        if (enable) {
+            Assert.notNull(this.easyEsProperties, "easyEsProperties must is A bean. easy-es配置类必须给配置一个bean");
+        }
     }
+
 
     @Bean
     public IndexStrategyFactory indexStrategyFactory() {
