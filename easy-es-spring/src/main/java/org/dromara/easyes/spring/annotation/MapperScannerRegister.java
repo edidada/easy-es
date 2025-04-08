@@ -24,6 +24,7 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.COMMA;
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
 public class MapperScannerRegister implements ImportBeanDefinitionRegistrar, EnvironmentAware {
+
     private Environment environment;
 
     @Override
@@ -60,8 +61,8 @@ public class MapperScannerRegister implements ImportBeanDefinitionRegistrar, Env
      * 使用了jdk动态代理，需要确定注册的实际interface class，就需要通过BeanDefinition来追加属性，
      * 当前使用到了spring的构造
      *
-     * @param registry     spring bean扫码注册器
-     * @param basePackages 扫码的包
+     * @param registry     spring bean扫描注册器
+     * @param basePackages 扫描的包
      */
     void registerBeanDefinitions(BeanDefinitionRegistry registry, String beanName, String... basePackages) {
         BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(MapperScannerConfigurer.class);
