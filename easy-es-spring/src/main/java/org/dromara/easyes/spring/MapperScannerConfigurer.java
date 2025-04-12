@@ -62,7 +62,8 @@ public class MapperScannerConfigurer
                 prc.postProcessBeanFactory(factory);
             }
             PropertyValues values = mapperScannerBean.getPropertyValues();
-            this.basePackage = getPropertyValue("basePackage", values);
+            // 如果在环境变量中取扫描的包，需要从easy-es.mappers进行取值，与mybatis配置mapper相似，但这里不做配置推荐
+            this.basePackage = getPropertyValue("easy-es.mappers", values);
         }
 
         // 取变量

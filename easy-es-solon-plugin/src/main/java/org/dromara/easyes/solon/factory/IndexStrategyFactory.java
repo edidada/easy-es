@@ -21,7 +21,7 @@ import java.util.Optional;
  * Copyright © 2022 xpc1024 All Rights Reserved
  **/
 @Component
-@Condition(onBean = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true && ${easy-es.address:x} != x")
+@Condition(onBean = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true")
 public class IndexStrategyFactory implements LifecycleBean {
 
     /**

@@ -51,8 +51,7 @@ public class EsAutoConfiguration {
     }
 
     @Bean
-    public EsClientUtils esClientUtils(
-            EasyEsProperties properties, EasyEsDynamicProperties dynamicProperties) {
+    public EsClientUtils esClientUtils(EasyEsProperties properties, EasyEsDynamicProperties dynamicProperties) {
         EsClientUtils esClientUtils = new EsClientUtils();
         Map<String, EasyEsProperties> datasourceMap = dynamicProperties.getDatasource();
         if (CollectionUtils.isEmpty(datasourceMap)) {
