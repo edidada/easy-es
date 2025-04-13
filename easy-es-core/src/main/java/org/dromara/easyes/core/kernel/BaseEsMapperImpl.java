@@ -102,9 +102,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
 
     @Override
     public Boolean createIndex() {
-        EntityInfo entityInfo = EntityInfoHelper.getEntityInfo(entityClass);
-        CreateIndexParam createIndexParam = IndexUtils.getCreateIndexParam(entityInfo, entityClass);
-        return IndexUtils.createIndex(client, entityInfo, createIndexParam);
+        return createIndex(EntityInfoHelper.getIndexName(entityClass));
     }
 
     @Override
@@ -164,8 +162,13 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
     @Override
     @SneakyThrows
     public String executeSQL(String sql) {
+        // 如果是下划线转驼峰，ee帮助处理
+        if (GlobalConfigCache.getGlobalConfig().getDbConfig().isMapUnderscoreToCamelCase()) {
+            sql = StringUtils.camelToUnderline(sql);
+        }
         PrintUtils.printSql(sql);
-        QueryResponse response = client.sql().query(x -> x.query(sql).format("json"));
+        String finalSql = sql;
+        QueryResponse response = client.sql().query(x -> x.query(finalSql).format("json"));
         return JsonpUtils.toString(response, new StringBuilder()).toString();
     }
 

@@ -95,6 +95,15 @@ public interface BaseEsMapper<T> {
     Boolean deleteIndex(String... indexNames);
 
     /**
+     * 删除当前mapper索引，无需传递索引名
+     * @return {@link Boolean} 是否成功
+     * @author MoJie
+     */
+    default Boolean deleteIndex() {
+        return this.deleteIndex(EntityInfoHelper.getIndexName(this.getEntityClass()));
+    }
+
+    /**
      * 刷新索引
      *
      * @return 刷新成功分片总数

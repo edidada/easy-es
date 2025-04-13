@@ -374,6 +374,7 @@ public class EntityInfoHelper {
         if (dbConfig.isMapUnderscoreToCamelCase()) {
             realHighLightField = StringUtils.camelToUnderline(realHighLightField);
         }
+        // 如果字段没有参与条件查询，则不进行高亮设置
         addHighlightParam(entityInfo, nestedOrObjectClass, highLight, realHighLightField, mappingField);
 
         MultiIndexField multiIndexField = field.getAnnotation(MultiIndexField.class);
@@ -413,6 +414,11 @@ public class EntityInfoHelper {
                 .setHighLightField(realHighLightField)
                 .setHighLightType(highLight.highLightType())
                 .setRequireFieldMatch(highLight.requireFieldMatch());
+        // 多级高亮 合并高亮结果时，尝试调用 first() 方法
+        // 如果是pinyin那么进行高亮降级，否则会出现first() should not be called in this context异常
+        if (realHighLightField.endsWith(".pinyin")) {
+            highlightParam.setHighLightType(HighLightTypeEnum.PLAIN);
+        }
         if (MINUS_ONE != highLight.numberOfFragments() && highLight.numberOfFragments() > ZERO) {
             highlightParam.setNumberOfFragments(highLight.numberOfFragments());
         }
@@ -692,6 +698,31 @@ public class EntityInfoHelper {
      */
     public static List<Field> getAllFields(Class<?> clazz) {
         return ReflectionKit.getFieldList(ClassUtils.getUserClass(clazz));
+    }
+
+    /**
+     * 根据类获取索引名
+     * @param clazz 实体
+     * @return {@link String}
+     * @author MoJie
+     */
+    public static String getIndexName(Class<?> clazz) {
+        String tablePrefix = GlobalConfigCache.getGlobalConfig().getDbConfig().getIndexPrefix();
+        IndexName table = clazz.getAnnotation(IndexName.class);
+        boolean tablePrefixEffect = true;
+        String indexName = clazz.getSimpleName().toLowerCase(Locale.ROOT);
+        if (table != null) {
+            if (StringUtils.isNotBlank(table.value())) {
+                indexName = table.value();
+                if (StringUtils.isNotBlank(tablePrefix) && !table.keepGlobalPrefix()) {
+                    tablePrefixEffect = false;
+                }
+            }
+        }
+        if (StringUtils.isNotBlank(tablePrefix) && tablePrefixEffect) {
+            indexName = tablePrefix + indexName;
+        }
+        return indexName;
     }
 
     /**
