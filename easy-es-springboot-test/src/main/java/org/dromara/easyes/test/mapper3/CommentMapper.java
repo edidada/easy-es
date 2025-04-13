@@ -1,4 +1,4 @@
-package org.dromara.easyes.test.mapper;
+package org.dromara.easyes.test.mapper3;
 
 
 import org.dromara.easyes.core.kernel.BaseEsMapper;
