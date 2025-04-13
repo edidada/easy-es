@@ -414,7 +414,7 @@ public class EntityInfoHelper {
                 .setHighLightField(realHighLightField)
                 .setHighLightType(highLight.highLightType())
                 .setRequireFieldMatch(highLight.requireFieldMatch());
-        // 多级高亮 合并高亮结果时，尝试调用 first() 方法
+        // 多级高亮 合并高亮结果时，es8会尝试调用 first() 方法-降级不会影响es7的查询
         // 如果是pinyin那么进行高亮降级，否则会出现first() should not be called in this context异常
         if (realHighLightField.endsWith(".pinyin")) {
             highlightParam.setHighLightType(HighLightTypeEnum.PLAIN);
