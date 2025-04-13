@@ -3,6 +3,7 @@ package org.dromara.easyes.spring;
 import lombok.Setter;
 import org.dromara.easyes.common.utils.EEVersionUtils;
 import org.dromara.easyes.common.utils.LogUtils;
+import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.spring.config.ClassPathMapperScanner;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValue;
@@ -63,7 +64,10 @@ public class MapperScannerConfigurer
             }
             PropertyValues values = mapperScannerBean.getPropertyValues();
             // 如果在环境变量中取扫描的包，需要从easy-es.mappers进行取值，与mybatis配置mapper相似，但这里不做配置推荐
-            this.basePackage = getPropertyValue("easy-es.mappers", values);
+            String propertyValue = getPropertyValue("easy-es.mappers", values);
+            if (StringUtils.isNotBlank(propertyValue)) {
+                this.basePackage = propertyValue;
+            }
         }
 
         // 取变量

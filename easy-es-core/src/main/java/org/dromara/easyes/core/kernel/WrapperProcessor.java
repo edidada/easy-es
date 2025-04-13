@@ -627,8 +627,14 @@ public class WrapperProcessor {
         // 设置以String形式指定的自定义排序字段及规则(此类排序通常由前端传入,满足部分用户个性化需求)
         if (CollectionUtils.isNotEmpty(wrapper.orderByParams)) {
             wrapper.orderByParams.forEach(orderByParam -> {
+                // 排序字段名
+                String orderColumn = orderByParam.getOrder();
+                // 获取配置是否开启了驼峰转换
+                if (GlobalConfigCache.getGlobalConfig().getDbConfig().isMapUnderscoreToCamelCase()) {
+                    orderColumn = StringUtils.camelToUnderline(orderColumn);
+                }
                 // 设置排序字段
-                FieldSort.Builder fieldSortBuilder = new FieldSort.Builder().field(orderByParam.getOrder());
+                FieldSort.Builder fieldSortBuilder = new FieldSort.Builder().field(orderColumn);
 
                 // 设置排序规则
                 if (SortOrder.Asc.toString().equalsIgnoreCase(orderByParam.getSort())) {

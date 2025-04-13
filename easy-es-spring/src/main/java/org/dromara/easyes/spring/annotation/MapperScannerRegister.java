@@ -1,5 +1,6 @@
 package org.dromara.easyes.spring.annotation;
 
+import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.spring.MapperScannerConfigurer;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -12,6 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,20 +38,30 @@ public class MapperScannerRegister implements ImportBeanDefinitionRegistrar, Env
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         AnnotationAttributes mapperScanAttrs = AnnotationAttributes
                 .fromMap(importingClassMetadata.getAnnotationAttributes(EsMapperScan.class.getName()));
+        List<String> basePackages = new ArrayList<>();
         // 默认已注解标记为主，如果没有则尝试寻找easy-es配置 scan
         if (mapperScanAttrs != null) {
-            List<String> basePackages = Arrays.stream(mapperScanAttrs.getStringArray("value"))
-                    .filter(StringUtils::hasText)
-                    .map(map -> {
-                        // 判断是否需要处理${}变量
-                        if (map.contains("${") && map.contains("}")) {
-                            String basePackage = this.environment.resolvePlaceholders(map);
-                            LogUtils.formatInfo("Scan Easy-Es Mapper[%s -> %s]", map, basePackage);
-                            return basePackage;
-                        }
-                        return map;
-                    })
-                    .collect(Collectors.toList());
+            basePackages = Arrays.stream(mapperScanAttrs.getStringArray("value"))
+                .filter(StringUtils::hasText)
+                .map(map -> {
+                    // 判断是否需要处理${}变量
+                    if (map.contains("${") && map.contains("}")) {
+                        String basePackage = this.environment.resolvePlaceholders(map);
+                        LogUtils.formatInfo("Scan Easy-Es Mapper[%s -> %s]", map, basePackage);
+                        return basePackage;
+                    }
+                    return map;
+                })
+                .collect(Collectors.toList());
+        } else {
+            // 如果在环境变量中取扫描的包，需要从easy-es.mappers进行取值，与mybatis配置mapper相似，但这里不做配置推荐
+            String propertyValue = this.environment.getProperty("easy-es.mappers", String.class, BaseEsConstants.EMPTY_STR);
+            if (org.dromara.easyes.common.utils.StringUtils.isNotBlank(propertyValue)) {
+                basePackages = Arrays.asList(propertyValue.split(COMMA));
+            }
+        }
+        // 如果扫描的包不为空，则进行mapperInterface的注册
+        if (!basePackages.isEmpty()) {
             // 注册bean
             registerBeanDefinitions(registry, generateBaseBeanName(importingClassMetadata),
                     StringUtils.toStringArray(basePackages));
