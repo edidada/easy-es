@@ -10,6 +10,7 @@ import co.elastic.clients.elasticsearch.indices.IndexSettings;
 public interface ISettingsProvider {
     /**
      * 获取settings
+     * @param builder 索引建造者
      */
     void settings(IndexSettings.Builder builder);
 }

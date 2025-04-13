@@ -470,7 +470,9 @@ public class WrapperProcessor {
 
     /**
      * 获取兜底索引名称
-     *
+     * @param entityClass 实体类
+     * @param indexName 索引名
+     * @param <T> 泛型
      * @return 索引名称
      */
     public static <T> String getIndexName(Class<T> entityClass, String indexName) {
@@ -484,7 +486,9 @@ public class WrapperProcessor {
     /**
      * 获取兜底索引名称数组
      *
+     * @param entityClass 实体类
      * @param indexNames 原始索引名称数组
+     * @param <T> 泛型
      * @return 目标索引名称数组
      */
     public static <T> List<String> getIndexName(Class<T> entityClass, String[] indexNames) {
@@ -502,8 +506,9 @@ public class WrapperProcessor {
 
     /**
      * 获取兜底索引名称数组
-     *
+     * @param entityClass 实体类
      * @param indexNames 原始索引名称数组
+     * @param <T> 泛型
      * @return 目标索引名称数组
      */
     public static <T> List<String> getIndexName(Class<T> entityClass, Collection<String> indexNames) {

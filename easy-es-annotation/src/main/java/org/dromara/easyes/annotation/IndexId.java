@@ -32,6 +32,7 @@ public @interface IndexId {
 
     /**
      * 是否将主键写入到source中
+     * @return 默认写入
      */
-    boolean writeToSource() default false;
+    boolean writeToSource() default true;
 }

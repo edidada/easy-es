@@ -127,9 +127,8 @@ public class GeoUtils {
 
     /**
      * geoJson 转换
-     *
      * @param geometry geometry
-     * @return Map<String, Object>
+     * @return map
      */
     public static Map<String, Object> toMap(Geometry geometry) {
         String geoJsonName = null;
@@ -276,6 +275,7 @@ public class GeoUtils {
      *
      * @param geometry geometry
      * @return String
+     * @throws Exception RuntimeException
      */
     public static String getGeoJsonName(Geometry geometry) throws Exception {
         return geometry.visit(new GeometryVisitor<String, Exception>() {

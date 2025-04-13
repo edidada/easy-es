@@ -967,6 +967,7 @@ public class IndexUtils {
      * 根据配置生成创建索引参数
      *
      * @param entityInfo 配置信息
+     * @param clazz 实体类
      * @return 创建索引参数
      */
     public static CreateIndexParam getCreateIndexParam(EntityInfo entityInfo, Class<?> clazz) {
@@ -999,6 +1000,7 @@ public class IndexUtils {
      *
      * @param entityInfo 实体信息
      * @param fieldList  字段列表
+     * @param clazz 实体类
      * @return 索引参数列表
      */
     public static List<EsIndexParam> initIndexParam(EntityInfo entityInfo, Class<?> clazz, List<EntityFieldInfo> fieldList) {

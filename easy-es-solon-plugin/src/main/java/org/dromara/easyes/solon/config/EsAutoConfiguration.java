@@ -41,7 +41,7 @@ public class EsAutoConfiguration {
 
     /**
      * 装配ElasticsearchClient
-     *
+     * @param easyEsProperties 配置
      * @return ElasticsearchClient bean
      */
     @Bean

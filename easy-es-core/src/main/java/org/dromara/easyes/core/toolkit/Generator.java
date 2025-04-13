@@ -34,6 +34,7 @@ public abstract class Generator {
      * generate model entity 生成实体类
      *
      * @param config 配置
+     * @param client 客户端
      */
     @SneakyThrows
     public void generateEntity(GeneratorConfig config, ElasticsearchClient client) {

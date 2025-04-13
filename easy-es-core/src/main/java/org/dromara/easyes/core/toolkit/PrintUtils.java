@@ -32,6 +32,9 @@ public class PrintUtils {
      * 参考{@link ElasticsearchTransportBase#prepareTransportRequest(Object, Endpoint)}获取相关数据
      *
      * @param request es请求参数
+     * @param <RequestT> 泛型
+     * @param <ResponseT> 泛型
+     * @param <ErrorT> 泛型
      * @param mapper  序列化mapper
      */
     public static <RequestT, ResponseT, ErrorT> void printDsl(RequestT request, JsonpMapper mapper) {
@@ -96,6 +99,7 @@ public class PrintUtils {
      *
      * @param request es请求参数
      * @param client  es客户端
+     * @param <RequestT> 泛型
      */
     public static <RequestT> void printDsl(RequestT request, ElasticsearchClient client) {
         printDsl(request, client._jsonpMapper());

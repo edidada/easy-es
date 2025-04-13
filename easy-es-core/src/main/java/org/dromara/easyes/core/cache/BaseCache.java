@@ -30,10 +30,10 @@ public class BaseCache {
 
     /**
      * 初始化mapper缓存
-     *
      * @param mapperInterface mapper接口
-     * @param client          es客户端
-     * @param entityClass     实体类
+     * @param entityClass 实体类
+     * @param client es客户端
+     * @param <T> 泛型
      */
     public static <T> void initMapperCache(Class<?> mapperInterface, Class<T> entityClass, ElasticsearchClient client) {
         // 初始化baseEsMapper的所有实现类实例

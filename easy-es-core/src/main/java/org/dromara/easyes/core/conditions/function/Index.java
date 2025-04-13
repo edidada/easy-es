@@ -23,9 +23,9 @@ public interface Index<Children, R> extends Serializable {
 
     /**
      * 设置索引的分片数和副本数
-     *
-     * @param shards   分片数
+     * @param shards 分片数
      * @param replicas 副本数
+     * @param maxResultWindow 最大返回窗口
      * @return wrapper
      */
     Children settings(Integer shards, Integer replicas, Integer maxResultWindow);
