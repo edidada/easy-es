@@ -53,6 +53,12 @@ public class IndexStrategyFactory implements LifecycleBean {
         }
     }
 
+    /**
+     * 获取索引托管的对象
+     * @param strategyType {@link ProcessIndexStrategyEnum} 托管参数
+     * @return {@link AutoProcessIndexStrategy}
+     * @author MoJie
+     */
     public AutoProcessIndexStrategy getByStrategyType(Integer strategyType) {
         return Optional.ofNullable(SERVICE_MAP.get(strategyType))
                 .orElseThrow(() -> ExceptionUtils.eee("no such service strategyType:{}", strategyType));
