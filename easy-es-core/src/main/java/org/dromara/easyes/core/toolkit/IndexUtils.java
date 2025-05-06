@@ -323,9 +323,8 @@ public class IndexUtils {
                     .size(mappings.size())
                     .source(mappings.source())
                     .runtime(mappings.runtime())
-                    .enabled(mappings.enabled())
-                    ;
-            esIndexInfo.setMapping(builder);
+                    .enabled(mappings.enabled());
+            esIndexInfo.setBuilder(builder);
         }
 
         return esIndexInfo;
@@ -416,7 +415,7 @@ public class IndexUtils {
         // 父子类型
         if (CollectionUtils.isNotEmpty(entityInfo.getRelationMap())) {
             mapping.properties(entityInfo.getJoinFieldName(), x -> x.join(y -> y
-                    .relations(entityInfo.getRelationMap())
+                            .relations(entityInfo.getRelationMap())
 //                    .eagerGlobalOrdinals(entityInfo.isEagerGlobalOrdinals())
             ));
         }
@@ -967,7 +966,7 @@ public class IndexUtils {
      * 根据配置生成创建索引参数
      *
      * @param entityInfo 配置信息
-     * @param clazz 实体类
+     * @param clazz      实体类
      * @return 创建索引参数
      */
     public static CreateIndexParam getCreateIndexParam(EntityInfo entityInfo, Class<?> clazz) {
@@ -1000,7 +999,7 @@ public class IndexUtils {
      *
      * @param entityInfo 实体信息
      * @param fieldList  字段列表
-     * @param clazz 实体类
+     * @param clazz      实体类
      * @return 索引参数列表
      */
     public static List<EsIndexParam> initIndexParam(EntityInfo entityInfo, Class<?> clazz, List<EntityFieldInfo> fieldList) {
@@ -1088,10 +1087,13 @@ public class IndexUtils {
 
         // 根据实体类注解信息构建mapping
         entityInfo.setIndexEqualStage(true);
-        TypeMapping.Builder mapping = IndexUtils.initMapping(entityInfo, esIndexParamList);
+        TypeMapping.Builder builderFromEntity = IndexUtils.initMapping(entityInfo, esIndexParamList);
 
         // 与查询到的已知index对比是否发生改变
-        return !mapping.equals(esIndexInfo.getMapping());
+        TypeMapping.Builder builderFromIndex = esIndexInfo.getBuilder();
+        Map<String, Property> propertiesOfEntity = builderFromEntity.build().properties();
+        Map<String, Property> propertiesOfIndex = builderFromIndex.build().properties();
+        return !PropertyComparator.isPropertyMapEqual(propertiesOfEntity,propertiesOfIndex);
     }
 
     /**
@@ -1174,7 +1176,8 @@ public class IndexUtils {
         );
         SearchResponse<Map<String, String>> response = null;
         try {
-            response = client.search(searchRequest, new TypeReference<Map<String, Object>>(){}.getType());
+            response = client.search(searchRequest, new TypeReference<Map<String, Object>>() {
+            }.getType());
         } catch (Throwable e) {
             LogUtils.warn("Active failed, The machine that acquired lock is migrating, will try again later");
         }

@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch.core.*;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.LOCK_INDEX;
 
@@ -24,6 +26,14 @@ public class LockUtils {
      * 重试等待时间
      */
     private final static Integer WAIT_SECONDS = 1;
+    /**
+     * 分布式锁内容
+     */
+    private final static Map<String,Object> LOCK_DOC;
+    static {
+        LOCK_DOC = new HashMap<>(2);
+        LOCK_DOC.put("tip","Do not delete unless deadlock occurs");
+    }
 
     /**
      * 尝试获取es分布式锁
@@ -64,12 +74,12 @@ public class LockUtils {
      */
     private static boolean createLock(ElasticsearchClient client, String idValue) {
         IndexRequest<?> indexRequest = IndexRequest.of(x -> x
-                .index(LOCK_INDEX).id(idValue).document(BaseEsConstants.DISTRIBUTED_LOCK_TIP_JSON)
+                .index(LOCK_INDEX).id(idValue).document(LOCK_DOC)
         );
         IndexResponse response;
         try {
             response = client.index(indexRequest);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return Boolean.FALSE;
         }

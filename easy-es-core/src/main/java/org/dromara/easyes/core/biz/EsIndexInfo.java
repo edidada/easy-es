@@ -32,5 +32,5 @@ public class EsIndexInfo {
     /**
      * 索引字段信息
      */
-    private TypeMapping.Builder mapping;
+    private TypeMapping.Builder builder;
 }

@@ -195,10 +195,6 @@ public interface BaseEsConstants {
      */
     String S1_SUFFIX = "_s1";
     /**
-     * 分布式锁提示内容
-     */
-    String DISTRIBUTED_LOCK_TIP_JSON = "{\"tip\":\"Do not delete unless deadlock occurs\"}";
-    /**
      * 获取/释放 分布式锁 最大失败重试次数
      */
     Integer LOCK_MAX_RETRY = 3;

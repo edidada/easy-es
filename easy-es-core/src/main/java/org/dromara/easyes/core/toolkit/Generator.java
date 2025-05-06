@@ -40,7 +40,7 @@ public abstract class Generator {
     public void generateEntity(GeneratorConfig config, ElasticsearchClient client) {
         // get index info
         EsIndexInfo esIndexInfo = IndexUtils.getIndexInfo(client, config.getIndexName());
-        TypeMapping.Builder mapping = esIndexInfo.getMapping();
+        TypeMapping.Builder mapping = esIndexInfo.getBuilder();
         if (mapping == null) {
             return;
         }
