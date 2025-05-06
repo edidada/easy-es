@@ -24,12 +24,24 @@ import java.util.Map;
 @Condition(onClass = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true")
 public class EsAutoConfiguration {
 
+    /**
+     * 加载easy-es属性变量
+     * @param properties 配置
+     * @return {@link EasyEsProperties}
+     * @author MoJie
+     */
     @Bean
     public EasyEsProperties easyEsProperties(
             @Inject(value = "${easy-es}", autoRefreshed = true) EasyEsProperties properties) {
         return properties;
     }
 
+    /**
+     * 动态数据源配置
+     * @param dynamicProperties 动态数据源
+     * @return {@link EasyEsDynamicProperties}
+     * @author MoJie
+     */
     @Bean
     public EasyEsDynamicProperties easyEsDynamicProperties(
             @Inject(value = "${easy-es.dynamic:}", autoRefreshed = true) EasyEsDynamicProperties dynamicProperties) {
@@ -50,6 +62,13 @@ public class EsAutoConfiguration {
         return EsClientUtils.buildClient(easyEsProperties);
     }
 
+    /**
+     * 构建连接对象，在EasyEsProperties和EasyEsDynamicProperties构建完成后执行
+     * @param properties 基础配置
+     * @param dynamicProperties 动态数据源配置
+     * @return {@link EsClientUtils}
+     * @author MoJie
+     */
     @Bean
     public EsClientUtils esClientUtils(EasyEsProperties properties, EasyEsDynamicProperties dynamicProperties) {
         EsClientUtils esClientUtils = new EsClientUtils();
@@ -65,11 +84,23 @@ public class EsAutoConfiguration {
         return esClientUtils;
     }
 
+    /**
+     * 自动平滑托管索引
+     * 过程零停机,数据会自动转移至新索引
+     * @return {@link AutoProcessIndexStrategy}
+     * @author MoJie
+     */
     @Bean
     public AutoProcessIndexStrategy autoProcessIndexSmoothlyStrategy() {
         return new AutoProcessIndexSmoothlyStrategy();
     }
 
+    /**
+     * 自动平滑托管索引
+     * 重建索引时原索引数据会被删除
+     * @return {@link AutoProcessIndexStrategy}
+     * @author MoJie
+     */
     @Bean
     public AutoProcessIndexStrategy autoProcessIndexNotSmoothlyStrategy() {
         return new AutoProcessIndexNotSmoothlyStrategy();
