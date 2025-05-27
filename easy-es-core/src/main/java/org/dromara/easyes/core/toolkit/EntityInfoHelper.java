@@ -409,6 +409,7 @@ public class EntityInfoHelper {
         // 置入高亮查询参数缓存
         HighLightParam highlightParam = new HighLightParam();
         highlightParam.setFragmentSize(highLight.fragmentSize())
+                .setNoMatchSize(highLight.noMatchSize())
                 .setPreTag(highLight.preTag())
                 .setPostTag(highLight.postTag())
                 .setHighLightField(realHighLightField)
