@@ -3,6 +3,7 @@ package org.dromara.easyes.common.utils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -61,7 +62,7 @@ public class EsClientUtils {
         EsClientUtils.restHighLevelClientMap.putIfAbsent(restHighLevelClientId, restHighLevelClient.get());
     }
 
-    public static ElasticsearchClient buildClient(EasyEsProperties easyEsConfigProperties) {
+    public static ElasticsearchClient buildClient(EasyEsProperties easyEsConfigProperties, ObjectMapper objectMapper) {
         // 处理地址
         String address = easyEsConfigProperties.getAddress();
         if (StringUtils.isEmpty(address)) {
@@ -128,7 +129,8 @@ public class EsClientUtils {
             return requestConfigBuilder;
         });
 
-        return new ElasticsearchClient(new RestClientTransport(builder.build(), new JacksonJsonpMapper(JsonUtils.OM_DEFAULT)));
+        return new ElasticsearchClient(new RestClientTransport(builder.build(),
+                new JacksonJsonpMapper(objectMapper)));
     }
 
     /**

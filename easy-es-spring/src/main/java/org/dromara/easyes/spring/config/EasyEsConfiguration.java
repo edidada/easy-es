@@ -7,6 +7,7 @@ import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.EsClientUtils;
+import org.dromara.easyes.common.utils.jackson.EEObjectMapperBuilderCustomizer;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
@@ -64,7 +65,12 @@ public class EasyEsConfiguration implements InitializingBean, EnvironmentAware {
     }
 
     @Bean
-    public EsClientUtils esClientUtils() {
+    public ObjectMapperBean objectMapperBean(@Autowired(required = false) EEObjectMapperBuilderCustomizer customizer) {
+        return new ObjectMapperBean(customizer, easyEsProperties);
+    }
+
+    @Bean
+    public EsClientUtils esClientUtils(ObjectMapperBean objectMapperBean) {
         EsClientUtils esClientUtils = new EsClientUtils();
         if (this.easyEsDynamicProperties == null) {
             this.easyEsDynamicProperties = new EasyEsDynamicProperties();
@@ -76,7 +82,8 @@ public class EasyEsConfiguration implements InitializingBean, EnvironmentAware {
         }
         for (String key : datasourceMap.keySet()) {
             EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-            EsClientUtils.registerClient(key, () -> EsClientUtils.buildClient(easyEsConfigProperties));
+            EsClientUtils.registerClient(key,
+                    () -> EsClientUtils.buildClient(easyEsConfigProperties, objectMapperBean.getObjectMapper()));
         }
         return esClientUtils;
     }

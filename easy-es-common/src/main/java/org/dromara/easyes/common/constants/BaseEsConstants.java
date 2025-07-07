@@ -284,4 +284,6 @@ public interface BaseEsConstants {
      * 默认日期格式化格式
      */
     String DEFAULT_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    String UTC_WITH_XXX_OFFSET_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+    String ES_DEFAULT_DATE_TIME_FORMAT = "strict_date_optional_time||epoch_millis";
 }

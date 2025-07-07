@@ -1,13 +1,17 @@
 package org.dromara.easyes.solon.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dromara.easyes.common.property.EasyEsDynamicProperties;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.CollectionUtils;
 import org.dromara.easyes.common.utils.EsClientUtils;
+import org.dromara.easyes.common.utils.jackson.EEObjectMapperBuilderCustomizer;
+import org.dromara.easyes.common.utils.jackson.JsonUtils;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
+import org.noear.solon.Solon;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Configuration;
@@ -21,8 +25,12 @@ import java.util.Map;
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
 @Configuration
-@Condition(onClass = ElasticsearchClient.class, onProperty = "${easy-es.enable:true} = true")
+@Condition(onClass = ElasticsearchClient.class,
+        onBean = ObjectMapperBean.class,
+        onProperty = "${easy-es.enable:true} = true")
 public class EsAutoConfiguration {
+    @Inject
+    private ObjectMapperBean objectMapperBean;
 
     /**
      * 加载easy-es属性变量
@@ -51,6 +59,7 @@ public class EsAutoConfiguration {
         return dynamicProperties;
     }
 
+
     /**
      * 装配ElasticsearchClient
      * @param easyEsProperties 配置
@@ -59,7 +68,7 @@ public class EsAutoConfiguration {
     @Bean
     @Condition(onMissingBean = ElasticsearchClient.class)
     public ElasticsearchClient elasticClient(EasyEsProperties easyEsProperties) {
-        return EsClientUtils.buildClient(easyEsProperties);
+        return EsClientUtils.buildClient(easyEsProperties, objectMapperBean.getObjectMapper());
     }
 
     /**
@@ -79,7 +88,8 @@ public class EsAutoConfiguration {
         }
         for (String key : datasourceMap.keySet()) {
             EasyEsProperties easyEsConfigProperties = datasourceMap.get(key);
-            EsClientUtils.registerClient(key, () -> EsClientUtils.buildClient(easyEsConfigProperties));
+            EsClientUtils.registerClient(key,
+                    () -> EsClientUtils.buildClient(easyEsConfigProperties, objectMapperBean.getObjectMapper()));
         }
         return esClientUtils;
     }

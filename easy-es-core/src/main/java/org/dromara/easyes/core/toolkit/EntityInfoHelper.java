@@ -272,11 +272,11 @@ public class EntityInfoHelper {
             }
 
             // 日期格式化信息初始化
-            String format = StringUtils.isBlank(indexField.dateFormat()) ? DEFAULT_DATE_TIME_FORMAT : indexField.dateFormat();
-            initClassDateFormatMap(indexField.fieldType(), field.getName(), entityInfo, clazz, format);
+            String format = StringUtils.isBlank(indexField.dateFormat()) ? dbConfig.getDefaultDateFormat() : indexField.dateFormat();
+            FieldType fieldType = FieldType.getByType(IndexUtils.getEsFieldType(indexField.fieldType(), field.getType().getSimpleName()));
+            initClassDateFormatMap(fieldType, field.getName(), entityInfo, clazz, format);
 
             // 是否忽略大小写
-            FieldType fieldType = FieldType.getByType(IndexUtils.getEsFieldType(indexField.fieldType(), field.getType().getSimpleName()));
             if (FieldType.KEYWORD.equals(fieldType)) {
                 // 仅对keyword类型设置,其它类型es不支持
                 entityFieldInfo.setIgnoreCase(indexField.ignoreCase());
@@ -477,7 +477,7 @@ public class EntityInfoHelper {
                 entityFieldInfo.setColumnType(field.getType().getSimpleName());
 
                 // 日期类型,如果没加注解, 设置默认的日期format
-                initClassDateFormatMap(fieldType, field.getName(), entityInfo, nestedOrObjectClass, DEFAULT_DATE_TIME_FORMAT);
+                initClassDateFormatMap(fieldType, field.getName(), entityInfo, nestedOrObjectClass, dbConfig.getDefaultDateFormat());
 
                 entityFieldInfoList.add(entityFieldInfo);
             } else {
@@ -510,7 +510,7 @@ public class EntityInfoHelper {
                     }
 
                     // 日期格式化信息初始化
-                    String format = StringUtils.isBlank(indexField.dateFormat()) ? DEFAULT_DATE_TIME_FORMAT : indexField.dateFormat();
+                    String format = StringUtils.isBlank(indexField.dateFormat()) ? dbConfig.getDefaultDateFormat() : indexField.dateFormat();
                     initClassDateFormatMap(indexField.fieldType(), field.getName(), entityInfo, nestedOrObjectClass, format);
 
                     // 缩放因子
@@ -598,7 +598,7 @@ public class EntityInfoHelper {
         if (FieldType.DATE.equals(fieldType)) {
             Map<Class<?>, Map<String, String>> classDateFormatMap = entityInfo.getClassDateFormatMap();
             Map<String, String> dateFormatMap = Optional.ofNullable(classDateFormatMap.get(clazz)).orElse(new HashMap<>());
-            dateFormatMap.putIfAbsent(field.getName(), DEFAULT_DATE_TIME_FORMAT);
+            dateFormatMap.putIfAbsent(field.getName(), dbConfig.getDefaultDateFormat());
             classDateFormatMap.putIfAbsent(clazz, dateFormatMap);
         }
 
