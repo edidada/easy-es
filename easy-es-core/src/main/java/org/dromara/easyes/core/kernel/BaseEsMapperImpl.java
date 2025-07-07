@@ -938,6 +938,7 @@ public class BaseEsMapperImpl<T> implements BaseEsMapper<T> {
                             .requireAlias(updateRequest.requireAlias())
                             .retryOnConflict(updateRequest.retryOnConflict())
                             .routing(updateRequest.routing())
+                            .action(c->c.doc((updateRequest.doc())))
                     ));
             operations.add(operation);
         });
