@@ -597,6 +597,7 @@ public class WrapperProcessor {
                 );
                 highlightBuilder.fields(highlightField, field);
                 highlightBuilder.fragmentSize(highLightParam.getFragmentSize());
+                highlightBuilder.noMatchSize(highLightParam.getNoMatchSize());
                 Optional.ofNullable(highLightParam.getNumberOfFragments()).ifPresent(highlightBuilder::numberOfFragments);
             }
         });
