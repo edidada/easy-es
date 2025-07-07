@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import lombok.Getter;
 import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.common.utils.jackson.deserializer.DateDeserializer;
 import org.dromara.easyes.common.utils.jackson.deserializer.LocalDateDeserializer;
@@ -62,7 +61,7 @@ public class JsonUtils {
         });
     }
 
-    public static JsonMapper buildJsonMapper(EEObjectMapperBuilderCustomizer consumer) {
+    public static JsonMapper buildJsonMapper(EasyEsObjectMapperCustomizer consumer) {
         JsonMapper.Builder builder = JsonMapper.builder();
         consumer.customize(builder);
         JsonMapper jsonMapper = builder.build();

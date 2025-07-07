@@ -4,7 +4,6 @@ import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.common.utils.LogUtils;
 import org.dromara.easyes.solon.config.EsAutoConfiguration;
 import org.dromara.easyes.solon.config.GeneratorConfiguration;
-import org.dromara.easyes.solon.config.ObjectMapperBean;
 import org.dromara.easyes.solon.factory.IndexStrategyFactory;
 import org.dromara.easyes.solon.register.MapperScannerRegister;
 import org.noear.solon.core.AppContext;
@@ -24,7 +23,6 @@ public class EasyEsSolonPlugin implements Plugin {
             LogUtils.info("===> Easy-Es is not enabled");
             return;
         }
-        context.beanMake(ObjectMapperBean.class);
         context.beanMake(EsAutoConfiguration.class);
         context.beanMake(GeneratorConfiguration.class);
         context.beanMake(IndexStrategyFactory.class);
