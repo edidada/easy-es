@@ -261,6 +261,10 @@ public interface BaseEsConstants {
     String LOWERCASE_NORMALIZER = "lowercase_normalizer";
 
     /**
+     * 忽略index.analysis.normalizer.lowercase_normalizer.filter
+     */
+    String LOWERCASE = "lowercase";
+    /**
      * 默认缩放因子
      */
     Double DEFAULT_SCALING_FACTOR = 100.0;
