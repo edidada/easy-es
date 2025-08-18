@@ -644,6 +644,10 @@ public class WrapperProcessor {
                 if (SortOrder.Desc.toString().equalsIgnoreCase(orderByParam.getSort())) {
                     fieldSortBuilder.order(SortOrder.Desc);
                 }
+                // 设置排序模式
+                if (Objects.nonNull(orderByParam.getMode())) {
+                    fieldSortBuilder.mode(orderByParam.getMode());
+                }
                 searchBuilder.sort(x -> x.field(fieldSortBuilder.build()));
             });
         }
