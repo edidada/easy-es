@@ -59,10 +59,7 @@ public class IndexUtils {
      * index.analysis.normalizer.lowercase_normalizer.type值
      */
     private static final String CUSTOM;
-    /**
-     * 忽略index.analysis.normalizer.lowercase_normalizer.filter
-     */
-    private static final String LOWERCASE;
+
     /**
      * dims索引字段名
      */
@@ -82,7 +79,6 @@ public class IndexUtils {
         DEFAULT_IGNORE_ABOVE = 256;
         IGNORE_ABOVE_KEY = "ignore_above";
         CUSTOM = "custom";
-        LOWERCASE = "lowercase";
         DIMS_KEY = "dims";
         EAGER_GLOBAL_ORDINALS = "eager_global_ordinals";
         COPY_TO_KEY = "copy_to";
@@ -121,15 +117,7 @@ public class IndexUtils {
 
             // 用户未指定的settings信息
             if (Objects.isNull(indexParam.getSettings())) {
-                IndexSettings.Builder settings = indexParam.getIndexSettings();
-                // 只要有其中一个字段加了忽略大小写,则在索引中创建此自定义配置,否则无需创建,不浪费资源
-                boolean ignoreCase = indexParam.getEsIndexParamList() != null && indexParam.getEsIndexParamList().stream()
-                        .anyMatch(EsIndexParam::isIgnoreCase);
-                if (ignoreCase) {
-                    // 忽略大小写配置
-                    settings.analysis(b -> b.normalizer(LOWERCASE_NORMALIZER, c -> c.custom(d -> d.filter(LOWERCASE))));
-                }
-                x.settings(settings.build());
+                x.settings(indexParam.getIndexSettings());
             } else {
                 // 用户自定义settings
                 x.settings(indexParam.getSettings().build());

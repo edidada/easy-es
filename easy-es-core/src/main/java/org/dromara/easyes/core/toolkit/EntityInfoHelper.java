@@ -84,10 +84,10 @@ public class EntityInfoHelper {
         entityInfo = new EntityInfo();
         // 初始化表名(索引名)相关
         initIndexName(clazz, globalConfig, entityInfo);
-        // 初始化索引settings相关
-        initSettings(clazz, entityInfo);
         // 初始化字段相关
         initIndexFields(clazz, globalConfig, entityInfo);
+        // 初始化索引settings相关
+        initSettings(clazz, entityInfo);
         // 初始化封装@Join父子类型注解信息
         initJoin(clazz, globalConfig, entityInfo);
 
@@ -788,8 +788,8 @@ public class EntityInfoHelper {
         entityInfo.setReplicasNum(settings.replicasNum());
         entityInfo.setShardsNum(settings.shardsNum());
 
-        IndexSettings.Builder builder = entityInfo.getIndexSettings()
-                .numberOfReplicas(settings.replicasNum() + "")
+        IndexSettings.Builder builder = new IndexSettings.Builder();
+        builder.numberOfReplicas(settings.replicasNum() + "")
                 .numberOfShards(settings.shardsNum() + "")
                 .maxResultWindow(settings.maxResultWindow());
 
@@ -799,6 +799,14 @@ public class EntityInfoHelper {
 
         ISettingsProvider provider = settings.settingsProvider().getDeclaredConstructor().newInstance();
         provider.settings(builder);
+        if (CollectionUtils.isNotEmpty(entityInfo.getFieldList())) {
+            // 只要有其中一个字段加了忽略大小写,则在索引中创建此自定义配置,否则无需创建,不浪费资源
+            if (entityInfo.getFieldList().stream().anyMatch(EntityFieldInfo::isIgnoreCase)) {
+                builder.analysis(b -> b.normalizer(LOWERCASE_NORMALIZER,
+                        c -> c.custom(d -> d.filter(LOWERCASE))));
+            }
+        }
+        entityInfo.setIndexSettings(builder.build());
     }
 
     /**

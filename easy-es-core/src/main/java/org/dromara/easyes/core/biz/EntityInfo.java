@@ -190,7 +190,7 @@ public class EntityInfo {
     /**
      * 通过自定义注解指定的索引settings
      */
-    private final IndexSettings.Builder indexSettings = new IndexSettings.Builder();
+    private IndexSettings indexSettings;
     /**
      * 请求配置 默认值为官方内置的默认配置
      */
