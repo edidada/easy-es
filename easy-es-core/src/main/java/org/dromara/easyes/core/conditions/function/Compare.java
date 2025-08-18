@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiPredicate;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.*;
