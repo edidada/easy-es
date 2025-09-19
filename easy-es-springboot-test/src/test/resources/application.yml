@@ -1,6 +1,6 @@
 easy-es:
   #  enable: true
-  address: 10.18.2.45:9200
+  address: 192.168.0.18:9200
   compatible: true
   #  schema: http
 #  username: elastic
@@ -8,7 +8,7 @@ easy-es:
   keep-alive-millis: 18000
   global-config:
     i-kun-mode: false
-    process-index-mode: manual
+    process-index-mode: smoothly
     async-process-index-blocking: true
     print-dsl: true
     db-config:
