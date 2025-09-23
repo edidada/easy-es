@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
@@ -126,7 +127,10 @@ public class EsClientUtils {
                     .ifPresent(requestConfigBuilder::setConnectionRequestTimeout);
             return requestConfigBuilder;
         });
-
+        // 如果是驼峰转下划线, 则增加序列化器
+        if (easyEsConfigProperties.getGlobalConfig().getDbConfig().isMapUnderscoreToCamelCase()) {
+            objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        }
         return new ElasticsearchClient(new RestClientTransport(builder.build(),
                 new JacksonJsonpMapper(objectMapper)));
     }

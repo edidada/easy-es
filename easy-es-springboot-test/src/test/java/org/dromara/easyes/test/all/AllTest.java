@@ -58,6 +58,7 @@ public class AllTest {
     @Test
     @Order(0)
     public void testCreateIndex() {
+        documentMapper.deleteIndex();
         // 0.前置操作 创建索引 需确保索引托管模式处于manual手动挡,若为自动挡则会冲突.
         boolean success = documentMapper.createIndex();
         Assertions.assertTrue(success);
