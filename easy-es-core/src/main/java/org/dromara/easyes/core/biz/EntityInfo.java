@@ -224,6 +224,10 @@ public class EntityInfo {
      * 是否判定索引相同阶段
      */
     private boolean indexEqualStage;
+    /**
+     * 是否开启knn插件 - 默认开启,若未安装该插件则可临时配置关闭(不推荐,性能表现差)
+     */
+    private boolean enableKnnPlugin;
 
     /**
      * 获取需要进行查询的字段列表
