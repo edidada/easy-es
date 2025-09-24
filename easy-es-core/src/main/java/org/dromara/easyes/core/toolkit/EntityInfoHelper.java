@@ -29,7 +29,10 @@ import static org.dromara.easyes.common.constants.BaseEsConstants.*;
  * Copyright © 2021 xpc1024 All Rights Reserved
  **/
 public class EntityInfoHelper {
-
+    /**
+     * 获取索引settings方法名
+     */
+    private final static String GET_SETTINGS_METHOD = "getSettings";
     /**
      * 储存反射类表信息
      */
@@ -87,8 +90,6 @@ public class EntityInfoHelper {
         initSettings(clazz, entityInfo);
         // 初始化封装@Join父子类型注解信息
         initJoin(clazz, globalConfig, entityInfo);
-        // 初始化knn插件配置
-        entityInfo.setEnableKnnPlugin(globalConfig.getDbConfig().isEnableKnnPlugin());
 
         // 放入缓存
         ENTITY_INFO_CACHE.put(clazz, entityInfo);

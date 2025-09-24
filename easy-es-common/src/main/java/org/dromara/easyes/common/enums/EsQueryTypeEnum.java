@@ -71,11 +71,6 @@ public enum EsQueryTypeEnum {
     GEO_SHAPE_ID,
     GEO_SHAPE,
     /**
-     * 向量查询
-     */
-    ANN,
-    KNN,
-    /**
      * 父子类型查询
      */
     HAS_CHILD,

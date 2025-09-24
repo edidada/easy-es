@@ -154,8 +154,8 @@ public class Document extends BaseJoin {
     /**
      * 稠密向量类型，dims 非负 最大为2048
      */
-    @IndexField(fieldType = FieldType.DENSE_VECTOR, dims = 3, index = true)
-    private double[] myVectors;
+    @IndexField(fieldType = FieldType.DENSE_VECTOR, dims = 3)
+    private double[] vector;
 
     @IndexField(fieldType = FieldType.KEYWORD, index = false)
     private String indexFalse;
