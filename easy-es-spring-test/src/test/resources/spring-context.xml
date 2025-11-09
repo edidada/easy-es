@@ -11,7 +11,10 @@
 
     <bean id="easyEsProperties" class="org.dromara.easyes.common.property.EasyEsProperties">
         <property name="enable" value="true"/>
-        <property name="address" value="127.0.0.1:9200"/>
+        <property name="address" value="localhost:9200"/>
+        <property name="schema" value="https"/>
+        <property name="username" value="admin"/>
+        <property name="password" value="hcMc^_EwmvZ8MA2pp9l+t@qe"/>
         <property name="keepAliveMillis" value="18000"/>
         <property name="globalConfig.IKunMode" value="true"/>
         <property name="globalConfig.processIndexMode" value="MANUAL"/>

@@ -13,27 +13,27 @@ import org.dromara.easyes.common.property.GlobalConfig;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.biz.*;
 import org.dromara.easyes.core.cache.GlobalConfigCache;
-import org.elasticsearch.action.admin.indices.alias.Alias;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.IndicesOptions;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.index.reindex.ReindexRequest;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.xcontent.XContentType;
+import org.easysearch.action.admin.indices.alias.Alias;
+import org.easysearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.easysearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.easysearch.action.bulk.BulkItemResponse;
+import org.easysearch.action.index.IndexRequest;
+import org.easysearch.action.search.SearchRequest;
+import org.easysearch.action.search.SearchResponse;
+import org.easysearch.action.support.IndicesOptions;
+import org.easysearch.action.support.master.AcknowledgedResponse;
+import org.easysearch.client.RequestOptions;
+import org.easysearch.client.RestHighLevelClient;
+import org.easysearch.client.indices.CreateIndexRequest;
+import org.easysearch.client.indices.CreateIndexResponse;
+import org.easysearch.client.indices.GetIndexRequest;
+import org.easysearch.client.indices.GetIndexResponse;
+import org.easysearch.common.unit.TimeValue;
+import org.easysearch.index.reindex.BulkByScrollResponse;
+import org.easysearch.index.reindex.ReindexRequest;
+import org.easysearch.search.builder.SearchSourceBuilder;
+import org.easysearch.search.sort.SortOrder;
+import org.easysearch.common.xcontent.XContentType;
 
 import java.io.IOException;
 import java.util.*;
@@ -485,9 +485,13 @@ public class IndexUtils {
                 info.put(SCALING_FACTOR_FIELD, scalingFactor);
             }
 
-            // dense_vector数据类型,须设置dims
+            // knn_dense_float_vector数据类型,须设置dims在knn对象中 (Easysearch格式)
             if (FieldType.DENSE_VECTOR.getType().equals(indexParam.getFieldType())) {
-                Optional.ofNullable(indexParam.getDims()).ifPresent(dims -> info.put(DIMS_KEY, dims));
+                Optional.ofNullable(indexParam.getDims()).ifPresent(dims -> {
+                    Map<String, Object> knnConfig = new HashMap<>();
+                    knnConfig.put(DIMS_KEY, dims);
+                    info.put("knn", knnConfig);
+                });
             }
 
             // 设置权重

@@ -39,8 +39,9 @@ public class Document {
      */
     private String title;
     /**
-     * 副标题
+     * 副标题 - 明确指定为 KEYWORD 类型以支持聚合
      */
+    @IndexField(fieldType = FieldType.KEYWORD)
     private String subTitle;
     /**
      * 文档内容,指定了类型及存储/查询分词器

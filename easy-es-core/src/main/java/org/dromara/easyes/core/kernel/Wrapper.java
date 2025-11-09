@@ -3,9 +3,9 @@ package org.dromara.easyes.core.kernel;
 
 import lombok.SneakyThrows;
 import org.dromara.easyes.core.biz.*;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.search.aggregations.BucketOrder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.easysearch.common.settings.Settings;
+import org.easysearch.search.aggregations.BucketOrder;
+import org.easysearch.search.builder.SearchSourceBuilder;
 
 import java.util.LinkedList;
 import java.util.List;

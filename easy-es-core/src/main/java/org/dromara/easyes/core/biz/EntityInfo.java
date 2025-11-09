@@ -9,7 +9,7 @@ import org.dromara.easyes.annotation.rely.IdType;
 import org.dromara.easyes.annotation.rely.JoinField;
 import org.dromara.easyes.annotation.rely.RefreshPolicy;
 import org.dromara.easyes.common.constants.BaseEsConstants;
-import org.elasticsearch.client.RequestOptions;
+import org.easysearch.client.RequestOptions;
 
 import java.lang.reflect.Field;
 import java.util.*;

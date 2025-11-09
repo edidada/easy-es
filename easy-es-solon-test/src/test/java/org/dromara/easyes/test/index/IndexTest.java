@@ -6,7 +6,7 @@ import org.dromara.easyes.core.conditions.index.LambdaEsIndexWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.client.indices.GetIndexResponse;
+import org.easysearch.client.indices.GetIndexResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

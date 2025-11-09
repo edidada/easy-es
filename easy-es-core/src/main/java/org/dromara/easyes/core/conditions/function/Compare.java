@@ -2,7 +2,7 @@ package org.dromara.easyes.core.conditions.function;
 
 import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.index.query.Operator;
+import org.easysearch.index.query.Operator;
 
 import java.io.Serializable;
 import java.time.ZoneId;

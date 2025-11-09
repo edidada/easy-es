@@ -6,7 +6,7 @@ import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
 import org.dromara.easyes.common.utils.*;
 import org.dromara.easyes.core.index.AutoProcessIndexNotSmoothlyStrategy;
 import org.dromara.easyes.core.index.AutoProcessIndexSmoothlyStrategy;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.noear.solon.annotation.Bean;
 import org.noear.solon.annotation.Condition;
 import org.noear.solon.annotation.Configuration;

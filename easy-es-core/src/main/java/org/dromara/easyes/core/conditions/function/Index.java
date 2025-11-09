@@ -2,7 +2,7 @@ package org.dromara.easyes.core.conditions.function;
 
 import org.dromara.easyes.annotation.rely.FieldType;
 import org.dromara.easyes.core.toolkit.FieldUtils;
-import org.elasticsearch.common.settings.Settings;
+import org.easysearch.common.settings.Settings;
 
 import java.io.Serializable;
 import java.util.Map;

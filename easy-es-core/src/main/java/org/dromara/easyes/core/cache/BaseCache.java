@@ -7,7 +7,7 @@ import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.kernel.BaseEsMapperImpl;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.FieldUtils;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 
 import java.lang.reflect.Method;
 import java.util.*;

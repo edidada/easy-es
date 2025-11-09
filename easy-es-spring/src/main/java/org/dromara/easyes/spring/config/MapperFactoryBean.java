@@ -18,7 +18,7 @@ import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.InterceptorChain;
 import org.dromara.easyes.extension.context.InterceptorChainHolder;
 import org.dromara.easyes.spring.factory.IndexStrategyFactory;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;

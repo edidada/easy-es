@@ -32,14 +32,18 @@
     <properties>
         <java.version>1.8</java.version>
         <lombok.version>1.18.28</lombok.version>
-        <es-rest-high-level-client.version>7.17.8</es-rest-high-level-client.version>
-        <es.version>7.17.8</es.version>
+        <easysearch.version>1.0.1</easysearch.version>
+        <easysearch.api.version>7.10.2</easysearch.api.version>
         <fastjson.version>1.2.83</fastjson.version>
         <codec.version>1.13</codec.version>
         <spring-boot.version>2.6.10</spring-boot.version>
         <spring.version>5.3.20</spring.version>
         <solon.version>3.0.5</solon.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <httpclient.version>4.5.10</httpclient.version>
+        <httpcore-nio.version>4.4.12</httpcore-nio.version>
+        <httpasyncclient.version>4.1.4</httpasyncclient.version>
+        <lucene.version>8.11.2</lucene.version>
     </properties>
 
     <dependencyManagement>
@@ -81,14 +85,9 @@
             </dependency>
 
             <dependency>
-                <groupId>org.elasticsearch.client</groupId>
-                <artifactId>elasticsearch-rest-high-level-client</artifactId>
-                <version>${es-rest-high-level-client.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.elasticsearch</groupId>
-                <artifactId>elasticsearch</artifactId>
-                <version>${es.version}</version>
+                <groupId>com.infinilabs</groupId>
+                <artifactId>easysearch-client</artifactId>
+                <version>${easysearch.version}</version>
             </dependency>
 
             <dependency>

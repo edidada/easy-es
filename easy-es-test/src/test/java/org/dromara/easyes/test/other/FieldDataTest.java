@@ -10,7 +10,7 @@ import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.geometry.Rectangle;
+import org.easysearch.geometry.Rectangle;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 

@@ -2,7 +2,7 @@ package org.dromara.easyes.core.biz;
 
 
 import lombok.Data;
-import org.elasticsearch.common.settings.Settings;
+import org.easysearch.common.settings.Settings;
 
 import java.util.List;
 import java.util.Map;

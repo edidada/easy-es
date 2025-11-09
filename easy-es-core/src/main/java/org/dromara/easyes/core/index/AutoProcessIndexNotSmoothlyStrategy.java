@@ -8,7 +8,7 @@ import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.IndexUtils;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 
 /**
  * 自动非平滑托管索引实现类, 重建索引时原索引数据会被删除

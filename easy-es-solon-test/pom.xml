@@ -33,4 +33,16 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <parallel>none</parallel>  <!-- 不并行执行 -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

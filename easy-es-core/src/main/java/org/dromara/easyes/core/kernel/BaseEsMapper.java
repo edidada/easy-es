@@ -2,12 +2,12 @@ package org.dromara.easyes.core.kernel;
 
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.SAPageInfo;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetIndexResponse;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.easysearch.action.search.SearchRequest;
+import org.easysearch.action.search.SearchResponse;
+import org.easysearch.action.search.SearchScrollRequest;
+import org.easysearch.client.RequestOptions;
+import org.easysearch.client.indices.GetIndexResponse;
+import org.easysearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.io.Serializable;

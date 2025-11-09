@@ -3,10 +3,10 @@ package org.dromara.easyes.core.conditions.function;
 import org.dromara.easyes.common.utils.CollectionUtils;
 import org.dromara.easyes.common.utils.ExceptionUtils;
 import org.dromara.easyes.core.toolkit.FieldUtils;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.geometry.Geometry;
+import org.easysearch.common.geo.GeoPoint;
+import org.easysearch.common.geo.ShapeRelation;
+import org.easysearch.common.unit.DistanceUnit;
+import org.easysearch.geometry.Geometry;
 
 import java.io.Serializable;
 import java.util.ArrayList;

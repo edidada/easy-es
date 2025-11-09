@@ -20,7 +20,7 @@ import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.InterceptorChain;
 import org.dromara.easyes.extension.context.InterceptorChainHolder;
 import org.dromara.easyes.solon.factory.IndexStrategyFactory;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
 import org.noear.solon.core.AppContext;
 import org.noear.solon.core.BeanBuilder;

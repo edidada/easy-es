@@ -8,7 +8,7 @@ import org.dromara.easyes.core.biz.EntityInfo;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.toolkit.EntityInfoHelper;
 import org.dromara.easyes.core.toolkit.IndexUtils;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 
 import static org.dromara.easyes.common.constants.BaseEsConstants.S1_SUFFIX;
 import static org.dromara.easyes.common.constants.BaseEsConstants.SO_SUFFIX;

@@ -5,7 +5,7 @@ import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.search.SearchResponse;
+import org.easysearch.action.search.SearchResponse;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

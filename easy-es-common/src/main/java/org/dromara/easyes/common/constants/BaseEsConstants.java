@@ -241,9 +241,9 @@ public interface BaseEsConstants {
      */
     String KEYWORD_SUFFIX = ".keyword";
     /**
-     * 执行SQL x-pack 固定地址
+     * 执行SQL 固定地址
      */
-    String SQL_ENDPOINT = "/_xpack/sql?format=json";
+    String SQL_ENDPOINT = "/_sql?format=json";
     /**
      * 执行DSL 查询固定地址
      */

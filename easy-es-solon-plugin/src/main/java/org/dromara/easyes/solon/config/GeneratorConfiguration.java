@@ -2,7 +2,7 @@ package org.dromara.easyes.solon.config;
 
 import org.dromara.easyes.core.config.GeneratorConfig;
 import org.dromara.easyes.core.toolkit.Generator;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.noear.solon.annotation.Component;
 import org.noear.solon.annotation.Inject;
 

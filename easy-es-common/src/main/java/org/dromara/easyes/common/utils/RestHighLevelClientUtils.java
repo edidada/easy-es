@@ -11,9 +11,9 @@ import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.dromara.easyes.common.enums.SchemaEnum;
 import org.dromara.easyes.common.property.EasyEsProperties;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestClient;
+import org.easysearch.client.RestClientBuilder;
+import org.easysearch.client.RestHighLevelClient;
 
 import javax.net.ssl.SSLContext;
 import java.util.*;

@@ -3,11 +3,11 @@ package org.dromara.easyes.core.biz;
 import org.dromara.easyes.common.enums.OrderTypeEnum;
 import lombok.Builder;
 import lombok.Data;
-import org.elasticsearch.common.geo.GeoDistance;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
+import org.easysearch.common.geo.GeoDistance;
+import org.easysearch.common.geo.GeoPoint;
+import org.easysearch.common.unit.DistanceUnit;
+import org.easysearch.search.sort.SortBuilder;
+import org.easysearch.search.sort.SortOrder;
 
 /**
  * 排序基本参数

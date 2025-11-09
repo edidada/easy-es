@@ -5,7 +5,7 @@ import org.dromara.easyes.common.utils.CollectionUtils;
 import org.dromara.easyes.common.utils.StringUtils;
 import org.dromara.easyes.core.biz.EsIndexInfo;
 import org.dromara.easyes.core.config.GeneratorConfig;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 
 import java.util.*;
 

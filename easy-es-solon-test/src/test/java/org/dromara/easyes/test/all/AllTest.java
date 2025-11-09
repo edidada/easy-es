@@ -1,5 +1,8 @@
 package org.dromara.easyes.test.all;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.dromara.easyes.common.constants.BaseEsConstants;
 import org.dromara.easyes.core.biz.EsPageInfo;
 import org.dromara.easyes.core.biz.OrderByParam;
@@ -12,32 +15,32 @@ import org.dromara.easyes.core.toolkit.FieldUtils;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.HttpAsyncResponseConsumerFactory;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.geo.GeoDistance;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.geometry.Circle;
-import org.elasticsearch.geometry.Point;
-import org.elasticsearch.geometry.Rectangle;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedLongTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.metrics.ParsedAvg;
-import org.elasticsearch.search.aggregations.metrics.ParsedMax;
-import org.elasticsearch.search.aggregations.metrics.ParsedMin;
-import org.elasticsearch.search.aggregations.metrics.ParsedSum;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
+import org.easysearch.action.search.SearchResponse;
+import org.easysearch.client.HttpAsyncResponseConsumerFactory;
+import org.easysearch.client.RequestOptions;
+import org.easysearch.common.geo.GeoDistance;
+import org.easysearch.common.geo.GeoPoint;
+import org.easysearch.common.geo.ShapeRelation;
+import org.easysearch.common.unit.DistanceUnit;
+import org.easysearch.geometry.Circle;
+import org.easysearch.geometry.Point;
+import org.easysearch.geometry.Rectangle;
+import org.easysearch.index.query.BoolQueryBuilder;
+import org.easysearch.index.query.QueryBuilder;
+import org.easysearch.index.query.QueryBuilders;
+import org.easysearch.script.Script;
+import org.easysearch.script.ScriptType;
+import org.easysearch.search.aggregations.bucket.terms.ParsedLongTerms;
+import org.easysearch.search.aggregations.bucket.terms.Terms;
+import org.easysearch.search.aggregations.metrics.ParsedAvg;
+import org.easysearch.search.aggregations.metrics.ParsedMax;
+import org.easysearch.search.aggregations.metrics.ParsedMin;
+import org.easysearch.search.aggregations.metrics.ParsedSum;
+import org.easysearch.search.builder.SearchSourceBuilder;
+import org.easysearch.search.sort.FieldSortBuilder;
+import org.easysearch.search.sort.GeoDistanceSortBuilder;
+import org.easysearch.search.sort.SortBuilders;
+import org.easysearch.search.sort.SortOrder;
 import org.junit.jupiter.api.*;
 import org.noear.solon.annotation.Inject;
 import org.noear.solon.test.SolonTest;
@@ -921,18 +924,36 @@ public class AllTest {
     @Order(6)
     public void testVector() {
         // 向量查询, 查询条件构造
-        Map<String, Object> params = new HashMap<>();
-        params.put("vector", new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594});
-        String scriptCode = "cosineSimilarity(params.vector, 'vector') + 1.0";
-        QueryBuilder queryBuilder = QueryBuilders.scriptScoreQuery(QueryBuilders.matchAllQuery(), new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, scriptCode, params));
+        String dsl = "{\n" +
+                "  \"query\": {\n" +
+                "    \"knn_nearest_neighbors\": {\n" +
+                "      \"field\": \"vector\",\n" +
+                "      \"vec\": {\n" +
+                "        \"values\": [\n" +
+                "          0.39684247970581055,\n" +
+                "          0.7687071561813354,\n" +
+                "          0.5145490765571594\n" +
+                "        ]\n" +
+                "      },\n" +
+                "      \"model\": \"exact\",\n" +
+                "      \"similarity\": \"cosine\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String jsonResult = documentMapper.executeDSL(dsl);
 
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        JSONObject result = JSON.parseObject(jsonResult);
+        JSONArray hits = result.getJSONObject("hits").getJSONArray("hits");
 
-        List<Document> Documents = documentMapper.selectList(wrapper);
-        Assertions.assertFalse(Documents.isEmpty());
+        List<Document> documents = new ArrayList<>();
+        for (int i = 0; i < hits.size(); i++) {
+            JSONObject hit = hits.getJSONObject(i);
+            String source = hit.getString("_source");
+            Document doc = JSON.parseObject(source, Document.class);
+            doc.setScore(hit.getFloat("_score"));
+            documents.add(doc);
+        }
+        Assertions.assertFalse(documents.isEmpty());
     }
 
     @Test

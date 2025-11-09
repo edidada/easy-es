@@ -3,6 +3,7 @@ package org.dromara.easyes.sample.controller;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.sample.entity.Document;
 import org.dromara.easyes.sample.mapper.DocumentMapper;
+import org.easysearch.action.search.SearchResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,6 +12,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 /**l
  * 演示springboot项目实际使用
@@ -30,13 +32,27 @@ public class SampleController {
      */
     @GetMapping("insert")
     public Integer insert() {
-        Document document = new Document();
-        document.setId("1");
-        document.setTitle("测试1");
-        document.setContent("测试内容1");
-        document.setCreator("老汉");
-        document.setGmtCreate(LocalDateTime.now());
-        return documentMapper.insert(document);
+        int count = 0;
+        // 插入5条测试数据
+        for (int i = 1; i <= 5; i++) {
+            Document document = new Document();
+            document.setId(String.valueOf(i));
+            document.setTitle("测试" + i);
+            if (i == 3) {
+                document.setTitle("传统功夫");
+                document.setContent("测试内容3");
+            } else if (i == 4) {
+                document.setContent("功夫相关内容");
+            } else {
+                document.setContent("测试内容" + i);
+            }
+            document.setCreator("创建者" + i);
+            document.setGmtCreate(LocalDateTime.now());
+            // 设置不同的点赞数
+            document.setStarNum(i * 10);
+            count += documentMapper.insert(document);
+        }
+        return count;
     }
 
     /**
@@ -82,5 +98,32 @@ public class SampleController {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         wrapper.match(Document::getContent, content);
         return documentMapper.selectList(wrapper);
+    }
+
+    /**
+     * 查询所有数据
+     *
+     * @return
+     */
+    @GetMapping("/selectAll")
+    public List<Document> selectAll() {
+        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+        return documentMapper.selectList(wrapper);
+    }
+
+    /**
+     * 聚合查询 - 按创建时间和点赞数分组统计
+     *
+     * @return SearchResponse 聚合结果
+     */
+    @GetMapping("/aggByDateAndStar")
+    public SearchResponse aggByDateAndStar() {
+        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
+        // 按创建时间分组，并在每个时间组内按点赞数分组（链式聚合）
+        wrapper.groupBy(Document::getGmtCreate)
+                .max(Document::getStarNum)
+                .min(Document::getStarNum);
+        SearchResponse response = documentMapper.search(wrapper);
+        return response;
     }
 }

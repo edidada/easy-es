@@ -3,7 +3,7 @@ package org.dromara.easyes.core.biz;
 import org.dromara.easyes.common.enums.EsQueryTypeEnum;
 import org.dromara.easyes.core.toolkit.Tree;
 import lombok.Data;
-import org.elasticsearch.index.query.QueryBuilder;
+import org.easysearch.index.query.QueryBuilder;
 
 /**
  * 查询参数树

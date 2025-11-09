@@ -4,7 +4,7 @@ import org.dromara.easyes.common.enums.ProcessIndexStrategyEnum;
 import org.dromara.easyes.common.property.EasyEsProperties;
 import org.dromara.easyes.common.utils.ExceptionUtils;
 import org.dromara.easyes.common.strategy.AutoProcessIndexStrategy;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.noear.solon.Solon;
 import org.noear.solon.annotation.Component;
 import org.noear.solon.annotation.Condition;

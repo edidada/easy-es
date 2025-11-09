@@ -2,7 +2,7 @@ package org.dromara.easyes.starter.config;
 
 import org.dromara.easyes.core.config.GeneratorConfig;
 import org.dromara.easyes.core.toolkit.Generator;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

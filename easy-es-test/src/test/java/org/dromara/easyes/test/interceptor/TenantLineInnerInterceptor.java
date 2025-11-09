@@ -6,8 +6,8 @@ import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.core.kernel.BaseEsMapper;
 import org.dromara.easyes.extension.context.Interceptor;
 import org.dromara.easyes.extension.context.Invocation;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.client.RequestOptions;
+import org.easysearch.action.search.SearchRequest;
+import org.easysearch.client.RequestOptions;
 import org.springframework.stereotype.Component;
 
 /**

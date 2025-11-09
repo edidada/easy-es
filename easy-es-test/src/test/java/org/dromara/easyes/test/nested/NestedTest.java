@@ -8,7 +8,7 @@ import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.entity.Faq;
 import org.dromara.easyes.test.entity.User;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.geometry.Point;
+import org.easysearch.geometry.Point;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;

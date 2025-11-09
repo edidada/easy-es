@@ -1,6 +1,6 @@
 package org.dromara.easyes.common.strategy;
 
-import org.elasticsearch.client.RestHighLevelClient;
+import org.easysearch.client.RestHighLevelClient;
 
 /**
  * 自动托管索引策略接口

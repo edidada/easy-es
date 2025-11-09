@@ -1,21 +1,25 @@
 package org.dromara.easyes.test.vector;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.test.TestEasyEsApplication;
 import org.dromara.easyes.test.entity.Document;
 import org.dromara.easyes.test.mapper.DocumentMapper;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.easysearch.index.query.QueryBuilder;
+import org.easysearch.index.query.QueryBuilders;
+import org.easysearch.script.Script;
+import org.easysearch.script.ScriptType;
+import org.easysearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,18 +58,36 @@ public class VectorTest {
 
     @Test
     public void testVectorSearch() {
-        Map<String, Object> params = new HashMap<>();
-        params.put("vector", new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594});
-        String scriptCode = "cosineSimilarity(params.vector, 'vector') + 1.0";
-        QueryBuilder queryBuilder = QueryBuilders.scriptScoreQuery(QueryBuilders.matchAllQuery(), new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, scriptCode, params));
+        String dsl = "{\n" +
+                "  \"query\": {\n" +
+                "    \"knn_nearest_neighbors\": {\n" +
+                "      \"field\": \"vector\",\n" +
+                "      \"vec\": {\n" +
+                "        \"values\": [\n" +
+                "          0.39684247970581055,\n" +
+                "          0.7687071561813354,\n" +
+                "          0.5145490765571594\n" +
+                "        ]\n" +
+                "      },\n" +
+                "      \"model\": \"exact\",\n" +
+                "      \"similarity\": \"cosine\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        String jsonResult = documentMapper.executeDSL(dsl);
 
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-        LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
-        wrapper.setSearchSourceBuilder(searchSourceBuilder);
+        JSONObject result = JSON.parseObject(jsonResult);
+        JSONArray hits = result.getJSONObject("hits").getJSONArray("hits");
 
-        List<Document> Documents = documentMapper.selectList(wrapper);
-        Assertions.assertFalse(Documents.isEmpty());
+        List<Document> documents = new ArrayList<>();
+        for (int i = 0; i < hits.size(); i++) {
+            JSONObject hit = hits.getJSONObject(i);
+            String source = hit.getString("_source");
+            Document doc = JSON.parseObject(source, Document.class);
+            doc.setScore(hit.getFloat("_score"));
+            documents.add(doc);
+        }
+        Assertions.assertFalse(documents.isEmpty());
     }
 
 }
