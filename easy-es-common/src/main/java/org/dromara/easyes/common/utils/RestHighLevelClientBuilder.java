@@ -8,7 +8,7 @@ import org.easysearch.client.RestHighLevelClient;
 import static org.dromara.easyes.common.constants.BaseEsConstants.UNKNOWN;
 
 /**
- * elasticsearch 构造器
+ * Esasysearch 构造器
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RestHighLevelClientBuilder {

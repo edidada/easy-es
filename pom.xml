@@ -9,7 +9,7 @@
     <version>2.1.0</version>
 
     <name>easy-es</name>
-    <description>easy use for elastic search</description>
+    <description>easy use for Easysearch</description>
 
     <modules>
         <module>easy-es-parent</module>

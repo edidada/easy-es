@@ -42,13 +42,15 @@
 # 简介 | Intro
 ---
 
-Easy-Es是一款简化ElasticSearch搜索引擎操作的开源框架,全自动智能索引托管.
+Easy-Es for Easysearch 是一款简化 INFINI Easysearch 搜索引擎操作的开源框架,全自动智能索引托管.
 
-目前功能丰富度和易用度及性能已全面领先SpringData-Elasticsearch.
+Easysearch 是一个轻量级且自主可控的 国产化搜索引擎。
+
+Easy-Es for Easysearch 是国内首家专门针对 Easysearch 客户端简化的工具。
 
 简化`CRUD`及其它高阶操作,可以更好的帮助开发者减轻开发负担
 
-底层采用Es官方提供的RestHighLevelClient,保证其原生性能及拓展性.
+底层采用 Easysearch Java Client,保证其原生性能及拓展性.
 
 技术讨论 QQ 群 ：897570597 群内可在群文件中免费领取 颈椎保护 | 增肌 | 减脂 等健身计划 无套路
 

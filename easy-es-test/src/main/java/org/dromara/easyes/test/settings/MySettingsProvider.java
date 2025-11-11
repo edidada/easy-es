@@ -15,7 +15,7 @@ public class MySettingsProvider extends DefaultSettingsProvider {
     public Map<String, Object> getSettings() {
         // TODO 这里可以自定义你的settings实现,将自定义的settings置入map并返回即可
         Map<String, Object> mySettings = new HashMap<>();
-        // 例如指定查询操作的慢日志阈值为30秒,当查询操作的执行时间超过此阈值时，Elasticsearch会记录相应的慢日志并发出警告
+        // 例如指定查询操作的慢日志阈值为30秒,当查询操作的执行时间超过此阈值时，Easysearch会记录相应的慢日志并发出警告
         mySettings.put("index.search.slowlog.threshold.query.warn", "30s");
         return mySettings;
     }

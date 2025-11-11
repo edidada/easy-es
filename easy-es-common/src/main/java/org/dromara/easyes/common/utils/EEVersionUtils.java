@@ -35,9 +35,9 @@ public class EEVersionUtils {
     }
 
     /**
-     * 获取elasticsearch client 版本
+     * 获取 easysearch-client 版本
      * <p>
-     * elasticsearch 客户端必须通过 restHighLevelClient.info 获取，无法使用getPackage.getImplementationVersion 获取
+     * Easysearch 客户端必须通过 restHighLevelClient.info 获取，无法使用getPackage.getImplementationVersion 获取
      * </p>
      *
      * @param restHighLevelClient es高级客户端

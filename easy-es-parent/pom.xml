@@ -9,7 +9,7 @@
     <version>2.1.0</version>
 
     <name>easy-es-parent</name>
-    <description>easy use for elastic search</description>
+    <description>easy use for Easysearch</description>
     <url>https://github.com/dromara/easy-es</url>
 
     <licenses>
