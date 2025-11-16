@@ -35,6 +35,8 @@
 
 **开源社区码云首页** https://gitee.com/dromara/
 
+**Easysearch官网** https://www.infinilabs.cn/products/easysearch/
+
 [Easy-Es-PPT下载](https://iknow.hs.net/21df32cf-35fb-44f0-945f-06330408c1bd.pptx)
 
 > **Tip:** 官网是vue单页面应用，且服务部署在🇺🇸,国内用户首次访问加载可能比较慢🐢，主公们请耐心等待一下，后续会很快🏹，如偶遇打不开可刷新多尝试几次,或尝试魔法上网.
@@ -42,11 +44,11 @@
 # 简介 | Intro
 ---
 
-Easy-Es for Easysearch 是一款简化 INFINI Easysearch 搜索引擎操作的开源框架,全自动智能索引托管.
+Easy-Es for Easysearch 是一款简化 INFINI [Easysearch](https://www.infinilabs.cn/products/easysearch/) 搜索引擎操作的开源框架,全自动智能索引托管.
 
-Easysearch 是一个轻量级且自主可控的 国产化搜索引擎。
+[Easysearch](https://www.infinilabs.cn/products/easysearch/) 是一个轻量级且自主可控的 国产化搜索引擎。
 
-Easy-Es for Easysearch 是国内首家专门针对 Easysearch 客户端简化的工具。
+Easy-Es for Easysearch 是国内首家专门针对 [Easysearch](https://www.infinilabs.cn/products/easysearch/) 客户端简化的工具。
 
 简化`CRUD`及其它高阶操作,可以更好的帮助开发者减轻开发负担
 

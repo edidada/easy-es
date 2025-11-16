@@ -4,6 +4,7 @@ import org.dromara.easyes.core.conditions.select.LambdaEsQueryWrapper;
 import org.dromara.easyes.sample.entity.Document;
 import org.dromara.easyes.sample.mapper.DocumentMapper;
 import org.easysearch.action.search.SearchResponse;
+import org.easysearch.search.aggregations.Aggregations;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +13,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
+import org.easysearch.search.aggregations.Aggregations;
 
 /**l
  * 演示springboot项目实际使用
@@ -114,16 +115,16 @@ public class SampleController {
     /**
      * 聚合查询 - 按创建时间和点赞数分组统计
      *
-     * @return SearchResponse 聚合结果
+     * @return Aggregations 聚合结果
      */
     @GetMapping("/aggByDateAndStar")
-    public SearchResponse aggByDateAndStar() {
+    public Aggregations aggByDateAndStar() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         // 按创建时间分组，并在每个时间组内按点赞数分组（链式聚合）
         wrapper.groupBy(Document::getGmtCreate)
                 .max(Document::getStarNum)
                 .min(Document::getStarNum);
         SearchResponse response = documentMapper.search(wrapper);
-        return response;
+        return response.getAggregations();
     }
 }
