@@ -37,6 +37,10 @@
 
 **Easysearch官网** https://www.infinilabs.cn/products/easysearch/
 
+有问题可联系
+
+<img src="./infinilabs.png" alt="欢迎讨论" width="80" height="90" />
+
 [Easy-Es-PPT下载](https://iknow.hs.net/21df32cf-35fb-44f0-945f-06330408c1bd.pptx)
 
 > **Tip:** 官网是vue单页面应用，且服务部署在🇺🇸,国内用户首次访问加载可能比较慢🐢，主公们请耐心等待一下，后续会很快🏹，如偶遇打不开可刷新多尝试几次,或尝试魔法上网.
