@@ -29,6 +29,8 @@
 
 **Dromara easy-es官方gitcode** https://gitcode.com/dromara/easy-es
 
+**Dromara easy-es for Easysearch** https://gitee.com/dromara/easy-es/tree/easy-es4easySearch
+
 **开源社区Dromara** https://dromara.org/
 
 **开源社区码云首页** https://gitee.com/dromara/
