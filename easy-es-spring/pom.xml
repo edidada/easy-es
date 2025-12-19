@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>easy-es-spring</artifactId>
+    <name>easy-es-spring</name>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
