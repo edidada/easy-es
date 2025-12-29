@@ -27,6 +27,7 @@
         <module>../easy-es-common</module>
         <module>../easy-es-solon-plugin</module>
         <module>../easy-es-spring</module>
+        <module>../easy-es-boot4-starter</module>
     </modules>
 
     <properties>
