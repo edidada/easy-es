@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>easy-es-extension</artifactId>
+    <name>easy-es-extension</name>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>

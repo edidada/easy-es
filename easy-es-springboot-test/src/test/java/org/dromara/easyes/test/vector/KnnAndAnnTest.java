@@ -33,7 +33,7 @@ public class KnnAndAnnTest {
         Document document = new Document();
         document.setEsId(testDataId);
         document.setContent("测试插入向量数据");
-        document.setMyVectors(new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594});
+        document.setVectors(new double[]{0.39684247970581055, 0.7687071561813354, 0.5145490765571594});
         int successCount = documentMapper.insert(document);
         Assertions.assertEquals(1, successCount);
     }
@@ -44,7 +44,7 @@ public class KnnAndAnnTest {
         Document document = new Document();
         document.setEsId(testDataId);
         document.setContent("测试更新向量数据");
-        document.setMyVectors(new double[]{0.39684247970581666, 0.768707156181666, 0.5145490765571666});
+        document.setVectors(new double[]{0.39684247970581666, 0.768707156181666, 0.5145490765571666});
         int successCount = documentMapper.updateById(document);
         Assertions.assertEquals(1, successCount);
     }
@@ -53,7 +53,7 @@ public class KnnAndAnnTest {
     public void testknn() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         float[] queryVector = {0.39684247970581055f, 0.7687071561813354f, 0.5145490765571594f};
-        wrapper.knn(Document::getMyVectors, queryVector, 10);
+        wrapper.knn(Document::getVectors, queryVector, 10);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }
@@ -62,7 +62,7 @@ public class KnnAndAnnTest {
     public void testAnn() {
         LambdaEsQueryWrapper<Document> wrapper = new LambdaEsQueryWrapper<>();
         float[] queryVector = {0.39684247970581055f, 0.7687071561813354f, 0.5145490765571594f};
-        wrapper.ann(Document::getMyVectors, queryVector, 10, 100);
+        wrapper.ann(Document::getVectors, queryVector, 10, 100);
         List<Document> documents = documentMapper.selectList(wrapper);
         System.out.println(documents);
     }

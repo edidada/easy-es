@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>easy-es-common</artifactId>
+    <name>easy-es-common</name>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
