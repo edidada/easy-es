@@ -234,7 +234,7 @@ QQ | 微信:252645816
 <br/>
 
 <a href="https://easysearch.cn">
-  <img alt="ad" src="https://iknow.hs.net/28b8fb97-2861-4eab-b325-390f13055132.png">
+  <img alt="ad" src="https://iknow.hs.net/eb47a2c4-d264-43a6-8112-d53e01886e2e.png">
 </a>
 
 <br/>
