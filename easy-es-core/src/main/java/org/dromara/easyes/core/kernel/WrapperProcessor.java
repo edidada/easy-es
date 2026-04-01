@@ -440,9 +440,99 @@ public class WrapperProcessor {
             fieldTypeMap = entityInfo.getFieldTypeMap();
         }
 
+        // 检查当前层级是否存在or(consumer)类型的节点,需要特殊处理
+        boolean hasOrNested = paramList.stream()
+                .anyMatch(p -> NESTED_OR.equals(p.getQueryTypeEnum())
+                        && p.getChildren() != null && !p.getChildren().isEmpty());
+        if (hasOrNested) {
+            // 按NESTED_OR节点分割参数列表,每段作为should的一个分支
+            return buildShouldFromOrSegments(paramList, builder, entityInfo, path, mappingColumnMap, fieldTypeMap);
+        }
+
         // 批量初始化每一个参数至BoolQueryBuilder
         paramList.forEach(param -> initBool(builder, param, entityInfo, mappingColumnMap, fieldTypeMap));
         return builder;
+    }
+
+    /**
+     * 当参数列表中存在or(consumer)节点时,将列表按NESTED_OR边界分割,
+     * 每段前置条件和每个NESTED_OR的子条件分别作为should的一个分支
+     */
+    private static BoolQuery.Builder buildShouldFromOrSegments(List<Param> paramList, BoolQuery.Builder builder,
+                                                                EntityInfo entityInfo, String path,
+                                                                Map<String, String> mappingColumnMap,
+                                                                Map<String, String> fieldTypeMap) {
+        // 将参数列表按NESTED_OR(带children的,即or(consumer)形式)分割成多个段
+        List<List<Param>> segments = new ArrayList<>();
+        List<Param> currentSegment = new ArrayList<>();
+
+        for (Param param : paramList) {
+            if (NESTED_OR.equals(param.getQueryTypeEnum()) && param.getChildren() != null
+                    && !param.getChildren().isEmpty()) {
+                // 遇到or(consumer)节点,先保存之前积累的段
+                if (!currentSegment.isEmpty()) {
+                    segments.add(currentSegment);
+                    currentSegment = new ArrayList<>();
+                }
+                // NESTED_OR的children作为独立的一段
+                segments.add(Collections.singletonList(param));
+            } else {
+                currentSegment.add(param);
+            }
+        }
+        if (!currentSegment.isEmpty()) {
+            segments.add(currentSegment);
+        }
+
+        // 将每段构建为should的一个分支
+        for (List<Param> segment : segments) {
+            if (segment.size() == 1 && NESTED_OR.equals(segment.get(0).getQueryTypeEnum())) {
+                // NESTED_OR节点: 递归处理其children
+                Param orParam = segment.get(0);
+                List<Param> children = (List<Param>) orParam.getChildren();
+                Query query = Query.of(t -> t.bool(b -> getBool(children, b, entityInfo, path)));
+                builder.should(query);
+            } else if (segment.size() == 1) {
+                // 单个普通条件: 直接构建query加入should,避免多余的bool包装
+                BoolQuery.Builder tempBool = QueryBuilders.bool();
+                initBool(tempBool, segment.get(0), entityInfo, mappingColumnMap, fieldTypeMap);
+                BoolQuery built = tempBool.build();
+                // 从临时bool中提取出唯一的query
+                Query singleQuery = extractSingleQuery(built);
+                builder.should(singleQuery != null ? singleQuery : Query.of(t -> t.bool(built)));
+            } else {
+                // 多个普通条件段: 构建为一个bool.must分支
+                BoolQuery.Builder innerBool = QueryBuilders.bool();
+                for (Param param : segment) {
+                    initBool(innerBool, param, entityInfo, mappingColumnMap, fieldTypeMap);
+                }
+                builder.should(Query.of(t -> t.bool(innerBool.build())));
+            }
+        }
+
+        // 设置minimumShouldMatch确保至少匹配一个should分支
+        builder.minimumShouldMatch("1");
+
+        return builder;
+    }
+
+    /**
+     * 从只包含单个query的BoolQuery中提取出该query
+     * 例如 bool{must:[termQuery]} 提取出 termQuery
+     */
+    private static Query extractSingleQuery(BoolQuery boolQuery) {
+        List<Query> must = boolQuery.must();
+        List<Query> should = boolQuery.should();
+        List<Query> filter = boolQuery.filter();
+        List<Query> mustNot = boolQuery.mustNot();
+        int total = must.size() + should.size() + filter.size() + mustNot.size();
+        if (total == 1) {
+            if (must.size() == 1) return must.get(0);
+            if (should.size() == 1) return should.get(0);
+            if (filter.size() == 1) return filter.get(0);
+            if (mustNot.size() == 1) return mustNot.get(0);
+        }
+        return null;
     }
 
 
