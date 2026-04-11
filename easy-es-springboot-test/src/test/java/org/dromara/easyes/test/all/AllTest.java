@@ -1039,4 +1039,5 @@ public class AllTest {
         Assertions.assertEquals(query.toString(), qry.toString());
     }
 
+
 }
